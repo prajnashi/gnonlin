@@ -876,7 +876,7 @@ source_getfunction (GstPad *pad)
       /* flush last element in queue */
 /*       private->queue = g_slist_remove (private->queue, buffer); */
       if (qbuffer)
-	private->queue = g_slist_remove (private->queue, buffer);
+	private->queue = g_slist_remove (private->queue, qbuffer);
     }
   }
   
