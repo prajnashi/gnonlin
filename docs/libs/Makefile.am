@@ -80,7 +80,7 @@ GTKDOC_LD=$(LIBTOOL) --mode=link $(CC)
 
 # If you need to override some of the declarations, place them in this file
 # and uncomment this line.
-#DOC_OVERRIDES = $(DOC_MODULE)-overrides.txt
+DOC_OVERRIDES = $(DOC_MODULE)-overrides.txt
 
 
 
@@ -238,6 +238,7 @@ distclean-local: clean
 	rm -rf $(DOC_MODULE)-decl.txt
 	rm -rf $(DOC_MODULE)-undocumented.txt
 	rm -rf $(DOC_MODULE)-unused.txt
+	rm -rf $(DOC_MODULE)-overrides.txt
 	rm -rf tmpl/*.sgml.bak
 	rm -f $(DOC_MODULE).hierarchy
 	rm -f *.stamp || true
@@ -269,11 +270,11 @@ install-data-local:
 	      $(INSTALL_DATA) $$i $(DESTDIR)$(TARGET_DIR); \
 	    done; \
 	  fi; \
-	  echo '-- Installing $(srcdir)/html/$(DOC_MODULE).devhelp' ; \
-	  $(INSTALL_DATA) $(srcdir)/html/$(DOC_MODULE).devhelp \
+	  echo '-- Installing ./html/$(DOC_MODULE).devhelp' ; \
+	  $(INSTALL_DATA) ./html/$(DOC_MODULE).devhelp \
 	    $(DESTDIR)$(TARGET_DIR)/$(DOC_MODULE).devhelp; \
-	  echo '-- Installing $(srcdir)/html/index.sgml' ; \
-	  $(INSTALL_DATA) $(srcdir)/html/index.sgml $(DESTDIR)$(TARGET_DIR); \
+	  echo '-- Installing ./html/index.sgml' ; \
+	  $(INSTALL_DATA) ./html/index.sgml $(DESTDIR)$(TARGET_DIR); \
 	fi) 
 uninstall-local:
 	(installfiles=`echo ./html/*.html`; \
@@ -298,7 +299,7 @@ uninstall-local:
 	  echo '-- Uninstalling $(DESTDIR)$(TARGET_DIR)/index.sgml' ; \
 	  rm -f $(DESTDIR)$(TARGET_DIR)/index.sgml; \
 	fi) 
-	if test -d $(DESTDIR)$(TARGET_DIR); then rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(TARGET_DIR) 2>/dev/null; fi
+#	if test -d $(DESTDIR)$(TARGET_DIR); then rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(TARGET_DIR) 2>/dev/null; fi
 
 #
 # Require gtk-doc when making dist

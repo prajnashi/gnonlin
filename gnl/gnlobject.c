@@ -471,6 +471,17 @@ gnl_object_covers_func (GnlObject *object, GstClockTime start,
   return FALSE;
 }
 
+/**
+ * gnl_object_covers:
+ * @object : The #GnlObject
+ * @start : The start #GstClockTime for the query
+ * @stop : The stop #GstClockTime for the query
+ * @type : The type of #GnlCoverType query used
+ *
+ * Returns: TRUE if the #GnlObject is covered by the given start/stop time
+ * and the type of #GnlCoverType
+ */
+
 gboolean
 gnl_object_covers (GnlObject *object, GstClockTime start,
 		   GstClockTime stop, GnlCoverType type)

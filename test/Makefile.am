@@ -1,8 +1,8 @@
 noinst_PROGRAMS = \
 	sourcetest1	\
-	sourcetest2	\
-	sourcetest3	\
-	sourcetest4
+	sourcetest2	#\
+#	sourcetest3	\
+#	sourcetest4
 #\
 #simple simple1 composition layertest layertest2 simple2 group \
 #		  sourcetest1 sourcetest2 sourcetest3 \
