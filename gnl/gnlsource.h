@@ -53,12 +53,13 @@ struct _GnlSource {
   guint64 start;
   guint64 stop;
 
-  GstElement *source;
-
+  GstElement *element;
 };
 
 struct _GnlSourceClass {
   GstBinClass	parent_class;
+
+  void 		(*set_element)		(GnlSource *source, GstElement *element);
 };
 
 /* normal GSource stuff */

@@ -28,6 +28,7 @@
 #endif
 
 #include <gnl/gnllayer.h>
+#include <gnl/gnloperation.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,12 +49,13 @@ typedef struct _GnlComposition GnlComposition;
 typedef struct _GnlCompositionClass GnlCompositionClass;
 
 struct _GnlComposition {
-  GnlLayer layer;
+  GnlLayer 	layer;
 
-  GList    *layers;
+  GList    	*layers;
 
-  GnlLayer *current;
-  gulong    handler;
+  GnlLayer 	*current;
+  gulong   	 handler;
+  GnlOperation 	*ocurrent;
 };
 
 struct _GnlCompositionClass {
@@ -63,6 +65,9 @@ struct _GnlCompositionClass {
 /* normal GComposition stuff */
 GType			gnl_composition_get_type	(void);
 GnlComposition*		gnl_composition_new		(const gchar *name);
+
+void            	gnl_composition_add_operation   (GnlComposition *composition, 
+							 GnlOperation *operation, guint64 start);
 
 void			gnl_composition_append_layer	(GnlComposition *composition,
 							 GnlLayer *layer);

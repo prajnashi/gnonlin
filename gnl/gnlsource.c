@@ -26,10 +26,14 @@
 static void 		gnl_source_class_init 		(GnlSourceClass *klass);
 static void 		gnl_source_init 		(GnlSource *source);
 
+static void 		gnl_source_set_element_func 	(GnlSource *source, GstElement *element);
+
 static GstElementStateReturn
 			gnl_source_change_state 	(GstElement *element);
 
 static GstBinClass *parent_class = NULL;
+
+#define CLASS(source)  GNL_SOURCE_CLASS (G_OBJECT_GET_CLASS (source))
 
 GType
 gnl_source_get_type (void)
@@ -56,17 +60,20 @@ gnl_source_get_type (void)
 static void
 gnl_source_class_init (GnlSourceClass *klass)
 {
-  GObjectClass *gobject_class;
-  GstBinClass *gstbin_class;
-  GstElementClass *gstelement_class;
+  GObjectClass 		*gobject_class;
+  GstBinClass 		*gstbin_class;
+  GstElementClass 	*gstelement_class;
+  GnlSourceClass 	*gnlsource_class;
 
-  gobject_class = (GObjectClass*)klass;
-  gstbin_class = (GstBinClass*)klass;
-  gstelement_class = (GstElementClass*)klass;
+  gobject_class = 	(GObjectClass*)klass;
+  gstbin_class = 	(GstBinClass*)klass;
+  gstelement_class = 	(GstElementClass*)klass;
+  gnlsource_class = 	(GnlSourceClass*)klass;
 
   parent_class = g_type_class_ref (GST_TYPE_BIN);
 
-  gstelement_class->change_state = gnl_source_change_state;
+  gstelement_class->change_state = 	gnl_source_change_state;
+  gnlsource_class->set_element = 	gnl_source_set_element_func;
 }
 
 
@@ -89,6 +96,17 @@ gnl_source_new (const gchar *name)
   return new;
 }
 
+static void
+gnl_source_set_element_func (GnlSource *source, GstElement *element)
+{
+  source->element = element;
+
+  gst_bin_add (GST_BIN (source), element);
+  gst_element_add_ghost_pad (GST_ELEMENT (source), 
+		  	     gst_element_get_pad (element, "src"), 
+			     "src");
+}
+
 void
 gnl_source_set_element (GnlSource *source, GstElement *element)
 {
@@ -97,12 +115,8 @@ gnl_source_set_element (GnlSource *source, GstElement *element)
   g_return_if_fail (source != NULL);
   g_return_if_fail (GNL_IS_SOURCE (source));
 
-  source->source = element;
-
-  gst_bin_add (GST_BIN (source), element);
-  gst_element_add_ghost_pad (GST_ELEMENT (source), 
-		  	     gst_element_get_pad (element, "src"), 
-			     "src");
+  if (CLASS (source)->set_element)
+    CLASS (source)->set_element (source, element);
 }
 
 void

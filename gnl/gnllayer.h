@@ -76,6 +76,8 @@ void		gnl_layer_set_timer 		(GnlLayer *layer, GnlTimer *timer);
 guint64		gnl_layer_next_change 		(GnlLayer *layer, guint64 time);
 gboolean	gnl_layer_occupies_time 	(GnlLayer *layer, guint64 time);
 gboolean	gnl_layer_prepare_for	 	(GnlLayer *layer, guint64 start, guint64 stop);
+GnlSource* 	gnl_layer_get_source_for_time 	(GnlLayer *layer, guint64 time);
+
 
 #ifdef __cplusplus
 }

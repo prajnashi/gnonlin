@@ -24,6 +24,8 @@
 static void 		gnl_operation_class_init 	(GnlOperationClass *klass);
 static void 		gnl_operation_init 		(GnlOperation *operation);
 
+static void 		gnl_operation_set_element 	(GnlSource *source, GstElement *element);
+
 static GnlSourceClass *parent_class = NULL;
 
 GType
@@ -43,7 +45,7 @@ gnl_operation_get_type (void)
       32,
       (GInstanceInitFunc) gnl_operation_init,
     };
-    operation_type = g_type_register_static (GST_TYPE_BIN, "GnlOperation", &operation_info, 0);
+    operation_type = g_type_register_static (GNL_TYPE_SOURCE, "GnlOperation", &operation_info, 0);
   }
   return operation_type;
 }
@@ -52,23 +54,61 @@ static void
 gnl_operation_class_init (GnlOperationClass *klass)
 {
   GObjectClass *gobject_class;
+  GnlSourceClass        *gnlsource_class;
 
   gobject_class =       (GObjectClass*)klass;
+  gnlsource_class =     (GnlSourceClass*)klass;
 
-  parent_class = g_type_class_ref (GST_TYPE_BIN);
+  parent_class = g_type_class_ref (GNL_TYPE_SOURCE);
+
+  gnlsource_class->set_element =        gnl_operation_set_element;
 }
-
 
 static void
 gnl_operation_init (GnlOperation *operation)
 {
+  operation->num_sinks = 0;
 }
 
+static void
+gnl_operation_set_element (GnlSource *source, GstElement *element)
+{
+  GList *walk;
+  GnlOperation *operation = GNL_OPERATION (source);
+
+  parent_class->set_element (source, element);
+
+  walk = gst_element_get_pad_list (element);
+  while (walk) {
+    GstPad *pad = GST_PAD (walk->data);
+
+    if (GST_PAD_IS_SINK (pad)) {
+      gst_element_add_ghost_pad (GST_ELEMENT (source),
+		           pad, "sink");
+      operation->num_sinks++;
+    }
+    walk = g_list_next (walk);
+  }
+}
 
 GnlOperation*
 gnl_operation_new (const gchar *name)
 {
-  return NULL;
+  GnlOperation *new;
+
+  g_return_val_if_fail (name != NULL, NULL);
+
+  new = g_object_new (GNL_TYPE_OPERATION, NULL);
+  gst_object_set_name (GST_OBJECT (new), name);
+
+  return new;
 }
+
+guint
+gnl_operation_get_num_sinks (GnlOperation *operation)
+{
+  return operation->num_sinks; 
+}
+
 
 

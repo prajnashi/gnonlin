@@ -50,6 +50,7 @@ typedef struct _GnlOperationClass GnlOperationClass;
 struct _GnlOperation {
   GnlSource 		source;
 
+  guint			num_sinks;
 };
 
 struct _GnlOperationClass {
@@ -59,6 +60,8 @@ struct _GnlOperationClass {
 /* normal GOperation stuff */
 GType		gnl_operation_get_type		(void);
 GnlOperation*	gnl_operation_new		(const gchar *name);
+
+guint		gnl_operation_get_num_sinks	(GnlOperation *operation);
 
 #ifdef __cplusplus
 }

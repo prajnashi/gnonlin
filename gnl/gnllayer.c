@@ -113,16 +113,14 @@ gnl_layer_next_change_func (GnlLayer *layer, guint64 time)
 
     if (entry->start >= time)
       return entry->start;
-    g_print ("%lld %lld %lld %lld %lld\n", entry->start, entry->source->stop, entry->source->start,
-		    time, entry->start + entry->source->stop - entry->source->start);
 
-    if (entry->start + (entry->source->stop - entry->source->start) > time)
+    if (entry->start + (entry->source->stop - entry->source->start) >= time)
       return entry->start + entry->source->stop - entry->source->start;
 
     sources = g_list_next (sources);
   }
 
-  return G_MAXUINT64;
+  return G_MAXINT64;
 }
 
 static GnlLayerEntry*
@@ -140,6 +138,18 @@ find_entry_for_time (GnlLayer *layer, guint64 time)
     sources = g_list_next (sources);
   }
 
+  return NULL;
+}
+
+GnlSource*
+gnl_layer_get_source_for_time (GnlLayer *layer, guint64 time)
+{
+  GnlLayerEntry* entry;
+
+  entry = find_entry_for_time (layer, time);
+  if (entry) {
+    return entry->source;
+  }
   return NULL;
 }
 
@@ -273,7 +283,6 @@ gnl_layer_schedule (GnlTimer *timer, GstClockTime start, GstClockTime stop, gpoi
 
     duration = MIN (stop - start, source->stop - source->start) - 1; 
     real_start = start - entry->start + source->start, 
-    g_print ("%lld %lld %lld %lld -> %lld\n", stop, start, source->stop, source->start, duration);
 
     gnl_timer_notify_async (layer->timer, 
 	 	      	    real_start,
