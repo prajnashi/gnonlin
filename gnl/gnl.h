@@ -29,7 +29,6 @@
 #include <gnl/gnlobject.h>
 #include <gnl/gnlsource.h>
 #include <gnl/gnlcomposition.h>
-/* #include <gnl/gnlgroup.h> */
 #include <gnl/gnloperation.h>
 #include <gnl/gnltimeline.h>
 

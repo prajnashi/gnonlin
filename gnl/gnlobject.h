@@ -57,27 +57,25 @@ typedef enum
 
 struct _GnlObject {
   GstBin 		 parent;
-
+  
   GstClockTime  	 start;
   GstClockTime 		 stop;
   GstClockTime  	 media_start;
   GstClockTime 		 media_stop;
   gint			 priority;
   gboolean		 active;
-
+  
   GstClockTime  	 current_time;
-
+  
   gpointer		 comp_private;
 };
 
 struct _GnlObjectClass {
   GstBinClass		parent_class;
-
+  
   gboolean		(*prepare)		(GnlObject *object, GstEvent *event);
   gboolean		(*covers)		(GnlObject *object, 
 		   				 GstClockTime start, GstClockTime stop, GnlCoverType);
-  GstClockTime		(*nearest_change)	(GnlObject *object, GstClockTime time, 
-		                                 GnlDirection direction);
 };
 
 /* normal GObject stuff */
@@ -95,7 +93,7 @@ void			gnl_object_set_active		(GnlObject *object, gboolean active);
 
 gboolean 		gnl_object_covers 		(GnlObject *object, GstClockTime start,
 		                  			 GstClockTime stop, GnlCoverType type);
-							 GnlDirection direction);
+
 gboolean		gnl_object_to_media_time	(GnlObject *object, GstClockTime objecttime,
 							 GstClockTime *mediatime);
 gboolean		gnl_media_to_object_time	(GnlObject *object, GstClockTime mediatime,

@@ -1,5 +1,14 @@
 2005-03-30  Edward Hervey  <bilboed@bilboed.com>
 
+	* gnl/gnl.h: 
+	* gnl/gnlobject.h:
+	* docs/libs/gnonlin-sections.txt:
+	* docs/libs/tmpl/gnlobject.sgml:
+	typo error in gnlobject.h,
+	removed documentation for gnl_object_nearest_change()
+
+2005-03-30  Edward Hervey  <bilboed@bilboed.com>
+
 	* gnl/gnlobject.h:
 	* gnl/gnlobject.c:
 	Removed gnl_object_nearest_change() and cleanup of commented code

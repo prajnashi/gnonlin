@@ -58,7 +58,6 @@ Base class for GNonLin objects
 @parent_class: 
 @prepare: 
 @covers: 
-@nearest_change: 
 
 <!-- ##### ENUM GnlCoverType ##### -->
 <para>
@@ -163,17 +162,6 @@ Base class for GNonLin objects
 @start: 
 @stop: 
 @type: 
-@Returns: 
-
-
-<!-- ##### FUNCTION gnl_object_nearest_change ##### -->
-<para>
-
-</para>
-
-@object: 
-@time: 
-@direction: 
 @Returns: 
 
 
