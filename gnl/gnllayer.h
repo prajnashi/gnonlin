@@ -38,8 +38,6 @@ G_BEGIN_DECLS
 #define GNL_IS_LAYER_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_LAYER))
 
-extern GstElementDetails gnl_layer_details;
-
 typedef struct _GnlLayer GnlLayer;
 typedef struct _GnlLayerClass GnlLayerClass;
 
@@ -99,6 +97,8 @@ GstClockTime	gnl_layer_nearest_cover		(GnlLayer *layer, GstClockTime start, GnlD
 gboolean	gnl_layer_covers		(GnlLayer *layer, GstClockTime start, GstClockTime stop, GnlCoverType);
 
 GnlSource*	gnl_layer_find_source		(GnlLayer *layer, GstClockTime time, GnlFindMethod method);
+gint64 		gnl_time_to_seek_val (GstClockTime val);
+
 
 G_END_DECLS
 

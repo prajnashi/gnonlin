@@ -183,8 +183,8 @@ gnl_vlayer_prepare (GnlLayer *layer, GstClockTime start, GstClockTime stop)
                               GST_SEEK_METHOD_SET |
                               GST_SEEK_FLAG_FLUSH |
                               GST_SEEK_FLAG_ACCURATE,
-                              start,
-                              next);
+                              gnl_time_to_seek_val (start),
+                              gnl_time_to_seek_val (next));
 
     gst_element_send_event (GST_ELEMENT (sub_layer), vlayer->event);
 

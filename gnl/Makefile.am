@@ -59,7 +59,7 @@ distclean-local:
 	rm -f $(top_builddir)/gnl/gnlmarshal.c $(top_builddir)/gnl/gnlmarshal.h 
 
 
-CFLAGS = $(GNL_CFLAGS) -D_GNU_SOURCE -DGST_CONFIG_DIR=\""@sysconfdir@/gnonlin"\" -Wall -Werror -g
+AM_CFLAGS = $(GNL_CFLAGS) -D_GNU_SOURCE -DGST_CONFIG_DIR=\""@sysconfdir@/gnonlin"\" -Wall -Werror -g
 LIBS = $(GNL_LIBS)
 libgnl_la_LDFLAGS =
 

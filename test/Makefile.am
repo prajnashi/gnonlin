@@ -4,4 +4,4 @@ noinst_PROGRAMS = simple simple1 composition layertest layertest2 simple2 group 
 
 
 LDADD = $(GST_LIBS) $(GNL_LIBS) ../gnl/libgnl.la
-CFLAGS = $(GST_CFLAGS) $(GNL_CFLAGS)
+AM_CFLAGS = $(GST_CFLAGS) $(GNL_CFLAGS)

@@ -26,7 +26,7 @@ gnl_init (int *argc, char **argv[])
   }
 
   gst_init (argc, argv);
-  gst_scheduler_factory_set_default_name ("basicwingo");
+  gst_scheduler_factory_set_default_name ("basicgthread");
   /* gst_scheduler_factory_set_default_name ("optwingo"); */
 }
 

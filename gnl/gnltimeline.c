@@ -101,8 +101,8 @@ gnl_timeline_timer_init (GnlTimelineTimer *timer)
   gst_element_set_loop_function (GST_ELEMENT (timer), gnl_timeline_timer_loop);
 }
 
-static GstPadConnectReturn
-timer_connect (GstPad *pad, GstCaps *caps)
+static GstPadLinkReturn
+timer_connect (GstPad *pad, const GstCaps *caps)
 {
   GstPad *otherpad;
   TimerGroupConnection *connection;
@@ -111,10 +111,10 @@ timer_connect (GstPad *pad, GstCaps *caps)
 	        
   otherpad = (GST_PAD_IS_SRC (pad)? connection->sinkpad : connection->srcpad);
 		  
-  if (GST_CAPS_IS_FIXED (caps)) 
+/*  if (GST_CAPS_IS_FIXED (caps)) */
     return gst_pad_try_set_caps (otherpad, caps);
-  else
-    return GST_PAD_CONNECT_DELAYED;
+/*  else
+    return GST_PAD_CONNECT_DELAYED; */
 }
 
 static TimerGroupConnection*
@@ -133,14 +133,14 @@ gnl_timeline_timer_create_pad (GnlTimelineTimer *timer, GnlGroup *group)
   g_free (padname);
   gst_element_add_pad (GST_ELEMENT (timer), connection->sinkpad);
   gst_pad_set_element_private (connection->sinkpad, connection);
-  gst_pad_set_connect_function (connection->sinkpad, timer_connect);
+  gst_pad_set_link_function (connection->sinkpad, timer_connect);
   
   padname = g_strdup_printf ("%s_src", objname);
   connection->srcpad = gst_pad_new (padname, GST_PAD_SRC);
   g_free (padname);
   gst_element_add_pad (GST_ELEMENT (timer), connection->srcpad);
   gst_pad_set_element_private (connection->srcpad, connection);
-  gst_pad_set_connect_function (connection->srcpad, timer_connect);
+  gst_pad_set_link_function (connection->srcpad, timer_connect);
 
   timer->connections = g_list_prepend (timer->connections, connection);
 
@@ -171,7 +171,7 @@ gnl_timeline_timer_loop (GstElement *element)
 
   if (to_schedule) {
     GstPad *sinkpad = to_schedule->sinkpad;
-    GstBuffer *buf;
+    GstData *buf;
     
     timer->current = to_schedule;
       
@@ -237,7 +237,7 @@ gnl_timeline_timer_loop (GstElement *element)
     while (walk) {
       TimerGroupConnection* connection = (TimerGroupConnection *) walk->data;
 
-      gst_pad_push (connection->srcpad, GST_BUFFER (gst_event_new (GST_EVENT_EOS)));
+      gst_pad_push (connection->srcpad, GST_DATA (gst_event_new (GST_EVENT_EOS)));
 
       walk = g_list_next (walk);
     }
@@ -389,7 +389,7 @@ gnl_timeline_prepare (GnlLayer *layer, GstClockTime start, GstClockTime stop)
                 GST_SEEK_FLAG_FLUSH |
                 GST_SEEK_FLAG_ACCURATE;
 		
-    event = gst_event_new_segment_seek (seek_type, 0, G_MAXUINT64);
+    event = gst_event_new_segment_seek (seek_type, 0, G_MAXINT64);
 
     //gst_element_set_state (GST_ELEMENT (group), GST_STATE_PAUSED);
 

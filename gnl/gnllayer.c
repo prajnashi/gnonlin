@@ -17,20 +17,18 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include "config.h"
 #include "gnllayer.h"
 
-GstElementDetails gnl_layer_details =
-{
+static GstElementDetails gnl_layer_details = GST_ELEMENT_DETAILS (
   "GNL Layer",
   "Layer",
-  "LGPL",
   "Combines GNL sources",
-  VERSION,
-  "Wim Taymans <wim.taymans@chello.be>",
-  "(C) 2002",
-};
+  "Wim Taymans <wim.taymans@chello.be>"
+  );
 
-static void 		gnl_layer_class_init 		(GnlLayerClass *klass);
+static void 		gnl_layer_base_init 		(gpointer g_class);
+static void 		gnl_layer_class_init 		(GnlLayerClass *klass, gpointer class_data);
 static void 		gnl_layer_init 			(GnlLayer *layer);
 
 static gboolean 	gnl_layer_send_event 		(GstElement *element, GstEvent *event);
@@ -54,6 +52,16 @@ static GstClockTime 	gnl_layer_nearest_cover_func 	(GnlLayer *layer, GstClockTim
 static void 		gnl_layer_self_state_change 	(GnlLayer *layer, 
 		              				 GstElementState old, GstElementState new, 
 			      				 GnlLayer *user_data);
+/* XXX Get rid of me or move somewhere else */
+gint64
+gnl_time_to_seek_val (GstClockTime val)
+{
+  if (val >= G_MAXINT64) {
+    return G_MAXINT64;
+  } else {
+    return val;
+  }
+}
 
 struct _GnlLayerEntry
 {
@@ -70,7 +78,7 @@ gnl_layer_get_type (void)
   if (!layer_type) {
     static const GTypeInfo layer_info = {
       sizeof (GnlLayerClass),
-      NULL,
+      (GBaseInitFunc) gnl_layer_base_init,
       NULL,
       (GClassInitFunc) gnl_layer_class_init,
       NULL,
@@ -85,7 +93,15 @@ gnl_layer_get_type (void)
 }
 
 static void
-gnl_layer_class_init (GnlLayerClass *klass)
+gnl_layer_base_init (gpointer g_class)
+{
+  GstElementClass *element_class = GST_ELEMENT_CLASS (g_class);
+
+  gst_element_class_set_details (element_class, &gnl_layer_details);
+}
+
+static void
+gnl_layer_class_init (GnlLayerClass *klass, gpointer class_data)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
@@ -275,8 +291,8 @@ gnl_layer_schedule_entry (GnlLayer *layer, GnlLayerEntry *entry)
                                 GST_SEEK_METHOD_SET |
 			        GST_SEEK_FLAG_FLUSH |
 			        GST_SEEK_FLAG_ACCURATE,
-			        layer->start_pos,  
-			        layer->stop_pos));
+			        gnl_time_to_seek_val (layer->start_pos),
+			        gnl_time_to_seek_val (layer->stop_pos)));
 
   }
 

@@ -38,8 +38,6 @@ G_BEGIN_DECLS
 #define GNL_IS_SOURCE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_SOURCE))
 
-extern GstElementDetails gnl_source_details;
-
 typedef enum {
   GNL_SOURCE_INVALID_RATE_CONTROL = 0,
   GNL_SOURCE_FIX_MEDIA_STOP = 1,

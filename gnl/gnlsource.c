@@ -19,18 +19,15 @@
 
 #include "gnlsource.h"
 #include "gnlmarshal.h"
-
-
-GstElementDetails gnl_source_details = 
-{
+#include "string.h"
+#include "gnllayer.h"
+  
+static GstElementDetails gnl_source_details = GST_ELEMENT_DETAILS (
   "GNL Source",
   "Source",
-  "LGPL",
   "Manages source elements",
-  VERSION,
-  "Wim Taymans <wim.taymans@chello.be>",
-  "(C) 2002",
-};
+  "Wim Taymans <wim.taymans@chello.be>"
+  );
 
 enum {
   ARG_0,
@@ -67,7 +64,8 @@ gnl_source_rate_control_get_type (void)
   return source_rate_control_type;
 }
 
-static void 		gnl_source_class_init 		(GnlSourceClass *klass);
+static void 		gnl_source_base_init 		(gpointer g_class);
+static void 		gnl_source_class_init 		(GnlSourceClass *klass, gpointer class_data);
 static void 		gnl_source_init 		(GnlSource *source);
 
 static void		gnl_source_set_property 	(GObject *object, guint prop_id,
@@ -83,8 +81,8 @@ static GstElementStateReturn
 			gnl_source_change_state 	(GstElement *element);
 
 
-static GstBuffer* 	source_getfunction 		(GstPad *pad);
-static void 		source_chainfunction 		(GstPad *pad, GstBuffer *buffer);
+static GstData* 	source_getfunction 		(GstPad *pad);
+static void 		source_chainfunction 		(GstPad *pad, GstData *buffer);
 
 typedef struct 
 {
@@ -116,7 +114,7 @@ gnl_source_get_type (void)
   if (!source_type) {
     static const GTypeInfo source_info = {
       sizeof (GnlSourceClass),
-      NULL,
+      (GBaseInitFunc) gnl_source_base_init,
       NULL,
       (GClassInitFunc) gnl_source_class_init,
       NULL,
@@ -131,7 +129,15 @@ gnl_source_get_type (void)
 }
 
 static void
-gnl_source_class_init (GnlSourceClass *klass)
+gnl_source_base_init (gpointer g_class)
+{
+  GstElementClass *element_class = GST_ELEMENT_CLASS (g_class);
+
+  gst_element_class_set_details (element_class, &gnl_source_details);
+}
+
+static void
+gnl_source_class_init (GnlSourceClass *klass, gpointer class_data)
 {
   GObjectClass 		*gobject_class;
   GstElementClass 	*gstelement_class;
@@ -288,8 +294,8 @@ gnl_source_set_element (GnlSource *source, GstElement *element)
   gst_bin_add (GST_BIN (source->bin), source->element);
 }
 
-static GstPadConnectReturn
-source_connect (GstPad *pad, GstCaps *caps)
+static GstPadLinkReturn
+source_connect (GstPad *pad, const GstCaps *caps)
 {
   GstPad *otherpad;
   SourcePadPrivate *private;
@@ -298,10 +304,10 @@ source_connect (GstPad *pad, GstCaps *caps)
   
   otherpad = (GST_PAD_IS_SRC (pad)? private->sinkpad : private->srcpad);
 
-  if (GST_CAPS_IS_FIXED (caps))
+/*  if (GST_CAPS_IS_FIXED (caps))*/
     return gst_pad_try_set_caps (otherpad, caps);
-  else
-    return GST_PAD_CONNECT_DELAYED;
+/*  else
+    return GST_PAD_CONNECT_DELAYED;*/
 }
 
 /** 
@@ -330,7 +336,7 @@ gnl_source_get_pad_for_stream (GnlSource *source, const gchar *padname)
   gst_element_add_pad (GST_ELEMENT (source), srcpad);
   gst_pad_set_element_private (srcpad, private);
   gst_pad_set_get_function (srcpad, source_getfunction);
-  gst_pad_set_connect_function (srcpad, source_connect);
+  gst_pad_set_link_function (srcpad, source_connect);
 
   ourpadname = g_strdup_printf ("internal_sink_%s", padname);
   sinkpad = gst_pad_new (ourpadname, GST_PAD_SINK);
@@ -338,7 +344,7 @@ gnl_source_get_pad_for_stream (GnlSource *source, const gchar *padname)
   gst_element_add_pad (GST_ELEMENT (source), sinkpad);
   gst_pad_set_element_private (sinkpad, private);
   gst_pad_set_chain_function (sinkpad, source_chainfunction);
-  gst_pad_set_connect_function (sinkpad, source_connect);
+  gst_pad_set_link_function (sinkpad, source_connect);
 
   private->srcpad  = srcpad;
   private->sinkpad = sinkpad;
@@ -416,7 +422,9 @@ source_send_seek (GnlSource *source, GstClockTime start, GstClockTime stop)
     g_print ("%s: seeking to %lld %lld\n", 
 	      gst_element_get_name (GST_ELEMENT (source)), start, stop);
     
-    event = gst_event_new_segment_seek (source->seek_type, start, stop);
+    event = gst_event_new_segment_seek (source->seek_type,
+					gnl_time_to_seek_val (start),
+					gnl_time_to_seek_val (stop));
 
     if (!gst_pad_send_event (pad, event)) {
       g_warning ("%s: could not seek", 
@@ -452,7 +460,7 @@ source_queue_media (GnlSource *source)
 }
 
 static void
-source_chainfunction (GstPad *pad, GstBuffer *buffer)
+source_chainfunction (GstPad *pad, GstData *buffer)
 {
   SourcePadPrivate *private;
   GnlSource *source;
@@ -463,10 +471,10 @@ source_chainfunction (GstPad *pad, GstBuffer *buffer)
   private->queue = g_slist_append (private->queue, buffer);
 }
 
-static GstBuffer*
+static GstData*
 source_getfunction (GstPad *pad)
 {
-  GstBuffer *buffer;
+  GstData *buffer;
   SourcePadPrivate *private;
   GnlSource *source;
   gboolean found = FALSE;
@@ -477,13 +485,13 @@ source_getfunction (GstPad *pad)
   while (!found) {
     while (!private->queue) {
       if (!gst_bin_iterate (GST_BIN (source->bin))) {
-        buffer = GST_BUFFER (gst_event_new (GST_EVENT_EOS));
+        buffer = GST_DATA (gst_event_new (GST_EVENT_EOS));
         break;
       }
     }
 
     if (private->queue) {
-      buffer = GST_BUFFER (private->queue->data);
+      buffer = GST_DATA (private->queue->data);
 
       if (GST_IS_EVENT (buffer)) {
         if (GST_EVENT_TYPE (buffer) == GST_EVENT_EOS) {

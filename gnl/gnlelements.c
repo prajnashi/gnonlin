@@ -20,62 +20,34 @@
  * Boston, MA 02111-1307, USA.
  */
 
-
+#include "config.h"
 #include "gnlsource.h"
 #include "gnllayer.h"
 
-struct _elements_entry {
-  gchar *name;
-  GType (*type) (void);
-  GstElementDetails *details;
-  gboolean (*factoryinit) (GstElementFactory *factory);
-};
-
-
-extern GType gst_filesrc_get_type(void);
-extern GstElementDetails gst_filesrc_details;
-
-static struct _elements_entry _elements[] = {
-  { "gnlsource", 	gnl_source_get_type, 	&gnl_source_details,		NULL },
-  { "gnllayer", 	gnl_layer_get_type, 	&gnl_layer_details,		NULL },
-  { NULL, 0 },
-};
+GST_DEBUG_CATEGORY (gnl_debug);
 
 static gboolean
-plugin_init (GModule *module, GstPlugin *plugin)
+plugin_init (GstPlugin *plugin)
 {
-  GstElementFactory *factory;
-  gint i = 0;
+  GST_DEBUG_CATEGORY_INIT (gnl_debug, "gnl", 0, "gnonlinear");
 
-  gst_plugin_set_longname (plugin, "Standard GNL Elements");
-
-  while (_elements[i].name) {
-    factory = gst_element_factory_new (_elements[i].name,
-                                      (_elements[i].type) (),
-                                      _elements[i].details);
-
-    if (!factory)
-      {
-	g_warning ("gst_element_factory_new failed for `%s'",
-		   _elements[i].name);
-	continue;
-      }
-
-    gst_plugin_add_feature (plugin, GST_PLUGIN_FEATURE (factory));
-    if (_elements[i].factoryinit) {
-      _elements[i].factoryinit (factory);
-    }
-
-    i++;
-  }
-
+  /* XXX is GST_RANK_NONE correct? */
+  if (!gst_element_register (plugin, "gnlsource", GST_RANK_NONE, GNL_TYPE_SOURCE))
+    return FALSE;
+  if (!gst_element_register (plugin, "gnllayer", GST_RANK_NONE, GNL_TYPE_LAYER))
+    return FALSE;
+  
   return TRUE;
 }
 
-GstPluginDesc plugin_desc = {
+GST_PLUGIN_DEFINE (
   GST_VERSION_MAJOR,
   GST_VERSION_MINOR,
   "gnlelements",
-  plugin_init
-};
+  "Standard elements for nonlinear video editing",
+  plugin_init,
+  VERSION,
+  GNL_LICENSE,
+  GNL_PACKAGE,
+  GNL_ORIGIN)
 
