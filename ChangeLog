@@ -15,9 +15,9 @@
 	* docs/libs/tmpl/gnlgroup.sgml:
 	Removing GnlGroup
 
-	* docs/libs/gnonlin-docs.sgml
-	* docs/libs/gnonlin-sections.txt
-	* docs/libs/tmpl/gnlobject.sgml
+	* docs/libs/gnonlin-docs.sgml:
+	* docs/libs/gnonlin-sections.txt:
+	* docs/libs/tmpl/gnlobject.sgml:
 	* gnl/gnlobject.h:
 	* gnl/gnlobject.c:
 	Removing rate control property for GnlObject
