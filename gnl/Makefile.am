@@ -10,6 +10,7 @@ DIST_SUBDIRS =
 libgnl_la_SOURCES =		\
 	gnl.c			\
 	gnlcomposition.c	\
+	gnlgroup.c		\
 	gnllayer.c		\
 	gnloperation.c		\
 	gnlsource.c		\
@@ -20,6 +21,7 @@ libgnlincludedir = $(includedir)/gnl
 libgnlinclude_HEADERS =		\
 	gnl.h			\
 	gnlcomposition.h	\
+	gnlgroup.h		\
 	gnllayer.h		\
 	gnloperation.h		\
 	gnlsource.h		\

@@ -159,7 +159,8 @@ gnl_timer_notify_async (GnlTimer *timer,
   timer->notify_func = notify_func;
   timer->user_data   = user_data;
 
-  g_print ("timer configured for start:%lld end:%lld out:%lld\n", start_time, end_time, out_time);
+  g_print ("%s configured for start:%lld end:%lld out:%lld\n", 
+		  GST_ELEMENT_NAME (timer), start_time, end_time, out_time);
 
   timer->need_seek   = TRUE;
 }
@@ -176,13 +177,17 @@ gnl_timer_chain (GstPad *pad, GstBuffer *buf)
     gst_pad_event_default (pad, GST_EVENT (buf));
     return;
   }
+  if (timer->eos && GST_PAD_IS_CONNECTED (timer->srcpad)) {
+    gst_element_set_state (GST_ELEMENT (timer), GST_STATE_PAUSED);
+    gst_pad_push (timer->srcpad, GST_BUFFER (gst_event_new (GST_EVENT_EOS)));
+    timer->eos = FALSE;
+    return;
+  }
 
   timestamp = GST_BUFFER_TIMESTAMP (buf);
 
   if (timer->need_seek || timestamp < timer->start_time) {
     GstRealPad *peer = GST_RPAD_PEER (timer->sinkpad);
-
-    //g_print ("not at start time %lld, sending seek (now at %lld)\n", timer->start_time, timestamp);
 
     if (gst_pad_send_event (GST_PAD (peer), gst_event_new_seek (GST_SEEK_TIMEOFFSET_SET, timer->start_time, TRUE))) {
       timer->need_seek = FALSE;
@@ -190,7 +195,11 @@ gnl_timer_chain (GstPad *pad, GstBuffer *buf)
     gst_buffer_unref (buf);
   }
   else {
-    g_print ("%s %d got buffer %lld %lld %lld\n", GST_ELEMENT_NAME (timer), timer->master, timestamp, timer->notify_time,
+    g_print ("%s %d got buffer %lld %lld %lld\n", 
+		    GST_ELEMENT_NAME (timer), 
+		    timer->master, 
+		    timestamp, 
+		    timer->notify_time,
                     timestamp - timer->start_time + timer->out_time);
 
     timer->time = timestamp;
@@ -202,12 +211,6 @@ gnl_timer_chain (GstPad *pad, GstBuffer *buf)
       timer->notify_time = -1;
       gst_element_set_state (GST_ELEMENT (timer), GST_STATE_PAUSED);
       timer->notify_func (timer, timer->user_data);
-
-      g_print ("%s eos %d\n", GST_ELEMENT_NAME (timer), timer->eos);
-      if (timer->eos && GST_PAD_IS_CONNECTED (timer->srcpad)) {
-        gst_pad_push (timer->srcpad, GST_BUFFER (gst_event_new (GST_EVENT_EOS)));
-        timer->eos = FALSE;
-      }
     }
   }
 }

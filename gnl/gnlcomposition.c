@@ -25,13 +25,11 @@ static void 		gnl_composition_class_init 		(GnlCompositionClass *klass);
 static void 		gnl_composition_init 			(GnlComposition *composition);
 
 static guint64 		gnl_composition_next_change 		(GnlLayer *layer, guint64 time);
-static gboolean 	gnl_composition_reschedule 		(GnlComposition *composition, GstClockTime time, gboolean change_state);
+static gboolean 	gnl_composition_prepare_cut 		(GnlLayer *layer, guint64 start, guint64 stop,
+								 GnlLayerCutDoneCallback func, gpointer user_data);
 
 static GstElementStateReturn
 			gnl_composition_change_state 		(GstElement *element);
-
-static void 		child_state_change 			(GstElement *child, GstElementState oldstate, 
-								 GstElementState newstate, gpointer user_data);
 
 static GnlLayerClass *parent_class = NULL;
 
@@ -62,23 +60,26 @@ gnl_composition_class_init (GnlCompositionClass *klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
+  GstBinClass *gstbin_class;
   GnlLayerClass *gnllayer_class;
 
   gobject_class =       (GObjectClass*)klass;
   gstelement_class =    (GstElementClass*)klass;
-  gnllayer_class =    (GnlLayerClass*)klass;
+  gstbin_class =    	(GstBinClass*)klass;
+  gnllayer_class =    	(GnlLayerClass*)klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_LAYER);
 
   gstelement_class->change_state 	= gnl_composition_change_state;
   gnllayer_class->next_change 		= gnl_composition_next_change;
+  gnllayer_class->prepare_cut 		= gnl_composition_prepare_cut;
 }
 
 static void
 gnl_composition_init (GnlComposition *composition)
 {
   composition->layers = NULL;
-  composition->current = NULL;
+  composition->active = NULL;
   composition->ocurrent = NULL;
 }
 
@@ -124,7 +125,6 @@ gnl_composition_next_change (GnlLayer *layer, guint64 time)
   guint64 res = G_MAXINT64;
 
   res = parent_class->next_change (layer, time);
-  g_print ("%lld\n", res);
 
   while (layers) {
     GnlLayer *clayer = GNL_LAYER (layers->data);
@@ -150,7 +150,7 @@ find_layer_for_time (GnlComposition *composition, guint64 time, guint index)
     GnlLayer *layer = GNL_LAYER (layers->data);
 
     if (gnl_layer_occupies_time (layer, time)) {
-      if (index--) {
+      if (!index--) {
         return layer;
       }
     }
@@ -173,174 +173,175 @@ find_operation_for_time (GnlComposition *composition, guint64 time)
 }
 
 static gboolean
-gnl_composition_reschedule (GnlComposition *composition, GstClockTime time, gboolean change_state)
+is_layer_active (GnlComposition *composition, GnlLayer *layer)
 {
-  GnlTimer *timer = GNL_LAYER (composition)->timer;
+  if (g_list_index (composition->active, layer) != -1)
+    return TRUE;
+
+  return FALSE;
+}
+
+static gboolean
+gnl_composition_prepare_cut (GnlLayer *layer, GstClockTime start, GstClockTime stop,
+			     GnlLayerCutDoneCallback func, gpointer user_data)
+{
   GnlOperation *operation;
-  GstElement *target;
   guint num_layers = 0;
   guint lindex;
-  gboolean scheduled = FALSE;
+  guint64 next_change = stop;
+  GList *to_schedule = NULL, *walk;
+  GstPad *ghostpad = NULL, *oldghostpad = NULL;
+  GnlComposition *composition = GNL_COMPOSITION (layer);
+  gboolean res = TRUE;
 	          
-  operation = find_operation_for_time (composition, time);
+  operation = find_operation_for_time (composition, start);
 
   /* first find out if we have an operation */
   if (operation) {
-    g_print ("%s operation for %lld %p\n",
-	     GST_ELEMENT_NAME (composition), time, operation);
+    g_print ("composition %s operation for %lld %p\n",
+	     GST_ELEMENT_NAME (composition), start, operation);
 
-    target = GST_ELEMENT (operation);
     /* we have to combine N layers */
     num_layers = gnl_operation_get_num_sinks (operation);
     if (operation != composition->ocurrent) {
       /* add it to the bin */
-      g_print ("%s adding new operation operation for %lld %p\n",
-	     GST_ELEMENT_NAME (composition), time, operation);
-      gst_bin_add (GST_BIN (composition), target);
-      gst_element_connect (GST_ELEMENT (target), "src", GST_ELEMENT (timer), "sink");
+      g_print ("composition %s adding new operation %s for %lld %p\n",
+	     GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (operation), start, operation);
+      gst_bin_add (GST_BIN (composition), GST_ELEMENT (operation));
+      ghostpad = gst_element_get_pad (GST_ELEMENT (operation), "internal_src");
+      g_print ("target ghost pad %p\n", ghostpad);
 
       composition->ocurrent = operation;
     }
   }
   else {
-    target = GST_ELEMENT (timer);
     num_layers = 1;
     if (composition->ocurrent) {
-      g_print ("%s removing old operation operation for %lld %p\n",
-	     GST_ELEMENT_NAME (composition), time, operation);
+      GstPad *srcpad, *peerpad;
+
+      g_print ("composition %s removing old operation %s for %lld %p\n",
+	     GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (composition->ocurrent), start, operation);
+
+      srcpad = gst_element_get_pad (GST_ELEMENT (composition->ocurrent), "internal_src");
+      peerpad = GST_PAD_PEER (srcpad);
+      if (peerpad)
+        gst_pad_disconnect (srcpad, peerpad);
+
       gst_bin_remove (GST_BIN (composition), GST_ELEMENT (composition->ocurrent));
       composition->ocurrent = NULL;
     }
   }
 
-  g_print ("%s combining %d layers\n", GST_ELEMENT_NAME (composition), num_layers);
+  g_print ("composition %s combining %d layers\n", GST_ELEMENT_NAME (composition), num_layers);
 
-  for (lindex = 1; lindex <= num_layers; lindex++) {
+  /* collect the layers we need to show */
+  for (lindex = 0; lindex < num_layers; lindex++) {
     GnlLayer *layer;
-    guint64 next_change = G_MAXINT64;
 
-    layer = find_layer_for_time (composition, time, lindex);
-    if (!layer)
-      break;
-
-    next_change = MIN (next_change, gnl_layer_next_change (GNL_LAYER (composition), time+1));
-
-    g_print ("%s schedule %lld %p (%s) %lld %lld\n", 
-		    GST_ELEMENT_NAME (composition), time, layer, GST_ELEMENT_NAME (layer),
-		    next_change,
-		    gnl_layer_next_change (GNL_LAYER (layer), time+1));
-
-    if (change_state)
-      gst_element_set_state (GST_ELEMENT (composition), GST_STATE_PAUSED);
-	
-    if (composition->current) {
-      g_print ("%s we currently have %s\n", GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (composition->current));
-      gst_element_disconnect (GST_ELEMENT (composition->current), "src", 
-			GST_ELEMENT (timer), "sink");
-      if (composition->current != layer) {
-        g_print ("%s removing old layer %s\n", GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (composition->current));
-        gst_bin_remove (GST_BIN (composition), GST_ELEMENT (composition->current));
-        g_signal_handler_disconnect (G_OBJECT (composition->current), composition->handler);
+    layer = find_layer_for_time (composition, start, lindex);
+    if (!layer) {
+      if (composition->ocurrent) {
+        g_warning ("not enough layers for operation");
       }
+      g_print ("composition %s done\n", GST_ELEMENT_NAME (composition));
+      gst_element_set_state (GST_ELEMENT (composition), GST_STATE_PAUSED);
+      res = FALSE;
+      goto done;
     }
-    if (composition->current != layer) {
-      g_print ("%s adding new layer %s\n", GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (layer));
-      gst_bin_add (GST_BIN (composition), GST_ELEMENT (layer));
-      composition->handler = g_signal_connect (G_OBJECT (layer), "state_change", G_CALLBACK (child_state_change), composition);
-      composition->current = layer;
-      gnl_layer_set_timer (layer, timer);
+    g_print ("composition %s need to schedule %lld %p (%s) %d\n", 
+	     GST_ELEMENT_NAME (composition), start, layer, GST_ELEMENT_NAME (layer),
+	     lindex);
+
+    to_schedule = g_list_prepend (to_schedule, layer);
+    
+    next_change = MIN (next_change, gnl_layer_next_change (GNL_LAYER (composition), start+1));
+  }
+
+  /* scheduler the layers */
+  walk = to_schedule = g_list_reverse (to_schedule);
+  lindex = 0;
+
+  while (walk) {
+    GnlLayer *layer = GNL_LAYER (walk->data);
+    walk = g_list_next (walk);
+
+    g_print ("composition %s scheduling %lld %p (%s) %lld %lld\n", 
+	     GST_ELEMENT_NAME (composition), start, layer, GST_ELEMENT_NAME (layer),
+	     next_change,
+	     gnl_layer_next_change (GNL_LAYER (layer), start+1));
+
+    if (is_layer_active (composition, layer)) {
+      GstPad *srcpad, *peerpad;
+
+      g_print ("composition %s reusing layer %s\n", GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (layer));
+
+      composition->active = g_list_remove (composition->active, layer);
+
+      srcpad = gst_element_get_pad (GST_ELEMENT (layer), "internal_src");
+      peerpad = GST_PAD_PEER (srcpad);
+      if (peerpad)
+        gst_pad_disconnect (srcpad, peerpad);
+
     }
     else {
-      g_print ("%s reusing layer %s\n", GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (layer));
+      g_print ("composition %s new layer %s\n", GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (layer));
+
+      gst_bin_add (GST_BIN (composition), GST_ELEMENT (layer));
     }
     gst_element_set_state (GST_ELEMENT (layer), GST_STATE_PAUSED);
-    gnl_layer_prepare_for (layer, time, next_change);
-
-    gst_element_connect (GST_ELEMENT (layer), "src", GST_ELEMENT (target), "sink");
-
-    if (change_state)
-      gst_element_set_state (GST_ELEMENT (composition), GST_STATE_PLAYING);
-
-    scheduled = TRUE;
-  }
-
-  if (lindex < num_layers && composition->ocurrent) {
-    g_warning ("not enough layers for operation");
-    return FALSE;
-  }
-  if (!scheduled) {
-    return FALSE;
-  }
-  
-  /*
-  }
-  else {
-    guint64 next_time = gnl_composition_next_change (GNL_LAYER (composition), time);
-    if (next_time == G_MAXINT64) {
-      g_print ("%s nothing more to do %lld %p %d\n", GST_ELEMENT_NAME (composition), time, layer, change_state);
+    gnl_layer_prepare_cut (layer, start, next_change, func, user_data);
+    
+    if (composition->ocurrent) {
+      gst_element_connect (GST_ELEMENT (layer), "internal_src", GST_ELEMENT (composition->ocurrent), g_strdup_printf ("sink%d", lindex));
     }
     else {
-      g_warning ("%s gap detected, skipping..!! %lld %lld", GST_ELEMENT_NAME (composition), time, next_time);
-
-      time = next_time;
-      gnl_timer_set_time (timer, time);
-      goto next;
+      ghostpad = gst_element_get_pad (GST_ELEMENT (layer), "internal_src");
     }
-    return FALSE;
+
+    lindex++;
   }
-  */
-  return TRUE;
+
+  if (!lindex) {
+    res = FALSE;
+    g_print ("composition %s somthing wrong %d\n", GST_ELEMENT_NAME (composition), lindex);
+    goto done;
+  }
+
+  oldghostpad = gst_element_get_pad (GST_ELEMENT (composition), "internal_src");
+  if (oldghostpad) {
+    gst_element_remove_ghost_pad (GST_ELEMENT (composition), oldghostpad);
+  }
+  gst_element_add_ghost_pad (GST_ELEMENT (composition), ghostpad, "internal_src");
+
+done:
+  walk = composition->active;
+  while (walk) {
+    GnlLayer *layer = GNL_LAYER (walk->data);
+
+    g_print ("%s removing old layer %s\n", GST_ELEMENT_NAME (composition), GST_ELEMENT_NAME (layer));
+    gst_bin_remove (GST_BIN (composition), GST_ELEMENT (layer));
+
+    walk = g_list_next (walk);
+  }
+  g_list_free (composition->active);
+  composition->active = to_schedule;
+
+  return res;
 } 
-
-static void
-child_state_change (GstElement *child, GstElementState oldstate, GstElementState newstate, gpointer user_data)
-{
-  GnlComposition *composition = GNL_COMPOSITION (user_data);
-  guint64 time;
-  GnlTimer *timer = GNL_LAYER (composition)->timer;
-
-  switch (newstate) {
-    case GST_STATE_PAUSED:
-      if (oldstate != GST_STATE_PLAYING)
-	return;
-      gnl_timer_set_time (timer, gnl_timer_get_time (timer) + 1);
-      time = gnl_timer_get_time (timer);
-      if (composition->ocurrent) {
-	gst_element_set_state (GST_ELEMENT (composition->ocurrent), GST_STATE_PAUSED);
-      }
-      g_print ("%s child state change %p %lld\n", GST_ELEMENT_NAME (composition), timer, time);
-
-      if (!gnl_composition_reschedule (composition, time, TRUE)) {
-	g_print ("setting EOS on %s\n", GST_ELEMENT_NAME (timer));
-
-        timer->eos = TRUE;	
-      }
-      break;
-    default:
-      break;
-  }
-}
 
 static GstElementStateReturn
 gnl_composition_change_state (GstElement *element)
 {
   GnlComposition *composition = GNL_COMPOSITION (element);
-  guint64 time;
  
-  switch (GST_STATE_TRANSITION (element)) {
+  switch (GST_STATE_TRANSITION (composition)) {
     case GST_STATE_NULL_TO_READY:
       break;
     case GST_STATE_READY_TO_PAUSED:
-      time = gnl_timer_get_time (GNL_LAYER (composition)->timer);
-
-      g_print ("%s to paused at %lld\n", GST_ELEMENT_NAME (composition), time);
-      gnl_composition_reschedule (composition, time, FALSE);
       break;
     case GST_STATE_PAUSED_TO_PLAYING:
       break;
     case GST_STATE_PLAYING_TO_PAUSED:
-      time = gnl_timer_get_time (GNL_LAYER (composition)->timer);
-      g_print ("%s ended %lld\n", GST_ELEMENT_NAME (composition), time);
       break;
     case GST_STATE_PAUSED_TO_READY:
     case GST_STATE_READY_TO_NULL:

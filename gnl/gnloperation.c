@@ -84,7 +84,7 @@ gnl_operation_set_element (GnlSource *source, GstElement *element)
 
     if (GST_PAD_IS_SINK (pad)) {
       gst_element_add_ghost_pad (GST_ELEMENT (source),
-		           pad, "sink");
+		           pad, g_strdup_printf ("sink%d", operation->num_sinks));
       operation->num_sinks++;
     }
     walk = g_list_next (walk);

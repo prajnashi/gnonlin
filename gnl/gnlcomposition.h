@@ -53,9 +53,9 @@ struct _GnlComposition {
 
   GList    	*layers;
 
-  GnlLayer 	*current;
   gulong   	 handler;
   GnlOperation 	*ocurrent;
+  GList		*active;
 };
 
 struct _GnlCompositionClass {

@@ -28,6 +28,7 @@
 #endif
 
 #include <gst/gstbin.h>
+#include <gnl/gnltimer.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,22 +45,31 @@ extern "C" {
 #define GNL_IS_SOURCE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_SOURCE))
 
+		
 typedef struct _GnlSource GnlSource;
 typedef struct _GnlSourceClass GnlSourceClass;
 
+typedef void (*GnlCutDoneCallback) (GnlSource *source, GstClockTime time, gpointer user_data);
+
 struct _GnlSource {
-  GstBin bin;
+  GstBin 	 bin;
 
-  guint64 start;
-  guint64 stop;
+  guint64  	 start;
+  guint64 	 stop;
 
-  GstElement *element;
+  GstElement 	*element;
+  GnlTimer	*timer;
+
+  GnlCutDoneCallback cut_done_func;
+  gpointer	 user_data;
 };
 
 struct _GnlSourceClass {
   GstBinClass	parent_class;
 
   void 		(*set_element)		(GnlSource *source, GstElement *element);
+  void 		(*prepare_cut)		(GnlSource *source, guint64 start, guint64 stop, guint64 out,
+		  			 GnlCutDoneCallback func, gpointer user_data);
 };
 
 /* normal GSource stuff */
@@ -68,6 +78,10 @@ GnlSource*	gnl_source_new			(const gchar *name);
 
 void		gnl_source_set_element		(GnlSource *source, GstElement *element);
 void		gnl_source_set_start_stop	(GnlSource *source, guint64 start, guint64 stop);
+GstClockTime	gnl_source_get_time		(GnlSource *source);
+
+void		gnl_source_prepare_cut		(GnlSource *source, guint64 start, guint64 stop, guint64 out,
+					 	 GnlCutDoneCallback func, gpointer user_data);
 
 #ifdef __cplusplus
 }

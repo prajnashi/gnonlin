@@ -1,7 +1,7 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
  *
- * gnltimeline.h: Header for base GnlTimeline
+ * gnlgroup.h: Header for base GnlGroup
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -20,54 +20,55 @@
  */
 
 
-#ifndef __GNL_TIMELINE_H__
-#define __GNL_TIMELINE_H__
+#ifndef __GNL_GROUP_H__
+#define __GNL_GROUP_H__
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <gst/gstpipeline.h>
-#include <gnl/gnlgroup.h>
 #include <gnl/gnlcomposition.h>
+#include <gnl/gnltimer.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-#define GNL_TYPE_TIMELINE \
-  (gnl_timeline_get_type())
-#define GNL_TIMELINE(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GNL_TYPE_TIMELINE,GnlTimeline))
-#define GNL_TIMELINE_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GNL_TYPE_TIMELINE,GnlTimelineClass))
-#define GNL_IS_TIMELINE(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_TIMELINE))
-#define GNL_IS_TIMELINE_CLASS(obj) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_TIMELINE))
+#define GNL_TYPE_GROUP \
+  (gnl_group_get_type())
+#define GNL_GROUP(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GNL_TYPE_GROUP,GnlGroup))
+#define GNL_GROUP_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),GNL_TYPE_GROUP,GnlGroupClass))
+#define GNL_IS_GROUP(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_GROUP))
+#define GNL_IS_GROUP_CLASS(obj) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_GROUP))
 
-typedef struct _GnlTimeline GnlTimeline;
-typedef struct _GnlTimelineClass GnlTimelineClass;
+typedef struct _GnlGroup GnlGroup;
+typedef struct _GnlGroupClass GnlGroupClass;
 
-struct _GnlTimeline {
-  GstBin	 parent;
+struct _GnlGroup {
+  GnlComposition	 parent;
 
-  GList		*groups;
+  guint64		 stop;
+  GnlTimer		*timer;
+  GstElement		*eos_element;
+  gboolean		 has_eos;
 };
 
-struct _GnlTimelineClass {
-  GstBinClass	parent_class;
+struct _GnlGroupClass {
+  GnlCompositionClass	parent_class;
 };
 
-GType		gnl_timeline_get_type		(void);
-GnlTimeline*	gnl_timeline_new		(const gchar *name);
-
-void		gnl_timeline_add_group		(GnlTimeline *timeline, GnlGroup *group);
+/* normal GGroup stuff */
+GType		gnl_group_get_type		(void);
+GnlGroup*	gnl_group_new			(const gchar *name);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 
-#endif /* __GNL_TIMELINE_H__ */
+#endif /* __GNL_GROUP_H__ */
 

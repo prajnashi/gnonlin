@@ -48,20 +48,25 @@ extern "C" {
 typedef struct _GnlLayer GnlLayer;
 typedef struct _GnlLayerClass GnlLayerClass;
 
+typedef void (*GnlLayerCutDoneCallback)	(GnlLayer *layer, GstClockTime time, gpointer user_data);
+
 struct _GnlLayer {
   GstBin bin;
 
   GList		*sources;
 
-  GnlTimer	*timer;
   GnlSource 	*current;
+
+  GnlLayerCutDoneCallback cut_done_func;
+  gpointer 	user_data;
+  
 };
 
 struct _GnlLayerClass {
   GstBinClass	parent_class;
 
-  void		(*set_timer)		(GnlLayer *layer, GnlTimer *timer);
-  gboolean	(*prepare_for)		(GnlLayer *layer, guint64 start, guint64 stop);
+  gboolean	(*prepare_cut)		(GnlLayer *layer, guint64 start, guint64 stop,
+		  			 GnlLayerCutDoneCallback func, gpointer user_data);
 
   guint64	(*next_change)		(GnlLayer *layer, guint64 time);
   gboolean	(*occupies_time)	(GnlLayer *layer, guint64 time);
@@ -72,10 +77,11 @@ GnlLayer*	gnl_layer_new			(const gchar *name);
 
 void		gnl_layer_add_source 		(GnlLayer *layer, GnlSource *source, guint64 start);
 
-void		gnl_layer_set_timer 		(GnlLayer *layer, GnlTimer *timer);
+gboolean	gnl_layer_prepare_cut	 	(GnlLayer *layer, guint64 start, guint64 stop,
+		  			 	 GnlLayerCutDoneCallback func, gpointer user_data);
+
 guint64		gnl_layer_next_change 		(GnlLayer *layer, guint64 time);
 gboolean	gnl_layer_occupies_time 	(GnlLayer *layer, guint64 time);
-gboolean	gnl_layer_prepare_for	 	(GnlLayer *layer, guint64 start, guint64 stop);
 GnlSource* 	gnl_layer_get_source_for_time 	(GnlLayer *layer, guint64 time);
 
 

@@ -22,14 +22,12 @@
 static void 		gnl_layer_class_init 		(GnlLayerClass *klass);
 static void 		gnl_layer_init 			(GnlLayer *layer);
 
-static void 		gnl_layer_set_timer_func 	(GnlLayer *layer, GnlTimer *timer);
-static gboolean		gnl_layer_prepare_for_func 	(GnlLayer *layer, guint64 start, guint64 stop);
+static gboolean		gnl_layer_prepare_cut_func 	(GnlLayer *layer, guint64 start, guint64 stop,
+							 GnlLayerCutDoneCallback func, gpointer user_data);
 
 static guint64 		gnl_layer_next_change_func	(GnlLayer *layer, guint64 time);
 static gboolean 	gnl_layer_occupies_time_func 	(GnlLayer *layer, guint64 time);
-
-static gboolean 	gnl_layer_schedule 		(GnlTimer *timer, GstClockTime start, 
-							 GstClockTime stop, gpointer user_data);
+static void 		gnl_layer_child_done 		(GnlSource *child, GstClockTime time, gpointer user_data);
 
 static GstElementStateReturn
 			gnl_layer_change_state 		(GstElement *element);
@@ -74,18 +72,19 @@ gnl_layer_class_init (GnlLayerClass *klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
+  GstBinClass *gstbin_class;
 
   gobject_class = (GObjectClass*)klass;
   gstelement_class = (GstElementClass*)klass;
+  gstbin_class = (GstBinClass*)klass;
 
   parent_class = g_type_class_ref (GST_TYPE_BIN);
 
   gstelement_class->change_state = gnl_layer_change_state;
 
-  klass->set_timer	= gnl_layer_set_timer_func;
   klass->next_change	= gnl_layer_next_change_func;
   klass->occupies_time	= gnl_layer_occupies_time_func;
-  klass->prepare_for	= gnl_layer_prepare_for_func;
+  klass->prepare_cut	= gnl_layer_prepare_cut_func;
 }
 
 
@@ -93,14 +92,6 @@ static void
 gnl_layer_init (GnlLayer *layer)
 {
   layer->sources = NULL;
-}
-
-static void
-gnl_layer_set_timer_func (GnlLayer *layer, GnlTimer *timer)
-{
-  g_print ("%s got timer %p\n", GST_ELEMENT_NAME (layer), timer);
-
-  layer->timer = timer;
 }
 
 static guint64
@@ -177,31 +168,14 @@ gnl_layer_occupies_time (GnlLayer *layer, guint64 time)
   return FALSE;
 }
 
-static gboolean
-gnl_layer_prepare_for_func (GnlLayer *layer, guint64 start, guint64 stop)
-{
-  g_print ("%s prepare for %lld->%lld\n", GST_ELEMENT_NAME (layer), start, stop);
-  if (!gnl_layer_schedule (layer->timer, start, stop, layer)) {
-    g_warning ("%s nothing to schedule %lld\n", GST_ELEMENT_NAME (layer), start);
-    return FALSE;
-  }
-  return TRUE;
-}
-
 gboolean
-gnl_layer_prepare_for (GnlLayer *layer, guint64 start, guint64 stop)
+gnl_layer_prepare_cut (GnlLayer *layer, guint64 start, guint64 stop,
+ 		       GnlLayerCutDoneCallback func, gpointer user_data)
 {
-  if (CLASS (layer)->prepare_for)
-    return CLASS (layer)->prepare_for (layer, start, stop);
+  if (CLASS (layer)->prepare_cut)
+    return CLASS (layer)->prepare_cut (layer, start, stop, func, user_data);
 
   return FALSE;
-}
-
-void
-gnl_layer_set_timer (GnlLayer *layer, GnlTimer *timer)
-{
-  if (CLASS (layer)->set_timer)
-    CLASS (layer)->set_timer (layer, timer);
 }
 
 static gint 
@@ -224,16 +198,6 @@ gnl_layer_new (const gchar *name)
   return layer;
 }
 
-static void
-source_ended (GnlTimer *timer, gpointer user_data) 
-{
-  GnlLayer *layer;
-
-  layer = GNL_LAYER (user_data);
-
-  gst_element_set_state (GST_ELEMENT (layer), GST_STATE_PAUSED);
-}
-
 void
 gnl_layer_add_source (GnlLayer *layer, GnlSource *source, guint64 start)
 {
@@ -252,10 +216,13 @@ gnl_layer_add_source (GnlLayer *layer, GnlSource *source, guint64 start)
 }
 
 static gboolean
-gnl_layer_schedule (GnlTimer *timer, GstClockTime start, GstClockTime stop, gpointer user_data)
+gnl_layer_prepare_cut_func (GnlLayer *layer, guint64 start, guint64 stop,
+ 		       	    GnlLayerCutDoneCallback func, gpointer user_data)
 {
-  GnlLayer *layer = GNL_LAYER (user_data);
   GnlLayerEntry *entry;
+
+  layer->cut_done_func = func;
+  layer->user_data = user_data;
 
   entry = find_entry_for_time (layer, start);
   if (entry) {
@@ -263,45 +230,57 @@ gnl_layer_schedule (GnlTimer *timer, GstClockTime start, GstClockTime stop, gpoi
     GstPad *pad;
     guint64 duration, real_start;
 
-    pad = gst_element_get_pad (GST_ELEMENT (layer), "src");
-    if (pad) {
-      gst_element_remove_ghost_pad (GST_ELEMENT (layer), pad);
-    }
-    if (layer->current) {
-      gst_bin_remove (GST_BIN (layer), GST_ELEMENT (layer->current));
+    if (layer->current != source) {
+      pad = gst_element_get_pad (GST_ELEMENT (layer), "internal_src");
+      if (pad) {
+        gst_element_remove_ghost_pad (GST_ELEMENT (layer), pad);
+      }
+      if (layer->current) {
+        gst_bin_remove (GST_BIN (layer), GST_ELEMENT (layer->current));
+      }
+      gst_bin_add (GST_BIN (layer), GST_ELEMENT (source));
+      gst_element_set_state (GST_ELEMENT (source), GST_STATE_PAUSED);
+      layer->current = source;
+
+      gst_element_add_ghost_pad (GST_ELEMENT (layer), 
+		    	       gst_element_get_pad (GST_ELEMENT (source), "internal_src"), 
+			       "internal_src");
     }
 
     g_print ("%s scheduling source %lld %p\n", GST_ELEMENT_NAME (layer), start, source);  
-    gst_bin_add (GST_BIN (layer), GST_ELEMENT (source));
-    gst_element_set_state (GST_ELEMENT (source), GST_STATE_PAUSED);
-
-    layer->current = source;
-
-    gst_element_add_ghost_pad (GST_ELEMENT (layer), 
-		    	       gst_element_get_pad (GST_ELEMENT (source), "src"), 
-			       "src");
 
     duration = MIN (stop - start, source->stop - source->start) - 1; 
-    real_start = start - entry->start + source->start, 
+    real_start = start - entry->start + source->start; 
 
-    gnl_timer_notify_async (layer->timer, 
-	 	      	    real_start,
-	 	      	    real_start + duration, 
-	 	      	    start, 
-			    source_ended, layer);
+    gnl_source_prepare_cut (source, real_start, real_start + duration, start, gnl_layer_child_done, layer);
+
     return TRUE;
   }
 
   return FALSE;
 }
 
+static void
+gnl_layer_child_done (GnlSource *child, GstClockTime time, gpointer user_data)
+{
+  GnlLayer *layer = GNL_LAYER (user_data);
+
+  g_print ("layer: %s child %s done at %lld\n", GST_ELEMENT_NAME (layer), GST_ELEMENT_NAME (child), time);
+
+  layer->cut_done_func (layer, time, layer->user_data);
+
+  return;
+}
+
 static GstElementStateReturn
 gnl_layer_change_state (GstElement *element)
 {
   GnlLayer *layer = GNL_LAYER (element);
-  guint64 time;
+  gint transition = GST_STATE_TRANSITION (layer);
   
-  switch (GST_STATE_TRANSITION (element)) {
+  GST_ELEMENT_CLASS (parent_class)->change_state (element);
+
+  switch (transition) {
     case GST_STATE_NULL_TO_READY:
       break;
     case GST_STATE_READY_TO_PAUSED:
@@ -311,14 +290,10 @@ gnl_layer_change_state (GstElement *element)
     case GST_STATE_PLAYING_TO_PAUSED:
       break;
     case GST_STATE_PAUSED_TO_READY:
-      time = gnl_timer_get_time (layer->timer);
-      g_print ("%s ended at %lld\n", GST_ELEMENT_NAME (element), time);
       break;
     default:
       break;
   }
-
-  GST_ELEMENT_CLASS (parent_class)->change_state (element);
 
   return GST_STATE_SUCCESS;
 }
