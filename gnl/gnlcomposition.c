@@ -307,7 +307,7 @@ gnl_composition_prepare_cut (GnlLayer *layer, GstClockTime start, GstClockTime s
     gnl_layer_prepare_cut (layer, start, next_change, func, user_data);
     
     if (composition->ocurrent) {
-      gst_element_connect (GST_ELEMENT (layer), "internal_src", GST_ELEMENT (composition->ocurrent), g_strdup_printf ("sink%d", lindex));
+      gst_element_connect_pads (GST_ELEMENT (layer), "internal_src", GST_ELEMENT (composition->ocurrent), g_strdup_printf ("sink%d", lindex));
     }
     else {
       ghostpad = gst_element_get_pad (GST_ELEMENT (layer), "internal_src");

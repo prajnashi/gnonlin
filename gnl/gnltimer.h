@@ -27,6 +27,7 @@
 #include "config.h"
 #endif
 
+#include <gst/gstutils.h>
 #include <gst/gstelement.h>
 
 #ifdef __cplusplus

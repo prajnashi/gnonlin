@@ -90,7 +90,7 @@ gnl_group_init (GnlGroup *group)
 		  	     gst_element_get_pad (GST_ELEMENT (group->timer), "src"), 
 			     "src");
 
-  group->eos_element = gst_elementfactory_make ("fakesrc", "internal_fakesrc");
+  group->eos_element = gst_element_factory_make ("fakesrc", "internal_fakesrc");
   g_object_set (G_OBJECT (group->eos_element), "num_buffers", 0, NULL);
 
   group->has_eos = FALSE;
@@ -132,6 +132,37 @@ gnl_group_cut_done (GnlLayer *layer, GstClockTime time, gpointer user_data)
     gst_element_set_state (GST_ELEMENT (group), GST_STATE_PLAYING);
   }
   else {
+    gst_element_connect_pads (group->eos_element, "src", GST_ELEMENT (group->timer), "sink");
+    gst_bin_add (GST_BIN (group), group->eos_element);
+
+    gst_element_set_state (group->eos_element, GST_STATE_PLAYING);
+    gst_element_set_state (GST_ELEMENT (group->timer), GST_STATE_PLAYING);
+    group->has_eos = TRUE;
+  }
+}
+
+#if 0
+static void
+group_ended (GnlTimer *timer, gpointer user_data)
+{
+  GnlGroup *group = GNL_GROUP (user_data);
+  GstPad *pad, *peer;
+  GstClockTime time = gnl_timer_get_time (timer);
+
+  g_print ("group %s ended %lld\n", GST_ELEMENT_NAME (group), time);
+
+  gst_element_set_state (GST_ELEMENT (group), GST_STATE_PAUSED);
+
+  pad = gst_element_get_pad (GST_ELEMENT (group->timer), "sink");
+  peer = GST_PAD_PEER (pad);
+  if (peer) {
+    gst_pad_disconnect (pad, peer);
+  }
+
+  if (gnl_group_prepare_cut (GNL_LAYER (group), time + 1, group->stop, gnl_group_cut_done, group)) {
+    gst_element_set_state (GST_ELEMENT (group), GST_STATE_PLAYING);
+  }
+  else {
     gst_element_connect (group->eos_element, "src", GST_ELEMENT (group->timer), "sink");
     gst_bin_add (GST_BIN (group), group->eos_element);
 
@@ -140,6 +171,8 @@ gnl_group_cut_done (GnlLayer *layer, GstClockTime time, gpointer user_data)
     group->has_eos = TRUE;
   }
 }
+#endif
+
 		
 static gboolean
 gnl_group_prepare_cut (GnlLayer *layer, guint64 start, guint64 stop,
@@ -151,7 +184,7 @@ gnl_group_prepare_cut (GnlLayer *layer, guint64 start, guint64 stop,
   group->stop = stop;
 
   if (group->has_eos) {
-    gst_element_disconnect (group->eos_element, "src", GST_ELEMENT (group->timer), "sink");
+    gst_element_disconnect_pads (group->eos_element, "src", GST_ELEMENT (group->timer), "sink");
     gst_bin_remove (GST_BIN (group), group->eos_element);
     group->has_eos = FALSE;
   }
@@ -164,7 +197,16 @@ gnl_group_prepare_cut (GnlLayer *layer, guint64 start, guint64 stop,
     g_print ("group %s nothing to schedule %lld\n", GST_ELEMENT_NAME (group), start);
     return FALSE;
   }
-  gst_element_connect (GST_ELEMENT (layer), "internal_src", GST_ELEMENT (group->timer), "sink");
+  gst_element_connect_pads (GST_ELEMENT (layer), "internal_src", GST_ELEMENT (group->timer), "sink");
+
+  /*
+  gnl_timer_notify_async (group->timer,
+                          start,
+                          next_change - 1,
+                          start,
+                          group_ended, group);
+			  */
+
 
   return TRUE;
 } 

@@ -49,7 +49,7 @@ _gnl_timer_init (void)
   GstElementFactory *factory;
 
   /* create an elementfactory for the gst_lame element */
-  factory = gst_elementfactory_new ("gnltimer", GNL_TYPE_TIMER,
+  factory = gst_element_factory_new ("gnltimer", GNL_TYPE_TIMER,
 		                    &gnl_timer_details);
   g_return_if_fail (factory != NULL);
 }
@@ -183,15 +183,23 @@ gnl_timer_chain (GstPad *pad, GstBuffer *buf)
     timer->eos = FALSE;
     return;
   }
-
   timestamp = GST_BUFFER_TIMESTAMP (buf);
 
-  if (timer->need_seek || timestamp < timer->start_time) {
+  if (timer->need_seek) {
     GstRealPad *peer = GST_RPAD_PEER (timer->sinkpad);
+    GstEvent *seek;
 
-    if (gst_pad_send_event (GST_PAD (peer), gst_event_new_seek (GST_SEEK_TIMEOFFSET_SET, timer->start_time, TRUE))) {
+    seek = gst_event_new_seek (GST_FORMAT_TIME |
+			       GST_SEEK_METHOD_SET |
+			       GST_SEEK_FLAG_FLUSH, timer->start_time);
+
+    if (gst_pad_send_event (GST_PAD (peer), seek)) {
       timer->need_seek = FALSE;
     }
+    gst_buffer_unref (buf);
+  }
+  else if (timestamp < timer->start_time) { 
+    g_print ("skipping %llu to reach %llu\n", timestamp, timer->start_time);
     gst_buffer_unref (buf);
   }
   else {

@@ -115,7 +115,7 @@ gnl_source_set_element_func (GnlSource *source, GstElement *element)
   source->element = element;
 
   gst_bin_add (GST_BIN (source), element);
-  gst_element_connect (element, "src", GST_ELEMENT (source->timer), "sink");
+  gst_element_connect_pads (element, "src", GST_ELEMENT (source->timer), "sink");
 }
 
 void
