@@ -10,6 +10,7 @@ AS_VERSION(gnonlin, GNL_VERSION, 0, 1, 9, 1, GNL_CVS="no", GNL_CVS="yes")
 
 dnl Required GStreamer version
 GST_REQ=0.8.9
+AC_SUBST(GST_REQ)
 
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
 
@@ -70,7 +71,7 @@ fi
 GST_PLUGIN_LDFLAGS="-module -avoid-version $EXPORT_LDFLAGS"
 AC_SUBST(GST_PLUGIN_LDFLAGS)
 
-plugindir="\$(libdir)/gstreamer-$GST_MAJORMINOR"
+plugindir="\${libdir}/gstreamer-$GST_MAJORMINOR"
 AC_SUBST(plugindir)
 
 dnl get the genmarshal command for the *.list files

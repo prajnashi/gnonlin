@@ -2,10 +2,11 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+plugindir=@plugindir@
 
 Name: gnonlin
 Description: Non linear editing framework
-Requires: glib >= 2.2.0, libxml2 >= 2.4.9, gstreamer-0.8 >= @GST_REQ@
+Requires: glib-2.0 >= 2.2.0, libxml-2.0 >= 2.4.9, gstreamer-0.8 >= @GST_REQ@
 Version: @VERSION@
-Libs: -L${libdir} -lgnl
+Libs: -L${libdir} -L${plugindir} -lgnl
 Cflags: -I${includedir} @GNL_CFLAGS@
