@@ -1,7 +1,7 @@
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
 
-SUBDIRS = gnl test docs
+SUBDIRS = gnl test ## docs
 
 # These are all the possible subdirs
 DIST_SUBDIRS = gnl test docs
@@ -28,7 +28,7 @@ rpm: dist
 	rpm -ta $(distdir).tar.gz
 
 deb:
-	dpkg-buildpacakge -rfakeroot -us -uc
+	dpkg-buildpackage -rfakeroot -us -uc
 
 deb-maint:
 	debuild
