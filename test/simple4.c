@@ -66,7 +66,7 @@ main (int argc, gchar *argv[])
   layer3 = gnl_layer_new ("my_layer3");
   gnl_layer_add_source (layer3, source3, 4);
 
-  comp = gnl_composition_new ("my_comosition");
+  comp = gnl_composition_new ("my_composition");
 
   gnl_composition_append_layer (comp, layer2);
   gnl_composition_append_layer (comp, layer3);
