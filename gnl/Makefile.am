@@ -23,8 +23,9 @@ libgnlincludedir = $(includedir)/gnl
 
 gnl_headers =			\
 	gnl.h			\
-	gnltypes.h		\
+	gnlobject.h		\
 	gnlcomposition.h	\
+	gnltypes.h		\
 	gnlgroup.h		\
 	gnloperation.h		\
 	gnlsource.h		\
@@ -56,7 +57,7 @@ gnlmarshal.c: gnlmarshal.list
 	glib-genmarshal --body --prefix=gnl_marshal $^ >> gnlmarshal.c.tmp
 	mv gnlmarshal.c.tmp gnlmarshal.c
 
-AM_CFLAGS = $(GNL_CFLAGS) -D_GNU_SOURCE -DGST_CONFIG_DIR=\""@sysconfdir@/gnonlin"\" -Wall -Werror -g
+AM_CFLAGS = $(GNL_CFLAGS) -I$(top_srcdir) -D_GNU_SOURCE -DGST_CONFIG_DIR=\""@sysconfdir@/gnonlin"\" -Wall -Werror -g
 LIBS = $(GNL_LIBS)
 libgnl_la_LDFLAGS =
 

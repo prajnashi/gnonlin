@@ -16,7 +16,7 @@ pkgconfig_DATA = gnonlin.pc
 
 man_MANS = gnonlin-config.1
 
-EXTRA_DIST = gnonlin.spec.in gnonlin-config.in gnonlin.m4 \
+EXTRA_DIST = gnonlin.spec.in gnonlin-config.in \
 	     gnonlin.pc.in gnonlin-uninstalled.pc.in \
 	     autogen.sh ChangeLog AUTHORS COPYING NEWS\
 	     LICENSE REQUIREMENTS README ABOUT-NLS $(man_MANS) 

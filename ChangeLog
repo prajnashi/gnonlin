@@ -1,3 +1,14 @@
+2005-03-29  Edward Hervey  <bilboed@bilboed.com>
+
+	* test/Makefile.am: 
+	added EXTRA_DIST=pipelines.c and -I$(top_srcdir) to build flags
+
+	* gnl/Makefile.am: (gnl_headers): forgot to add gnlobject.h
+
+	* docs/libs/Makefile.am: (GTKDOC_CFLAGS): added -I$(top_srcdir) for build
+
+	* Makefile.am: (EXTRA_DIST): removed gnonlin.m4
+
 2005-03-24  Edward Hervey  <bilboed@bilboed.com>
 
 	* docs/libs/tmpl/gnl.sgml:
