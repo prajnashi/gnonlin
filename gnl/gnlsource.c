@@ -89,6 +89,10 @@ gnl_source_set_element (GnlSource *source, GstElement *element)
   g_return_if_fail (GNL_IS_SOURCE (source));
 
   source->source = element;
+
+  gst_bin_add (GST_BIN (source), element);
+
+  gst_element_add_ghost_pad (GST_ELEMENT (source), gst_element_get_pad (element, "src"), "src");
 }
 
 void

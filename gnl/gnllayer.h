@@ -51,6 +51,7 @@ struct _GnlLayer {
   GstBin bin;
 
   GList		*sources;
+  GstElement	*output;
 };
 
 struct _GnlLayerClass {
@@ -61,6 +62,7 @@ GType		gnl_layer_get_type		(void);
 GnlLayer*	gnl_layer_new			(const gchar *name);
 
 void		gnl_layer_add_source 		(GnlLayer *layer, GnlSource *source, guint64 start);
+void		gnl_layer_set_output 		(GnlLayer *layer, GstElement *output);
 
 #ifdef __cplusplus
 }

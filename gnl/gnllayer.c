@@ -67,6 +67,7 @@ static void
 gnl_layer_init (GnlLayer *layer)
 {
   layer->sources = NULL;
+  layer->output = NULL;
 }
 
 static gint 
@@ -89,6 +90,19 @@ gnl_layer_new (const gchar *name)
   return new;
 }
 
+static gboolean
+update_connection (GnlLayer *layer) 
+{
+  if (layer->sources) {
+    GnlLayerEntry *entry = (GnlLayerEntry *) layer->sources->data;
+    GstElement *source = GST_ELEMENT (entry->source);
+
+    if (layer->output && source) {
+      gst_element_connect (source, "src", layer->output, "sink");
+    }
+  }
+}
+
 void
 gnl_layer_add_source (GnlLayer *layer, GnlSource *source, guint64 start)
 {
@@ -100,8 +114,28 @@ gnl_layer_add_source (GnlLayer *layer, GnlSource *source, guint64 start)
   g_return_if_fail (GNL_IS_SOURCE (source));
 
   entry = g_malloc (sizeof (GnlLayerEntry));
+  entry->start = start;
+  entry->source = source;
   
   layer->sources = g_list_insert_sorted (layer->sources, entry, _entry_compare_func);
+
+  gst_bin_add (GST_BIN (layer), GST_ELEMENT (source));
+
+  update_connection (layer);
+}
+
+void
+gnl_layer_set_output (GnlLayer *layer, GstElement *output)
+{
+  g_return_if_fail (layer != NULL);
+  g_return_if_fail (GNL_IS_LAYER (layer));
+  g_return_if_fail (output != NULL);
+  g_return_if_fail (GST_IS_ELEMENT (output));
+
+  layer->output = output;
+  gst_bin_add (GST_BIN (layer), output);
+
+  update_connection (layer);
 }
 
 

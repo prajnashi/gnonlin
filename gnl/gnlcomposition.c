@@ -86,6 +86,7 @@ gnl_composition_append_layer (GnlComposition *composition, GnlLayer *layer)
   g_return_if_fail (layer != NULL);
   g_return_if_fail (GNL_IS_LAYER (layer));
 
+  gst_bin_add (GST_BIN (composition), GST_ELEMENT (layer));
 }
 
 

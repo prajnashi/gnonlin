@@ -26,7 +26,7 @@ libgnlinclude_HEADERS =		\
 
 noinst_HEADERS = 	
 
-CFLAGS = $(LIBGNL_CFLAGS) -D_GNU_SOURCE -DGST_CONFIG_DIR=\""@sysconfdir@/gnonlin"\"
-LIBS = $(LIBGNL_LIBS)
-libgnl_la_LDFLAGS = -version-info $(GNL_LIBVERSION)
+CFLAGS = $(GNL_CFLAGS) -D_GNU_SOURCE -DGST_CONFIG_DIR=\""@sysconfdir@/gnonlin"\"
+LIBS = $(GNL_LIBS)
+libgnl_la_LDFLAGS =
 

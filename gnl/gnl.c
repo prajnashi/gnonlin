@@ -56,9 +56,6 @@ gnl_init_check (int     *argc,
 void 
 gnl_main (void) 
 {
-#ifndef USE_GLIB2
-  gtk_main ();
-#endif
 }
 
 /**
@@ -69,7 +66,4 @@ gnl_main (void)
 void 
 gnl_main_quit (void) 
 {
-#ifndef USE_GLIB2
-  gtk_main_quit ();
-#endif
 }
