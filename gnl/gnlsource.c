@@ -468,23 +468,25 @@ source_getfunction (GstPad *pad)
   GstBuffer *buffer;
   SourcePadPrivate *private;
   GnlSource *source;
+  gboolean found = FALSE;
 
   private = gst_pad_get_element_private (pad);
   source = GNL_SOURCE (gst_pad_get_parent (pad));
 
-  while (!private->queue) {
-    if (!gst_bin_iterate (GST_BIN (source->bin))) {
-      buffer = GST_BUFFER (gst_event_new (GST_EVENT_EOS));
-      break;
+  while (!found) {
+    while (!private->queue) {
+      if (!gst_bin_iterate (GST_BIN (source->bin))) {
+        buffer = GST_BUFFER (gst_event_new (GST_EVENT_EOS));
+        break;
+      }
     }
-  }
 
-  if (private->queue) {
-    buffer = GST_BUFFER (private->queue->data);
+    if (private->queue) {
+      buffer = GST_BUFFER (private->queue->data);
 
-    if (GST_IS_EVENT (buffer)) {
-      if (GST_EVENT_TYPE (buffer) == GST_EVENT_EOS) {
-        g_print ("%s: EOS at %lld %lld %lld %lld %lld %lld\n", 
+      if (GST_IS_EVENT (buffer)) {
+        if (GST_EVENT_TYPE (buffer) == GST_EVENT_EOS) {
+          g_print ("%s: EOS at %lld %lld %lld %lld %lld %lld\n", 
 	       gst_element_get_name (GST_ELEMENT (source)), 
 	       source->media_start,
 	       source->media_stop,
@@ -493,27 +495,38 @@ source_getfunction (GstPad *pad)
 	       source->start,
 	       source->stop);
 
-        source->current_time = source->real_stop - source->media_start + source->start;
-	gst_element_set_eos (GST_ELEMENT (source));
+          source->current_time = source->real_stop - source->media_start + source->start;
+	  gst_element_set_eos (GST_ELEMENT (source));
+	  found = TRUE;
+        }
       }
-    }
-    else {
-      GstClockTimeDiff outtime;
+      else {
+        GstClockTimeDiff outtime, intime;
 
-      outtime = GST_BUFFER_TIMESTAMP (buffer) - source->media_start;
+        intime = GST_BUFFER_TIMESTAMP (buffer);
+
+        outtime = intime - source->media_start + source->start;
 	      
-      g_print ("%s: get %lld corrected to %lld\n", 
+        source->current_time = outtime;
+
+	if (outtime >= 0) {
+          g_print ("%s: get %lld corrected to %lld\n", 
 	       gst_element_get_name (GST_ELEMENT (source)), 
-	       GST_BUFFER_TIMESTAMP (buffer), 
-	       outtime + source->start);
+	       intime, 
+	       outtime);
 
-      GST_BUFFER_TIMESTAMP (buffer) = outtime + source->start;
-      source->current_time = outtime + source->start;
+          GST_BUFFER_TIMESTAMP (buffer) = outtime;
+
+          found = TRUE;
+	}
+	else {
+          gst_buffer_unref (buffer);
+	}
+      }
+ 
+      private->queue = g_slist_remove (private->queue, buffer);
     }
-
-    private->queue = g_slist_remove (private->queue, buffer);
   }
-
   
   return buffer;
 }

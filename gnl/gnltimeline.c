@@ -101,6 +101,22 @@ gnl_timeline_timer_init (GnlTimelineTimer *timer)
   gst_element_set_loop_function (GST_ELEMENT (timer), gnl_timeline_timer_loop);
 }
 
+static GstPadConnectReturn
+timer_connect (GstPad *pad, GstCaps *caps)
+{
+  GstPad *otherpad;
+  TimerGroupConnection *connection;
+
+  connection = gst_pad_get_element_private (pad);
+	        
+  otherpad = (GST_PAD_IS_SRC (pad)? connection->sinkpad : connection->srcpad);
+		  
+  if (GST_CAPS_IS_FIXED (caps)) 
+    return gst_pad_try_set_caps (otherpad, caps);
+  else
+    return GST_PAD_CONNECT_DELAYED;
+}
+
 static TimerGroupConnection*
 gnl_timeline_timer_create_pad (GnlTimelineTimer *timer, GnlGroup *group)
 {
@@ -117,12 +133,14 @@ gnl_timeline_timer_create_pad (GnlTimelineTimer *timer, GnlGroup *group)
   g_free (padname);
   gst_element_add_pad (GST_ELEMENT (timer), connection->sinkpad);
   gst_pad_set_element_private (connection->sinkpad, connection);
+  gst_pad_set_connect_function (connection->sinkpad, timer_connect);
   
   padname = g_strdup_printf ("%s_src", objname);
   connection->srcpad = gst_pad_new (padname, GST_PAD_SRC);
   g_free (padname);
   gst_element_add_pad (GST_ELEMENT (timer), connection->srcpad);
   gst_pad_set_element_private (connection->srcpad, connection);
+  gst_pad_set_connect_function (connection->srcpad, timer_connect);
 
   timer->connections = g_list_prepend (timer->connections, connection);
 
@@ -142,7 +160,7 @@ gnl_timeline_timer_loop (GstElement *element)
     GstPad *sinkpad = connection->sinkpad;
 
     if (GST_PAD_IS_USABLE (sinkpad)) {
-      if (connection->time < current) {
+      if (connection->time <= current) {
         to_schedule = connection;
         current = connection->time;
       }
@@ -154,7 +172,7 @@ gnl_timeline_timer_loop (GstElement *element)
   if (to_schedule) {
     GstPad *sinkpad = to_schedule->sinkpad;
     GstBuffer *buf;
-
+    
     timer->current = to_schedule;
       
     buf = gst_pad_pull (sinkpad);
