@@ -1,11 +1,12 @@
 # cheap trick to build . first...
 
+built_header_configure = gnlversion.h
+built_header_make = gnlmarshal.h
+build_source_make = gnlmarshal.c
+
 lib_LTLIBRARIES = libgnl.la
 
 EXTRA_libgnl_la_SOURCES = gnlmarshal.list 
-
-SUBDIRS = . 
-DIST_SUBDIRS = 
 
 libgnl_la_SOURCES =		\
 	gnl.c			\
@@ -17,22 +18,30 @@ libgnl_la_SOURCES =		\
 	gnlsource.c		\
 	gnltimeline.c
 
-BUILT_SOURCES = gnlmarshal.h gnlmarshal.c
-
 libgnlincludedir = $(includedir)/gnl
-
-built_headers =			\
-	gnlmarshal.h
 
 gnl_headers =			\
 	gnl.h			\
+	gnltypes.h		\
 	gnlcomposition.h	\
 	gnlgroup.h		\
 	gnloperation.h		\
 	gnlsource.h		\
 	gnltimeline.h
 
-libgnlinclude_HEADERS =	$(gnl_headers) $(built_headers)
+#files built on make all/check/instal
+BUILT_SOURCES =			\
+	$(built_header_configure)	\
+	$(built_header_make)		\
+	$(built_source_make)
+
+CLEANFILES = $(built_header_make) $(built_source_make)
+DISTCLEANFILE = $(built_header_configure)
+
+libgnlinclude_HEADERS =	$(gnl_headers)
+nodist_libgnlinclude_HEADERS = $(built_header_make) $(built_header_configure)
+
+nodist_libgnl_la_SOURCES = $(built_source_make)
 
 noinst_HEADERS = 	
 
@@ -45,15 +54,6 @@ gnlmarshal.c: gnlmarshal.list
 	echo "#include \"gnlmarshal.h\"" >> gnlmarshal.c.tmp
 	glib-genmarshal --body --prefix=gnl_marshal $^ >> gnlmarshal.c.tmp
 	mv gnlmarshal.c.tmp gnlmarshal.c
-
-# Don't want the generated marshal files in the dist
-dist-hook:
-	rm -f $(distdir)/gnlmarshal.c $(distdir)/gnlmarshal.h
-
-# Clean generated files
-distclean-local:
-	rm -f $(top_builddir)/gnl/gnlmarshal.c $(top_builddir)/gnl/gnlmarshal.h 
-
 
 AM_CFLAGS = $(GNL_CFLAGS) -D_GNU_SOURCE -DGST_CONFIG_DIR=\""@sysconfdir@/gnonlin"\" -Wall -Werror -g
 LIBS = $(GNL_LIBS)
