@@ -91,6 +91,7 @@ AC_CONFIG_FILES([
   gnl/gnlversion.h
   test/Makefile
   docs/Makefile
+  docs/version.entities
   docs/libs/Makefile
   gnonlin-config
   gnonlin.pc

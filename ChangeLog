@@ -1,5 +1,25 @@
 2005-03-24  Edward Hervey  <bilboed@bilboed.com>
 
+	* docs/libs/tmpl/gnl.sgml:
+	* docs/libs/tmpl/gnlcomposition.sgml:
+	* docs/libs/tmpl/gnlgroup.sgml:
+	* docs/libs/tmpl/gnlobject.sgml:
+	* docs/libs/tmpl/gnloperation.sgml:
+	* docs/libs/tmpl/gnlsource.sgml:
+	* docs/libs/tmpl/gnltimeline.sgml:
+	Added sgml file templates for documentation
+
+	* docs/libs/gnonlin.types:
+	* docs/libs/gnonlin-sections.txt:
+	* docs/libs/gnonlin-docs.sgml:
+	Added files for better hierarchy of documentation
+
+	* configure.ac:
+	* docs/Makefile.am:
+	* docs/version.entities.in:
+	* docs/libs/Makefile.am: 
+	Added version.entities for documentation
+
 	* docs/libs/Makefile.am: (GTKDOC_LIBS): added libgnl.la dependency
 
 	* gnl/gnlsource.c: (source_getfunction): typo mistake

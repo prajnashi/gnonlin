@@ -208,11 +208,11 @@ html-build.stamp: sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files)
 	mkdir html
 	cp $(srcdir)/$(DOC_MAIN_SGML_FILE) html
 	cp -pr xml html
-#cp ../version.entities html
+	cp ../version.entities html
 	cd html && gtkdoc-mkhtml $(DOC_MODULE) $(DOC_MAIN_SGML_FILE)
 	rm -f html/$(DOC_MAIN_SGML_FILE)
 	rm -rf html/xml
-#rm -f html/version.entities
+	rm -f html/version.entities
 	test "x$(HTML_IMAGES)" = "x" || for i in "" $(HTML_IMAGES) ; do \
 	    if test "$$i" != ""; then cp $(srcdir)/$$i html ; fi; done
 	@echo '-- Fixing Crossreferences' 

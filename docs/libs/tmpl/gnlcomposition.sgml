@@ -1,0 +1,94 @@
+<!-- ##### SECTION Title ##### -->
+GnlComposition
+
+<!-- ##### SECTION Short_Description ##### -->
+Container to assemble and order #GnlObject
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+#GnlComposition are the base class for assembling #GnlObject through time. The
+main objects that can be assembled are #GnlSource and #GnlOperation , but it
+can receive any type of #GnlObject (#GnlComposition, #GnlTimeline, ...) that has
+ONE single output.
+</para>
+
+<para>
+The main idea behind #GnlComposition is to arrange ONE type of media (audio, or
+video, or ...) and then those #GnlComposition are combined in a #GnlTimeline.
+</para>
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+<!-- ##### STRUCT GnlComposition ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### STRUCT GnlCompositionClass ##### -->
+<para>
+
+</para>
+
+@parent_class: 
+@nearest_cover: 
+
+<!-- ##### ENUM GnlFindMethod ##### -->
+<para>
+
+</para>
+
+@GNL_FIND_AT: 
+@GNL_FIND_AFTER: 
+@GNL_FIND_START: 
+
+<!-- ##### FUNCTION gnl_composition_new ##### -->
+<para>
+
+</para>
+
+@name: 
+@Returns: 
+
+
+<!-- ##### FUNCTION gnl_composition_add_object ##### -->
+<para>
+
+</para>
+
+@comp: 
+@object: 
+
+
+<!-- ##### FUNCTION gnl_composition_remove_object ##### -->
+<para>
+
+</para>
+
+@comp: 
+@object: 
+
+
+<!-- ##### FUNCTION gnl_composition_set_default_source ##### -->
+<para>
+
+</para>
+
+@comp: 
+@source: 
+
+
+<!-- ##### FUNCTION gnl_composition_find_object ##### -->
+<para>
+
+</para>
+
+@comp: 
+@time: 
+@method: 
+@Returns: 
+
+
