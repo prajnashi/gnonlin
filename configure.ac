@@ -34,5 +34,6 @@ AC_SUBST(GNL_LIBS, "$GNOME_LIBS $GST_LIBS")
 AC_OUTPUT([
   Makefile
   gnl/Makefile
+  gnl/gnlversion.h
   test/Makefile
 ])
