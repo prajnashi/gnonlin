@@ -1,0 +1,7 @@
+
+src/   		- core source files
+
+test/  		- test apps
+
+gui/   		- gui stuff
+    widgets/ 	- usefull widgets.

@@ -1,0 +1,56 @@
+GnlSource:
+  - extends from a GstBin
+  - consist of a single GStreamer pipeline with M output pads
+  - have a start and stop time
+  - have one or more output pads, ghosted from the Gst pipeline
+
+GnlLayer:
+  - extends GnlSource
+  - contains sources
+  - sources cannot overlap
+  - sources have start/length properties inside the layer
+
+GnlComposition:
+  - extends GnlLayer
+  - can contain GnlLayers, possibly overlapping
+
+GnlOperation:
+  - extends GnlSource
+  - also ghosts N input pads in addition to the GnlSources output pads
+
+
+ .-0----->-----------5000----->------10000----->-----15000---.
+ ! main_timeline                                             !
+ !                                                           !
+ ! .- composition -----------------------------------------. !
+ ! !                                                       ! !
+ ! ! .- layer1 ------------------------------------------. ! !
+ ! ! !                                                   ! ! !
+ ! ! !                .- operation ---.                  ! ! !
+ ! ! !                !               !                  ! ! !
+ ! ! !                ! blend         !                  ! ! !
+ ! ! !                '---------------'                  ! ! !
+ ! ! '---------------------------------------------------' ! !
+ ! ! .- layer2 ------------------------------------------. ! !
+ ! ! !                                                   ! ! !
+ ! ! ! .-- source1 -------------------.                  ! ! !
+ ! ! ! !                              !                  ! ! !
+ ! ! ! ! /myfile.avi                  !                  ! ! !
+ ! ! ! '------------------------------'                  ! ! !
+ ! ! '---------------------------------------------------' ! !
+ ! ! .- layer3 ------------------------------------------. ! !
+ ! ! !                .- source2 ---------------------.  ! ! !
+ ! ! !                !                               !  ! ! !
+ ! ! !                ! /myfile2.avi                  !  ! ! !
+ ! ! !                '-------------------------------'  ! ! !
+ ! ! '---------------------------------------------------' ! !
+ ! '-------------------------------------------------------' ! 
+ '-----------------------------------------------------------'
+
+  
+
+      *****		(alpha blend 2 layers)
+===========
+      *********		(monochrome 1 layer)
+      =========
+      
