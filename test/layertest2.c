@@ -9,23 +9,23 @@ create_source (void)
   GstElement *bin;
   GstElement *src;
   GstElement *mad;
-  GstElement *queue;
+  //GstElement *queue;
 
-  bin = gst_elementfactory_make ("thread", "thread");
+  bin = gst_element_factory_make ("bin", "thread");
 
-  src = gst_elementfactory_make ("filesrc", "filesrc");
+  src = gst_element_factory_make ("filesrc", "filesrc");
   g_object_set (G_OBJECT (src), "location", filename, NULL);
-  mad = gst_elementfactory_make ("mad", "mad");
-  queue = gst_elementfactory_make ("queue", "queue");
+  mad = gst_element_factory_make ("mad", "mad");
+  //queue = gst_element_factory_make ("queue", "queue");
 
   gst_bin_add (GST_BIN (bin), src);
   gst_bin_add (GST_BIN (bin), mad);
-  gst_bin_add (GST_BIN (bin), queue);
+  //gst_bin_add (GST_BIN (bin), queue);
 
-  gst_element_connect (src, "src", mad, "sink");
-  gst_element_connect (mad, "src", queue, "sink");
+  gst_element_connect_pads (src, "src", mad, "sink");
+  //gst_element_connect_pads (mad, "src", queue, "sink");
 
-  gst_element_add_ghost_pad (bin, gst_element_get_pad (queue, "src"), "src");
+  gst_element_add_ghost_pad (bin, gst_element_get_pad (mad, "src"), "src");
 
   return bin;
 }
@@ -56,23 +56,24 @@ main (int argc, gchar *argv[])
 
   source1 = gnl_source_new ("my_source1");
   gnl_source_set_element (source1, create_source());
-  gnl_source_set_start_stop (source1, 3000000, 4000000);
+  gnl_source_set_start_stop (source1, 0 * GST_SECOND, 2 * GST_SECOND);
 
   source2 = gnl_source_new ("my_source2");
-  fakesrc2 = gst_elementfactory_make ("fakesrc", "src2");
+  fakesrc2 = gst_element_factory_make ("fakesrc", "src2");
   gnl_source_set_element (source2, create_source());
-  gnl_source_set_start_stop (source2, 13500000, 14900000);
+  gnl_source_set_start_stop (source2, 12 * GST_SECOND, 14 * GST_SECOND);
 
   layer1 = gnl_layer_new ("my_layer1");
   gnl_layer_add_source (layer1, source1, 0);
-  gnl_layer_add_source (layer1, source2, 1000000);
+  gnl_layer_add_source (layer1, source2, 2 * GST_SECOND);
 
   group = gnl_group_new ("my_group");
 
-  sink = gst_elementfactory_make ("osssink", "sink");
+  sink = gst_element_factory_make ("osssink", "sink");
+  g_object_set (G_OBJECT (sink), "sync", FALSE, NULL);
   gst_bin_add (GST_BIN (pipeline), sink);
 
-  gst_element_connect (GST_ELEMENT (group), "src", sink, "sink");
+  gst_element_connect_pads (GST_ELEMENT (group), "src", sink, "sink");
 
   gnl_composition_append_layer (GNL_COMPOSITION (group), layer1);
 

@@ -44,17 +44,17 @@ main (int argc, gchar *argv[])
   timeline = gnl_timeline_new ("main_timeline");
 
   source1 = gnl_source_new ("my_source1");
-  fakesrc1 = gst_elementfactory_make ("fakesrc", "src1");
+  fakesrc1 = gst_element_factory_make ("fakesrc", "src1");
   gnl_source_set_element (source1, fakesrc1);
   gnl_source_set_start_stop (source1, 0, 6);
 
   source2 = gnl_source_new ("my_source2");
-  fakesrc2 = gst_elementfactory_make ("fakesrc", "src2");
+  fakesrc2 = gst_element_factory_make ("fakesrc", "src2");
   gnl_source_set_element (source2, fakesrc2);
   gnl_source_set_start_stop (source2, 0, 6);
 
   source3 = gnl_source_new ("my_source3");
-  fakesrc3 = gst_elementfactory_make ("fakesrc", "src3");
+  fakesrc3 = gst_element_factory_make ("fakesrc", "src3");
   gnl_source_set_element (source3, fakesrc3);
   gnl_source_set_start_stop (source3, 0, 6);
 
@@ -78,9 +78,9 @@ main (int argc, gchar *argv[])
 
   gnl_timeline_add_group (timeline, group);
 
-  sink = gst_elementfactory_make ("fakesink", "sink");
+  sink = gst_element_factory_make ("fakesink", "sink");
   gst_bin_add (GST_BIN (pipeline), sink);
-  gst_element_connect (GST_ELEMENT (group), "src", sink, "sink");
+  gst_element_connect_pads (GST_ELEMENT (group), "src", sink, "sink");
 
   gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (timeline));
 

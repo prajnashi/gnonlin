@@ -34,12 +34,12 @@ main (int argc, gchar *argv[])
   group = gnl_group_new ("my_group1");
 
   source1 = gnl_source_new ("my_source1");
-  fakesrc1 = gst_elementfactory_make ("fakesrc", "src1");
+  fakesrc1 = gst_element_factory_make ("fakesrc", "src1");
   gnl_source_set_element (source1, fakesrc1);
   gnl_source_set_start_stop (source1, 2, 5);
 
   source2 = gnl_source_new ("my_source2");
-  fakesrc2 = gst_elementfactory_make ("fakesrc", "src2");
+  fakesrc2 = gst_element_factory_make ("fakesrc", "src2");
   gnl_source_set_element (source2, fakesrc2);
   gnl_source_set_start_stop (source2, 8, 15);
 
@@ -47,9 +47,9 @@ main (int argc, gchar *argv[])
   gnl_layer_add_source (layer1, source1, 0);
   gnl_layer_add_source (layer1, source2, 3);
 
-  sink = gst_elementfactory_make ("fakesink", "sink");
+  sink = gst_element_factory_make ("fakesink", "sink");
   gst_bin_add (GST_BIN (pipeline), sink);
-  gst_element_connect (GST_ELEMENT (group), "src", sink, "sink");
+  gst_element_connect_pads (GST_ELEMENT (group), "src", sink, "sink");
 
   gnl_composition_append_layer (GNL_COMPOSITION (group), layer1);
   gnl_timeline_add_group (timeline, group);

@@ -28,12 +28,12 @@ main (int argc, gchar *argv[])
   timeline = gnl_timeline_new ("main_timeline");
 
   source1 = gnl_source_new ("my_source1");
-  element1 = gst_elementfactory_make ("fakesrc", "src1");
+  element1 = gst_element_factory_make ("fakesrc", "src1");
   gnl_source_set_element (source1, element1);
   gnl_source_set_start_stop (source1, 0, 9);
 
   effect = gnl_operation_new ("effect");
-  effect_element = gst_elementfactory_make ("identity", "effect");
+  effect_element = gst_element_factory_make ("identity", "effect");
   gnl_source_set_element (GNL_SOURCE (effect), effect_element);
   gnl_source_set_start_stop (GNL_SOURCE (effect), 0, 6);
 
@@ -49,9 +49,9 @@ main (int argc, gchar *argv[])
 
   gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (timeline));
 
-  sink = gst_elementfactory_make ("fakesink", "sink");
+  sink = gst_element_factory_make ("fakesink", "sink");
   gst_bin_add (GST_BIN (pipeline), sink);
-  gst_element_connect (GST_ELEMENT (group), "src", sink, "sink");
+  gst_element_connect_pads (GST_ELEMENT (group), "src", sink, "sink");
 
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
 

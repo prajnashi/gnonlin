@@ -16,9 +16,9 @@ main (int argc, gchar *argv[])
 
   gnl_timeline_add_group (timeline, group);
 
-  sink = gst_elementfactory_make ("fakesink", "sink");
+  sink = gst_element_factory_make ("fakesink", "sink");
   gst_bin_add (GST_BIN (pipeline), sink);
-  gst_element_connect (GST_ELEMENT (group), "src", sink, "sink");
+  gst_element_connect_pads (GST_ELEMENT (group), "src", sink, "sink");
 
   gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (timeline));
 
