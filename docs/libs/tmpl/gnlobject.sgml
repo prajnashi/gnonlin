@@ -61,21 +61,21 @@ Base class for GNonLin objects
 
 <!-- ##### ENUM GnlCoverType ##### -->
 <para>
-
+Types of cover type queries.
 </para>
 
-@GNL_COVER_ALL: 
-@GNL_COVER_SOME: 
-@GNL_COVER_START: 
-@GNL_COVER_STOP: 
+@GNL_COVER_ALL: The #GnlObject covers start and stop time.
+@GNL_COVER_SOME: The #GnlObject is partially in between the start and stop time.
+@GNL_COVER_START: The #GnlObject covers the given start time.
+@GNL_COVER_STOP: The #GnlObject covers the given stop time.
 
 <!-- ##### ENUM GnlDirection ##### -->
 <para>
 
 </para>
 
-@GNL_DIRECTION_FORWARD: 
-@GNL_DIRECTION_BACKWARD: 
+@GNL_DIRECTION_FORWARD: Search forward in time.
+@GNL_DIRECTION_BACKWARD: Search backwards in time.
 
 <!-- ##### FUNCTION gnl_object_set_media_start_stop ##### -->
 <para>

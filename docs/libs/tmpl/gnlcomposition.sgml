@@ -41,9 +41,9 @@ video, or ...) and then those #GnlComposition are combined in a #GnlTimeline.
 
 </para>
 
-@GNL_FIND_AT: 
-@GNL_FIND_AFTER: 
-@GNL_FIND_START: 
+@GNL_FIND_AT: Find a #GnlObject present at the given position
+@GNL_FIND_AFTER: Find a #GnlObject at or after the given position
+@GNL_FIND_START: Find a #GnlObject whose start time is the given position
 
 <!-- ##### FUNCTION gnl_composition_new ##### -->
 <para>
