@@ -1,0 +1,24 @@
+# cheap trick to build . first...
+
+lib_LTLIBRARIES = libgnl.la
+
+EXTRA_libgnl_la_SOURCES = 
+
+SUBDIRS = . 
+DIST_SUBDIRS = 
+
+libgnl_la_SOURCES =		\
+	gnl.c			\
+	gnlsource.c		
+
+libgnlincludedir = $(includedir)/gnl
+libgnlinclude_HEADERS =		\
+	gnl.h			\
+	gnlsource.h		
+
+noinst_HEADERS = 	
+
+CFLAGS = $(LIBGNL_CFLAGS) -D_GNU_SOURCE -DGST_CONFIG_DIR=\""@sysconfdir@/gnonlin"\"
+LIBS = $(LIBGNL_LIBS)
+libgnl_la_LDFLAGS = -version-info $(GNL_LIBVERSION)
+
