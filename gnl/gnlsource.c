@@ -20,6 +20,7 @@
 #include "gnlsource.h"
 #include "gnlmarshal.h"
 
+
 GstElementDetails gnl_source_details = 
 {
   "GNL Source",
@@ -540,7 +541,7 @@ source_element_new_pad (GstElement *element, GstPad *pad, ConnectData *data)
   g_print ("connect %s new pad %s %d\n", data->padname, gst_pad_get_name (pad),
      					GST_PAD_IS_CONNECTED (data->target));
 
-  if (!strcmp (gst_pad_get_name (pad), data->padname) && 
+  if (!g_ascii_strcasecmp (gst_pad_get_name (pad), data->padname) && 
      !GST_PAD_IS_CONNECTED (data->target)) 
   {
      gst_pad_connect (pad, data->target);

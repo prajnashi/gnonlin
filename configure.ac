@@ -22,7 +22,7 @@ AC_ARG_WITH(pkg-config-path,
    AC_HELP_STRING([--with-pkg-config-path],[colon-separated list of pkg-config(1) dirs]),
    [export PKG_CONFIG_PATH=${withval}])
 
-PKG_CHECK_MODULES(GST, gstreamer)
+PKG_CHECK_MODULES(GST, gstreamer-0.6)
 
 dnl get the genmarshal command for the *.list files
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
