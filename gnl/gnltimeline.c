@@ -458,6 +458,14 @@ gnl_timeline_timer_loop (GstElement *element)
  * timeline
  */
 
+static GstElementDetails gnl_timeline_details = GST_ELEMENT_DETAILS ( 
+  "GNL Timeline",
+  "Filter Editor",
+  "Combines GNL Composition",
+  "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
+  );
+
+static void		gnl_timeline_base_init		(gpointer g_class);
 static void 		gnl_timeline_class_init 	(GnlTimelineClass *klass);
 static void 		gnl_timeline_init 		(GnlTimeline *timeline);
 
@@ -480,7 +488,7 @@ gnl_timeline_get_type (void)
   if (!timeline_type) {
     static const GTypeInfo timeline_info = {
       sizeof (GnlTimelineClass),
-      NULL,
+      (GBaseInitFunc) gnl_timeline_base_init,
       NULL,
       (GClassInitFunc) gnl_timeline_class_init,
       NULL,
@@ -492,6 +500,14 @@ gnl_timeline_get_type (void)
     timeline_type = g_type_register_static (GNL_TYPE_COMPOSITION, "GnlTimeline", &timeline_info, 0);
   }
   return timeline_type;
+}
+
+static void
+gnl_timeline_base_init (gpointer g_class)
+{
+  GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
+
+  gst_element_class_set_details (gstclass, &gnl_timeline_details);
 }
 
 static void

@@ -41,9 +41,6 @@ G_BEGIN_DECLS
 #define GNL_IS_OBJECT_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OBJECT))
 
-extern GstElementDetails gnl_object_details;
-gboolean gnl_object_factory_init (GstElementFactory *factory);
-
 typedef enum {
   GNL_OBJECT_INVALID_RATE_CONTROL = 0,
   GNL_OBJECT_FIX_MEDIA_STOP = 1,

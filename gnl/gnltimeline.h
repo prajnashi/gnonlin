@@ -40,6 +40,7 @@ G_BEGIN_DECLS
 #define GNL_IS_TIMELINE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_TIMELINE))
 
+extern GstElementDetails gnl_timeline_details;
 typedef struct _GnlTimelineTimer GnlTimelineTimer;
 
 struct _GnlTimeline {

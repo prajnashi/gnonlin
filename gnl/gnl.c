@@ -7,18 +7,16 @@ gchar *_gnl_progname;
 
 GST_DEBUG_CATEGORY (gnonlin);
 
-#if 0
 extern gboolean gnl_elements_plugin_init (GstPlugin *plugin); 
  
 static GstPluginDesc gnl_elements_plugin_desc = { 
   GST_VERSION_MAJOR, 
   GST_VERSION_MINOR, 
-  "gnlelements", 
+  "gnlelements",
   "gnonlin pipeline handling elements",
   gnl_elements_plugin_init, NULL,
   "0.1", "LGPL", "gnonlin", "http://gnonlin.sf.net"
 }; 
-#endif
 
 
 static gboolean 	gnl_init_check 		(int *argc, gchar ***argv);
@@ -35,9 +33,7 @@ static gboolean 	gnl_init_check 		(int *argc, gchar ***argv);
 void 
 gnl_init (int *argc, char **argv[]) 
 {
-#if 0
   GstPlugin *plugin;
-#endif
 
   GST_DEBUG_CATEGORY_INIT (gnonlin, "gnonlin", GST_DEBUG_FG_GREEN, "gnonlin non-linear library"); 
  
@@ -49,12 +45,10 @@ gnl_init (int *argc, char **argv[])
 
   gst_scheduler_factory_set_default_name ("opt");
 
-#if 0
   plugin = gst_registry_pool_find_plugin ("gnlelements");
   if (plugin == NULL) {
     _gst_plugin_register_static (&gnl_elements_plugin_desc);
   }
-#endif
 }
 
 /* returns FALSE if the program can be aborted */

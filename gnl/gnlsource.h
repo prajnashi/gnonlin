@@ -41,7 +41,6 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_SOURCE))
 
 extern GstElementDetails gnl_source_details;
-gboolean gnl_source_factory_init (GstElementFactory *factory);
 
 typedef struct _GnlSourcePrivate GnlSourcePrivate;
 

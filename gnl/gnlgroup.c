@@ -21,6 +21,14 @@
 
 #include "gnl.h"
 
+static GstElementDetails gnl_group_details = GST_ELEMENT_DETAILS (
+  "GNL Group",
+  "Filter/Editor",
+  "GNonlin Single media type composition",
+  "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
+);
+
+static void		gnl_group_base_init		(gpointer g_class);
 static void 		gnl_group_class_init 		(GnlGroupClass *klass);
 static void 		gnl_group_init 			(GnlGroup *group);
 
@@ -36,7 +44,7 @@ gnl_group_get_type (void)
   if (!group_type) {
     static const GTypeInfo group_info = {
       sizeof (GnlGroupClass),
-      NULL,
+      (GBaseInitFunc) gnl_group_base_init,
       NULL,
       (GClassInitFunc) gnl_group_class_init,
       NULL,
@@ -48,6 +56,14 @@ gnl_group_get_type (void)
     group_type = g_type_register_static (GNL_TYPE_COMPOSITION, "GnlGroup", &group_info, 0);
   }
   return group_type;
+}
+
+static void
+gnl_group_base_init (gpointer g_class)
+{
+  GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
+
+  gst_element_class_set_details (gstclass, &gnl_group_details);
 }
 
 static void

@@ -134,7 +134,7 @@ gnl_source_base_init (gpointer g_class)
 {
   GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
 
-  gst_element_class_set_details (gstclass, &gnl_object_details);
+  gst_element_class_set_details (gstclass, &gnl_source_details);
   
 }
 

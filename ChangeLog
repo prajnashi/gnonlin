@@ -1,5 +1,24 @@
 2005-03-23  Edward Hervey  <bilboed@bilboed.com>
 
+	* docs/Makefile.am: Make doc build depend on ./configure choice
+
+	* gnl/gnl.c, gnl/gnlcomposition.c, gnl/gnlelements.c,
+	gnl/gnlgroup.c, gnl/gnlgroup.h, gnl/gnlobject.c, gnl/gnlobject.h,
+	gnl/gnloperation.c, gnl/gnloperation.h, gnl/gnlsource.c,
+	gnl/gnlsource.h, gnl/gnltimeline.c, gnl/gnltimeline.h:
+	Modifications so that elements are registered as gst-plugins
+
+	* gnl/Makefile.am: (plugin_LTLIBRARIES): 
+	use plugin_ instead of lib_ so that it's installed in the gst-plugins
+	directory
+
+	* Makefile.am: removed useless lines
+	
+	* gnl/gnlobject.c: (gnl_object_get_property):
+	was setting an enum instead of an int
+
+	* configure.ac: No spaces in value assignment !!
+
 	* test/sourcetest1.c: modified datarate of fakesrc
 
 	* gnl/gnl*.[ch]: correction for GST_DEBUG_* functions

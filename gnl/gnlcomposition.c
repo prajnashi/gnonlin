@@ -21,11 +21,12 @@
 #include "config.h"
 #include <gnl/gnl.h>
 
-static GstElementDetails gnl_composition_details = GST_ELEMENT_DETAILS ( "GNL Composition",
-		      "Filter/Editor",
-		      "Combines GNL objects",
-		      "Wim Taymans <wim.taymans@chello.be>"
-		      );
+static GstElementDetails gnl_composition_details = GST_ELEMENT_DETAILS (
+   "GNL Composition",
+   "Filter/Editor",
+   "Combines GNL objects",
+   "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
+   );
 
 static void		gnl_composition_base_init		(gpointer g_class);
 static void 		gnl_composition_class_init 		(GnlCompositionClass *klass);

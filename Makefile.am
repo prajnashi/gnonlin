@@ -21,16 +21,4 @@ EXTRA_DIST = gnonlin.spec.in gnonlin-config.in gnonlin.m4 \
 	     autogen.sh ChangeLog AUTHORS COPYING NEWS\
 	     LICENSE REQUIREMENTS README ABOUT-NLS $(man_MANS) 
 
-dist-hook:
-	cp gnonlin.spec $(distdir)
-
-rpm: dist
-	rpm -ta $(distdir).tar.gz
-
-deb:
-	dpkg-buildpackage -rfakeroot -us -uc
-
-deb-maint:
-	debuild
-
 include $(top_srcdir)/common/release.mak

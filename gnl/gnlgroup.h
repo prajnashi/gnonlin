@@ -41,6 +41,7 @@ G_BEGIN_DECLS
 #define GNL_IS_GROUP_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_GROUP))
 
+extern GstElementDetails gnl_group_details;
 
 struct _GnlGroup {
   GnlComposition	 parent;

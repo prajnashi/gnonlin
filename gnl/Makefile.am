@@ -4,7 +4,7 @@ built_header_configure = gnlversion.h
 built_header_make = gnlmarshal.h
 build_source_make = gnlmarshal.c
 
-lib_LTLIBRARIES = libgnl.la
+plugin_LTLIBRARIES = libgnl.la
 
 EXTRA_libgnl_la_SOURCES = gnlmarshal.list 
 
@@ -37,7 +37,7 @@ BUILT_SOURCES =			\
 	$(built_source_make)
 
 CLEANFILES = $(built_header_make) $(built_source_make)
-DISTCLEANFILE = $(built_header_configure)
+DISTCLEANFILE = $(CLEANFILES) $(built_header_configure)
 
 libgnlinclude_HEADERS =	$(gnl_headers)
 nodist_libgnlinclude_HEADERS = $(built_header_make) $(built_header_configure)

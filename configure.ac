@@ -70,7 +70,7 @@ fi
 GST_PLUGIN_LDFLAGS="-module -avoid-version $EXPORT_LDFLAGS"
 AC_SUBST(GST_PLUGIN_LDFLAGS)
 
-plugindir = "\$(libdir)/gstreamer-$GST_MAJORMINOR"
+plugindir="\$(libdir)/gstreamer-$GST_MAJORMINOR"
 AC_SUBST(plugindir)
 
 dnl get the genmarshal command for the *.list files
@@ -84,7 +84,7 @@ AC_DEFINE(GNL_LICENSE, "LGPL", [Gnonlin license])
 AC_DEFINE(GNL_PACKAGE, "Gnonlin", [Gnonlin package])
 AC_DEFINE(GNL_ORIGIN, "http://gnonlin.sf.net", [Gnonlin origin])
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
   Makefile
   gnl/Makefile
   gnl/gnlversion.h
@@ -95,3 +95,4 @@ AC_OUTPUT([
   gnonlin.pc
   gnonlin.spec
 ])
+AC_OUTPUT

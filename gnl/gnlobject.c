@@ -23,13 +23,6 @@
 #include "gnl.h"
 #include "gnlmarshal.h"
 
-GstElementDetails gnl_object_details = GST_ELEMENT_DETAILS (
-  "GNL Object",
-  "Filter/Editor",
-  "GNonLin Base object",
-  "Wim Taymans <wim.taymans@chello.be>"
-  );
-     
 enum {
   ARG_0,
   ARG_START,
@@ -64,10 +57,8 @@ gnl_object_rate_control_get_type (void)
 }
 
 
-static void		gnl_object_base_init		(gpointer g_class);
 static void 		gnl_object_class_init 		(GnlObjectClass *klass);
 static void 		gnl_object_init 		(GnlObject *object);
-/* static void 		gnl_object_dispose 		(GObject *object); */
 
 static void		gnl_object_set_property 	(GObject *object, guint prop_id,
 							 const GValue *value, GParamSpec *pspec);
@@ -86,7 +77,6 @@ static GstElementStateReturn
 
 
 static GstBinClass *parent_class = NULL;
-//static guint gnl_object_signals[LAST_SIGNAL] = { 0 };
 
 #define CLASS(object)  GNL_OBJECT_CLASS (G_OBJECT_GET_CLASS (object))
 
@@ -98,7 +88,7 @@ gnl_object_get_type (void)
   if (!object_type) {
     static const GTypeInfo object_info = {
       sizeof (GnlObjectClass),
-      (GBaseInitFunc) gnl_object_base_init,
+      NULL,
       NULL,
       (GClassInitFunc) gnl_object_class_init,
       NULL,
@@ -111,21 +101,6 @@ gnl_object_get_type (void)
   }
   return object_type;
 }
-
-
-static void
-gnl_object_base_init (gpointer g_class)
-{
-  GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
-
-  gst_element_class_set_details (gstclass, &gnl_object_details);
-  gst_element_class_add_pad_template (gstclass,
-				      gst_pad_template_new ("src", GST_PAD_SRC,
-							    GST_PAD_REQUEST,
-							    GST_CAPS_ANY)
-				      );
-}
-
 
 
 static void
@@ -772,7 +747,7 @@ gnl_object_get_property (GObject *object, guint prop_id,
       g_value_set_uint64 (value, gnlobject->media_stop);
       break;
     case ARG_PRIORITY:
-      g_value_set_enum (value, gnl_object_get_priority (gnlobject));
+      g_value_set_int (value, gnl_object_get_priority (gnlobject));
       break;
     case ARG_ACTIVE:
       g_value_set_boolean (value, gnl_object_is_active (gnlobject));

@@ -30,13 +30,12 @@ struct _elements_entry {
   GType (*type) (void);
 };
 
-
-/*extern GType gst_filesrc_get_type(void);*/
-/*extern GstElementDetails gst_filesrc_details;*/
-
 static struct _elements_entry _elements[] = {
   { "gnlsource", 	gnl_source_get_type },
   { "gnlcomposition", 	gnl_composition_get_type },
+  { "gnloperation",	gnl_operation_get_type },
+  { "gnlgroup",		gnl_group_get_type },
+  { "gnltimeline",	gnl_timeline_get_type },
   { NULL, 0 }
 };
 
@@ -44,8 +43,6 @@ gboolean
 gnl_elements_plugin_init (GstPlugin *plugin)
 {
   gint i = 0;
-
-  /*  gst_plugin_set_longname (plugin, "Standard GNL Elements");*/
 
   for ( ; _elements[i].name; i++ )
     if (!(gst_element_register(plugin,
@@ -71,13 +68,6 @@ gnl_elements_plugin_init (GstPlugin *plugin)
 	}*/
   return TRUE;
 }
-
-/* GstPluginDesc plugin_desc = { */
-/*   GST_VERSION_MAJOR, */
-/*   GST_VERSION_MINOR, */
-/*   "gnlelements", */
-/*   gnl_elements_plugin_init */
-/* }; */
 
 GST_PLUGIN_DEFINE ( GST_VERSION_MAJOR, GST_VERSION_MINOR,
 		    "gnlelements",
