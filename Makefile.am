@@ -1,10 +1,10 @@
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
 
-SUBDIRS = gnl test ## docs
+SUBDIRS = gnl test docs
 
 # These are all the possible subdirs
-DIST_SUBDIRS = gnl ##test ## docs
+DIST_SUBDIRS = gnl test docs
 
 bin_SCRIPTS = gnonlin-config
 

@@ -49,6 +49,16 @@ fi
 
 AC_HEADER_STDC([])
 
+dnl modify pkg-config path
+AC_ARG_WITH(pkg-config-path, 
+   AC_HELP_STRING([--with-pkg-config-path],
+                  [colon-separated list of pkg-config(1) dirs]),
+   [export PKG_CONFIG_PATH=${withval}])
+
+GST_DOC()
+GST_ARCH()
+
+
 dnl check for gstreamer; uninstalled is selected preferentially -- see pkg-config(1)
 PKG_CHECK_MODULES(GST, gstreamer-$GST_MAJORMINOR >= $GST_REQ,
   HAVE_GST="yes", HAVE_GST="no")
@@ -79,6 +89,8 @@ AC_OUTPUT([
   gnl/Makefile
   gnl/gnlversion.h
   test/Makefile
+  docs/Makefile
+  docs/libs/Makefile
   gnonlin-config
   gnonlin.pc
   gnonlin.spec
