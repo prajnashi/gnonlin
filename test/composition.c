@@ -27,23 +27,22 @@ main (int argc, gchar *argv[])
   pipeline = gst_pipeline_new ("main_pipeline");
   timeline = gnl_timeline_new ("main_timeline");
 
-  source1 = gnl_source_new ("my_source1");
   element1 = gst_element_factory_make ("fakesrc", "src1");
-  gnl_source_set_element (source1, element1);
+  source1 = gnl_source_new ("my_source1", element1);
+  gnl_source_set_media_start_stop (source1, 0, 9);
   gnl_source_set_start_stop (source1, 0, 9);
 
-  effect = gnl_operation_new ("effect");
   effect_element = gst_element_factory_make ("identity", "effect");
-  gnl_source_set_element (GNL_SOURCE (effect), effect_element);
+  effect = gnl_operation_new ("effect", effect_element);
   gnl_source_set_start_stop (GNL_SOURCE (effect), 0, 6);
 
   layer1 = gnl_layer_new ("layer1");
-  gnl_layer_add_source (layer1, source1, 0);
+  gnl_layer_add_source (layer1, source1, "src");
 
   group = gnl_group_new ("group");
 
   gnl_composition_add_operation (GNL_COMPOSITION (group), effect, 0);
-  gnl_composition_append_layer (GNL_COMPOSITION (group), layer1);
+  gnl_group_append_layer (group, layer1);
 
   gnl_timeline_add_group (timeline, group);
 

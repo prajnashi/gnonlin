@@ -7,17 +7,10 @@
  !                                                         !
  ! (-----------------------------------------------------) !
  ! ! my_layer1                                           ! !
- ! !                  (-------------------------------)  ! !
- ! !                  ! source1                       !  ! !
- ! !                  !                               !  ! !
- ! !                  (-------------------------------)  ! !
- ! (-----------------------------------------------------) !
- ! (-----------------------------------------------------) !
- ! ! my_layer2                                           ! !
- ! ! (-------------------------------)                   ! !
- ! ! ! source2                       !                   ! !
- ! ! !                               !                   ! !
- ! ! (-------------------------------)                   ! !
+ ! ! (------------------------)(-------------------------) !
+ ! ! ! source1                !| source2                 | !
+ ! ! !                        !|                         | !
+ ! ! (------------------------)(-------------------------) !
  ! (-----------------------------------------------------) !
  !                                                         !
  (---------------------------------------------------------)
@@ -29,7 +22,7 @@ main (int argc, gchar *argv[])
   GstElement *pipeline;
   GnlTimeline *timeline;
   GnlGroup *group;
-  GnlLayer *layer1, *layer2;
+  GnlLayer *layer1;
   GnlSource *source1, *source2;
   GstElement *fakesrc1, *fakesrc2, *sink;
   GstPad *pad;
@@ -42,22 +35,20 @@ main (int argc, gchar *argv[])
   fakesrc1 = gst_element_factory_make ("fakesrc", "src1");
   source1 = gnl_source_new ("my_source1", fakesrc1);
   gnl_source_set_media_start_stop (source1, 0, 6);
-  gnl_source_set_start_stop (source1, 3, 9);
+  gnl_source_set_start_stop (source1, 0, 6);
 
   fakesrc2 = gst_element_factory_make ("fakesrc", "src2");
   source2 = gnl_source_new ("my_source2", fakesrc2);
-  gnl_source_set_media_start_stop (source2, 10, 16);
-  gnl_source_set_start_stop (source2, 0, 6);
+  gnl_source_set_media_start_stop (source2, 0, 6);
+  gnl_source_set_start_stop (source2, 6, 9);
 
   layer1 = gnl_layer_new ("my_layer1");
   gnl_layer_add_source (layer1, source1, "src");
-  layer2 = gnl_layer_new ("my_layer2");
-  gnl_layer_add_source (layer2, source2, "src");
+  gnl_layer_add_source (layer1, source2, "src");
 
   group = gnl_group_new ("my_group");
 
   gnl_group_append_layer (group, layer1);
-  gnl_group_append_layer (group, layer2);
 
   gnl_timeline_add_group (timeline, group);
 
