@@ -37,4 +37,5 @@ AC_OUTPUT([
   gnl/gnlversion.h
   test/Makefile
   gnonlin-config
+  gnonlin.pc
 ])

@@ -8,8 +8,8 @@ DIST_SUBDIRS = gnl test docs
 
 bin_SCRIPTS = gnonlin-config
 
-m4datadir = $(datadir)/aclocal
-m4data_DATA = gnonlin.m4
+## m4datadir = $(datadir)/aclocal
+## m4data_DATA = gnonlin.m4
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = gnonlin.pc
