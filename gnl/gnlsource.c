@@ -26,7 +26,7 @@
 static void 		gnl_source_class_init 		(GnlSourceClass *klass);
 static void 		gnl_source_init 		(GnlSource *source);
 
-static GnlLayerClass *parent_class = NULL;
+static GstBinClass *parent_class = NULL;
 
 GType
 gnl_source_get_type (void)
@@ -45,7 +45,7 @@ gnl_source_get_type (void)
       32,
       (GInstanceInitFunc) gnl_source_init,
     };
-    source_type = g_type_register_static (G_TYPE_OBJECT, "GnlSource", &source_info, 0);
+    source_type = g_type_register_static (GST_TYPE_BIN, "GnlSource", &source_info, 0);
   }
   return source_type;
 }
@@ -55,7 +55,7 @@ gnl_source_class_init (GnlSourceClass *klass)
 {
   GObjectClass *gobject_class;
 
-  gobject_class =       (GObjectClass*)klass;
+  gobject_class = (GObjectClass*)klass;
 
   parent_class = g_type_class_ref (GST_TYPE_BIN);
 }
@@ -70,7 +70,14 @@ gnl_source_init (GnlSource *source)
 GnlSource*
 gnl_source_new (const gchar *name)
 {
-  return NULL;
+  GnlSource *new;
+
+  g_return_val_if_fail (name != NULL, NULL);
+
+  new = g_object_new (GNL_TYPE_SOURCE, NULL);
+  gst_object_set_name (GST_OBJECT (new), name);
+  
+  return new;
 }
 
 void
@@ -93,7 +100,6 @@ gnl_source_set_start_stop (GnlSource *source, guint64 start, guint64 stop)
 
   source->start = start;
   source->stop = stop;
-  
 }
 
 

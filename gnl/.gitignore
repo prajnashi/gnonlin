@@ -5,4 +5,4 @@ Makefile.in
 *.la
 .deps
 .libs
-gstversion.h
+gnlversion.h

@@ -17,14 +17,18 @@
  * Boston, MA 02111-1307, USA.
  */
 
-
-
 #include <gnl/gnllayer.h>
 
 static void 		gnl_layer_class_init 		(GnlLayerClass *klass);
 static void 		gnl_layer_init 			(GnlLayer *layer);
 
 static GnlLayerClass *parent_class = NULL;
+
+typedef struct
+{
+  GnlSource *source;
+  guint64 start;
+} GnlLayerEntry;
 
 GType
 gnl_layer_get_type (void)
@@ -43,7 +47,7 @@ gnl_layer_get_type (void)
       32,
       (GInstanceInitFunc) gnl_layer_init,
     };
-    layer_type = g_type_register_static (G_TYPE_OBJECT, "GnlLayer", &layer_info, 0);
+    layer_type = g_type_register_static (GST_TYPE_BIN, "GnlLayer", &layer_info, 0);
   }
   return layer_type;
 }
@@ -53,7 +57,7 @@ gnl_layer_class_init (GnlLayerClass *klass)
 {
   GObjectClass *gobject_class;
 
-  gobject_class =       (GObjectClass*)klass;
+  gobject_class = (GObjectClass*)klass;
 
   parent_class = g_type_class_ref (GST_TYPE_BIN);
 }
@@ -62,23 +66,42 @@ gnl_layer_class_init (GnlLayerClass *klass)
 static void
 gnl_layer_init (GnlLayer *layer)
 {
+  layer->sources = NULL;
+}
+
+static gint 
+_entry_compare_func (gconstpointer a, gconstpointer b)
+{
+  return (gint)(((GnlLayerEntry *)a)->start - ((GnlLayerEntry *)b)->start);
 }
 
 
 GnlLayer*
 gnl_layer_new (const gchar *name)
 {
-  return NULL;
+  GnlLayer *new;
+
+  g_return_val_if_fail (name != NULL, NULL);
+
+  new = g_object_new (GNL_TYPE_LAYER, NULL);
+  gst_object_set_name (GST_OBJECT (new), name);
+
+  return new;
 }
 
 void
 gnl_layer_add_source (GnlLayer *layer, GnlSource *source, guint64 start)
 {
+  GnlLayerEntry *entry;
+
   g_return_if_fail (layer != NULL);
   g_return_if_fail (GNL_IS_LAYER (layer));
   g_return_if_fail (source != NULL);
   g_return_if_fail (GNL_IS_SOURCE (source));
 
+  entry = g_malloc (sizeof (GnlLayerEntry));
+  
+  layer->sources = g_list_insert_sorted (layer->sources, entry, _entry_compare_func);
 }
 
 

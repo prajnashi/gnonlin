@@ -24,7 +24,7 @@
 static void 		gnl_timeline_class_init 	(GnlTimelineClass *klass);
 static void 		gnl_timeline_init 		(GnlTimeline *timeline);
 
-static GnlLayerClass *parent_class = NULL;
+static GnlCompositionClass *parent_class = NULL;
 
 GType
 gnl_timeline_get_type (void)
@@ -43,7 +43,7 @@ gnl_timeline_get_type (void)
       4,
       (GInstanceInitFunc) gnl_timeline_init,
     };
-    timeline_type = g_type_register_static (G_TYPE_OBJECT, "GnlTimeline", &timeline_info, 0);
+    timeline_type = g_type_register_static (GNL_TYPE_COMPOSITION, "GnlTimeline", &timeline_info, 0);
   }
   return timeline_type;
 }
@@ -55,7 +55,7 @@ gnl_timeline_class_init (GnlTimelineClass *klass)
 
   gobject_class =       (GObjectClass*)klass;
 
-  parent_class = g_type_class_ref (GNL_TYPE_LAYER);
+  parent_class = g_type_class_ref (GNL_TYPE_COMPOSITION);
 }
 
 
@@ -68,7 +68,14 @@ gnl_timeline_init (GnlTimeline *timeline)
 GnlTimeline*
 gnl_timeline_new (const gchar *name)
 {
-  return NULL;
+  GnlTimeline *new;
+
+  g_return_val_if_fail (name != NULL, NULL);
+
+  new = g_object_new (GNL_TYPE_TIMELINE, NULL);
+  gst_object_set_name (GST_OBJECT (new), name);
+
+  return new;
 }
 
 

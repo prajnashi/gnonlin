@@ -43,7 +43,7 @@ gnl_composition_get_type (void)
       32,
       (GInstanceInitFunc) gnl_composition_init,
     };
-    composition_type = g_type_register_static (G_TYPE_OBJECT, "GnlComposition", &composition_info, 0);
+    composition_type = g_type_register_static (GNL_TYPE_LAYER, "GnlComposition", &composition_info, 0);
   }
   return composition_type;
 }
@@ -55,7 +55,7 @@ gnl_composition_class_init (GnlCompositionClass *klass)
 
   gobject_class =       (GObjectClass*)klass;
 
-  parent_class = g_type_class_ref (GST_TYPE_BIN);
+  parent_class = g_type_class_ref (GNL_TYPE_LAYER);
 }
 
 
@@ -68,7 +68,14 @@ gnl_composition_init (GnlComposition *composition)
 GnlComposition*
 gnl_composition_new (const gchar *name)
 {
-  return NULL;
+  GnlComposition *new;
+
+  g_return_val_if_fail (name != NULL, NULL);
+
+  new = g_object_new (GNL_TYPE_COMPOSITION, NULL);
+  gst_object_set_name (GST_OBJECT (new), name);
+
+  return new;
 }
 
 void

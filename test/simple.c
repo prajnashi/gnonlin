@@ -26,6 +26,7 @@
 int
 main (int argc, gchar *argv[]) 
 {
+  GstElement *pipeline;
   GnlTimeline *timeline;
   GnlLayer *layer1, *layer2;
   GnlSource *source1, *source2;
@@ -33,6 +34,7 @@ main (int argc, gchar *argv[])
 
   gnl_init (&argc, &argv);
 
+  pipeline = gst_pipeline_new ("main_pipeline");
   timeline = gnl_timeline_new ("main_timeline");
 
   source1 = gnl_source_new ("my_source1");
@@ -53,10 +55,12 @@ main (int argc, gchar *argv[])
   gnl_composition_append_layer (GNL_COMPOSITION (timeline), layer1);
   gnl_composition_append_layer (GNL_COMPOSITION (timeline), layer2);
 
-  gst_element_set_state (GST_ELEMENT (timeline), GST_STATE_PLAYING);
+  gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (timeline));
 
-  while (gst_bin_iterate (GST_BIN (timeline)));
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
+
+  while (gst_bin_iterate (GST_BIN (pipeline)));
   
-  gst_element_set_state (GST_ELEMENT (timeline), GST_STATE_NULL);
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
    
 }

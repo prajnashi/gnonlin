@@ -48,13 +48,13 @@ typedef struct _GnlLayer GnlLayer;
 typedef struct _GnlLayerClass GnlLayerClass;
 
 struct _GnlLayer {
-  GnlSource	source;
+  GstBin bin;
 
   GList		*sources;
 };
 
 struct _GnlLayerClass {
-  GnlSourceClass	parent_class;
+  GstBinClass	parent_class;
 };
 
 GType		gnl_layer_get_type		(void);

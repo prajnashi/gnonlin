@@ -27,6 +27,7 @@
 #include "config.h"
 #endif
 
+#include <gst/gstpipeline.h>
 #include <gnl/gnlcomposition.h>
 
 #ifdef __cplusplus
@@ -48,7 +49,7 @@ typedef struct _GnlTimeline GnlTimeline;
 typedef struct _GnlTimelineClass GnlTimelineClass;
 
 struct _GnlTimeline {
-  GnlComposition	composition;
+  GnlComposition	pipeline;
 
 };
 

@@ -34,7 +34,6 @@ gnl_init_check (int     *argc,
 		gchar ***argv)
 {
   gboolean ret = TRUE;
-  gboolean showhelp = FALSE;
 
   _gnl_progname = NULL;
 
