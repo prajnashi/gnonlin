@@ -27,6 +27,7 @@ static void 		gnl_composition_init 			(GnlComposition *composition);
 static guint64 		gnl_composition_next_change 		(GnlLayer *layer, guint64 time);
 static gboolean 	gnl_composition_prepare_cut 		(GnlLayer *layer, guint64 start, guint64 stop,
 								 GnlLayerCutDoneCallback func, gpointer user_data);
+static gboolean 	gnl_composition_occupies_time 		(GnlLayer *layer, guint64 time);
 
 static GstElementStateReturn
 			gnl_composition_change_state 		(GstElement *element);
@@ -73,6 +74,8 @@ gnl_composition_class_init (GnlCompositionClass *klass)
   gstelement_class->change_state 	= gnl_composition_change_state;
   gnllayer_class->next_change 		= gnl_composition_next_change;
   gnllayer_class->prepare_cut 		= gnl_composition_prepare_cut;
+  gnllayer_class->occupies_time  	= gnl_composition_occupies_time;
+
 }
 
 static void
@@ -171,6 +174,18 @@ find_operation_for_time (GnlComposition *composition, guint64 time)
 
   return NULL;
 }
+
+static gboolean
+gnl_composition_occupies_time (GnlLayer *layer, guint64 time)
+{ 
+  if (find_operation_for_time (GNL_COMPOSITION (layer), time))
+    return TRUE;
+  if (find_layer_for_time (GNL_COMPOSITION (layer), time, 0))
+    return TRUE;
+
+  return FALSE;
+} 
+
 
 static gboolean
 is_layer_active (GnlComposition *composition, GnlLayer *layer)
