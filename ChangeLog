@@ -1,5 +1,11 @@
 2005-03-30  Edward Hervey  <bilboed@bilboed.com>
 
+	* gnl/gnlobject.h:
+	* gnl/gnlobject.c:
+	Removed gnl_object_nearest_change() and cleanup of commented code
+
+2005-03-30  Edward Hervey  <bilboed@bilboed.com>
+
 	* gnl/Makefile.am:
 	* gnl/gnl.h:
 	* gnl/gnltypes.h:

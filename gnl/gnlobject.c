@@ -31,7 +31,6 @@ enum {
   ARG_MEDIA_STOP,
   ARG_PRIORITY,
   ARG_ACTIVE,
-/*   ARG_RATE_CONTROL, */
 };
 
 enum
@@ -39,41 +38,36 @@ enum
   LAST_SIGNAL
 };
 
-/* #define GNL_TYPE_OBJECT_RATE_CONTROL (gnl_object_rate_control_get_type()) */
-/* static GType */
-/* gnl_object_rate_control_get_type (void) */
-/* { */
-/*   static GType object_rate_control_type = 0; */
-/*   static GEnumValue object_rate_control[] = { */
-/*     { GNL_OBJECT_INVALID_RATE_CONTROL, "0", "Invalid"}, */
-/*     { GNL_OBJECT_FIX_MEDIA_STOP,       "1", "Fix media stop time to match object start/stop times"}, */
-/*     { GNL_OBJECT_USE_MEDIA_STOP,       "2", "Use media stop time to adjust rate"}, */
-/*     { 0, NULL, NULL}, */
-/*   }; */
-/*   if (!object_rate_control_type) { */
-/*     object_rate_control_type = g_enum_register_static ("GnlObjectRateControlType", object_rate_control); */
-/*   } */
-/*   return object_rate_control_type; */
-/* } */
+static void
+gnl_object_class_init 		(GnlObjectClass *klass);
 
+static void
+gnl_object_init 		(GnlObject *object);
 
-static void 		gnl_object_class_init 		(GnlObjectClass *klass);
-static void 		gnl_object_init 		(GnlObject *object);
+static void
+gnl_object_set_property 	(GObject *object, guint prop_id,
+				 const GValue *value, GParamSpec *pspec);
 
-static void		gnl_object_set_property 	(GObject *object, guint prop_id,
-							 const GValue *value, GParamSpec *pspec);
-static void		gnl_object_get_property 	(GObject *object, guint prop_id, GValue *value,
-		                                         GParamSpec *pspec);
-static gboolean 	gnl_object_do_seek 		(GnlObject *object, GstSeekType type, 
-							 GstClockTime start, GstClockTime stop);
-static gboolean 	gnl_object_send_event 		(GstElement *element, GstEvent *event);
-static gboolean 	gnl_object_query 		(GstElement *element, GstQueryType type,
-		                                         GstFormat *format, gint64 *value);
-static gboolean 	gnl_object_covers_func 		(GnlObject *object, GstClockTime start,
-		        				 GstClockTime stop, GnlCoverType type);
+static void
+gnl_object_get_property 	(GObject *object, guint prop_id, GValue *value,
+				 GParamSpec *pspec);
+static gboolean
+gnl_object_do_seek 		(GnlObject *object, GstSeekType type, 
+				 GstClockTime start, GstClockTime stop);
+
+static gboolean
+gnl_object_send_event 		(GstElement *element, GstEvent *event);
+
+static gboolean
+gnl_object_query 		(GstElement *element, GstQueryType type,
+				 GstFormat *format, gint64 *value);
+
+static gboolean
+gnl_object_covers_func 		(GnlObject *object, GstClockTime start,
+				 GstClockTime stop, GnlCoverType type);
 
 static GstElementStateReturn
-			gnl_object_change_state 	(GstElement *element);
+gnl_object_change_state 	(GstElement *element);
 
 
 static GstBinClass *parent_class = NULL;
@@ -118,7 +112,6 @@ gnl_object_class_init (GnlObjectClass *klass)
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_object_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_object_get_property);
-/*   gobject_class->dispose      = GST_DEBUG_FUNCPTR (gnl_object_dispose); */
 
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_START,
     g_param_spec_uint64 ("start", "Start", "The start position relative to the parent",
@@ -138,9 +131,6 @@ gnl_object_class_init (GnlObjectClass *klass)
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_ACTIVE,
     g_param_spec_boolean ("active", "Active", "The state of the object",
                           TRUE, G_PARAM_READWRITE));
-/*   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_RATE_CONTROL, */
-/*     g_param_spec_enum ("rate_control", "Rate control", "Specify the rate control method", */
-/*                        GNL_TYPE_OBJECT_RATE_CONTROL, 1, G_PARAM_READWRITE)); */
 
   gstelement_class->change_state 	= gnl_object_change_state;
   gstelement_class->send_event 		= gnl_object_send_event;
@@ -159,15 +149,7 @@ gnl_object_init (GnlObject *object)
   object->current_time = 0;
   object->priority = 0;
   object->active = TRUE;
-/*   object->rate_control = GNL_OBJECT_FIX_MEDIA_STOP; */
 }
-
-/* static void */
-/* gnl_object_dispose (GObject *object) */
-/* { */
-/*   GST_INFO("disposed"); */
-/*   G_OBJECT_CLASS (parent_class)->dispose (object); */
-/* } */
 
 /**
  * gnl_object_to_media_time:
@@ -354,45 +336,6 @@ gnl_object_get_media_start_stop (GnlObject *object, GstClockTime *start, GstCloc
 }
 
 /** 
- * gnl_object_get_rate_control:
- * @object: The object element to query
- *
- * Get the currently configured method for handling the relation
- * between the media times and the start/stop position.
- *
- * Returns: The RateControl method used.
- */
-/* GnlObjectRateControl */
-/* gnl_object_get_rate_control (GnlObject *object) */
-/* { */
-/*   g_return_val_if_fail (GNL_IS_OBJECT (object), GNL_OBJECT_INVALID_RATE_CONTROL); */
-
-/*   return object->rate_control; */
-/* } */
-
-/** 
- * gnl_object_set_rate_control:
- * @object: The object element to modify
- * @control: The method to use for rate control
- *
- * Set the method for handling differences in media and normal
- * start/stop times.
- */
-/* void */
-/* gnl_object_set_rate_control (GnlObject *object, GnlObjectRateControl control) */
-/* { */
-/*   g_return_if_fail (object != NULL); */
-/*   g_return_if_fail (GNL_IS_OBJECT (object)); */
-/*   g_return_if_fail (control >= GNL_OBJECT_FIX_MEDIA_STOP && */
-/*                     control <= GNL_OBJECT_USE_MEDIA_STOP); */
-
-/*   if (object->rate_control != control) { */
-/*     object->rate_control = control; */
-/*     g_object_notify (G_OBJECT (object), "rate_control"); */
-/*   } */
-/* } */
-
-/** 
  * gnl_object_set_priority:
  * @object: The object element to modify
  * @priority: The new priority of the object
@@ -549,7 +492,6 @@ gnl_object_do_seek (GnlObject *object, GstSeekType type, GstClockTime start, Gst
 {
   GstClockTime seek_start, seek_stop;
   gdouble ratio;
-/*   GstSeekType seek_type; */
   gboolean res = FALSE;
   GstEvent *event;
 
@@ -590,18 +532,6 @@ gnl_object_do_seek (GnlObject *object, GstSeekType type, GstClockTime start, Gst
     seek_stop = object->media_start + (stop - object->start) * ratio;
   }
 
-/*   if (object->media_start != GST_CLOCK_TIME_NONE) { */
-/*     seek_start = MAX (object->media_start + seek_start, object->media_start); */
-/*     seek_stop  = MIN (object->media_start + seek_stop, object->media_stop); */
-/*   } */
-/*   if ((object->media_stop != GST_CLOCK_TIME_NONE) */
-/*       && (seek_stop == object->media_stop)) { */
-/*     seek_type = type & ~GST_SEEK_FLAG_SEGMENT_LOOP; */
-/*   } */
-/*   else { */
-/*     seek_type = type; */
-/*   } */
-  
   GST_INFO("Changed to [%" GST_TIME_FORMAT "] -> [%" GST_TIME_FORMAT "]", 
 	   GST_TIME_ARGS (seek_start), GST_TIME_ARGS (seek_stop));
 
@@ -669,15 +599,6 @@ gnl_object_query (GstElement *element, GstQueryType type,
       break;
     case GST_QUERY_SEGMENT_END:
       break;
-/*     case GST_QUERY_RATE: */
-/*       if (object->media_stop == object->media_start || object->stop == object->start) { */
-/*         *value = 0; */
-/*       } */
-/*       else { */
-/*         *value = (object->media_stop - object->media_start) * GST_QUERY_TYPE_RATE_DEN /  */
-/* 	          (object->stop - object->start); */
-/*       } */
-/*       break; */
     default:
       res = FALSE;
       break;
@@ -714,9 +635,6 @@ gnl_object_set_property (GObject *object, guint prop_id,
     case ARG_ACTIVE:
       gnl_object_set_active (gnlobject, g_value_get_boolean (value));
       break;
-/*     case ARG_RATE_CONTROL: */
-/*       gnl_object_set_rate_control (gnlobject, g_value_get_enum (value)); */
-/*       break; */
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -752,9 +670,6 @@ gnl_object_get_property (GObject *object, guint prop_id,
     case ARG_ACTIVE:
       g_value_set_boolean (value, gnl_object_is_active (gnlobject));
       break;
-/*     case ARG_RATE_CONTROL: */
-/*       g_value_set_enum (value, gnl_object_get_rate_control (gnlobject)); */
-/*       break; */
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
