@@ -19,8 +19,8 @@
  */
 
 
-#include <gst/gst.h>
 #include "gnltimeline.h"
+#include <gnl/gnlgroup.h>
 
 #define GNL_TYPE_TIMELINE_TIMER \
   (gnl_timeline_timer_get_type())

@@ -10,6 +10,7 @@ EXTRA_libgnl_la_SOURCES = gnlmarshal.list
 
 libgnl_la_SOURCES =		\
 	gnl.c			\
+	gnlobject.c		\
 	gnlcomposition.c	\
 	gnlelements.c		\
 	gnlgroup.c		\
@@ -43,7 +44,7 @@ nodist_libgnlinclude_HEADERS = $(built_header_make) $(built_header_configure)
 
 nodist_libgnl_la_SOURCES = $(built_source_make)
 
-noinst_HEADERS = 	
+noinst_HEADERS = 
 
 gnlmarshal.h: gnlmarshal.list
 	glib-genmarshal --header --prefix=gnl_marshal $^ > gnlmarshal.h.tmp

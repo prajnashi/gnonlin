@@ -24,9 +24,9 @@
 #ifndef __GNL_GROUP_H__
 #define __GNL_GROUP_H__
 
-#include <gnl/gnl.h>
-#include <gnl/gnltypes.h>
+#include <gst/gst.h>
 #include <gnl/gnlcomposition.h>
+
 
 G_BEGIN_DECLS
 

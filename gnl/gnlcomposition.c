@@ -19,8 +19,7 @@
  */
 
 #include "config.h"
-#include "gnlsource.h"
-#include "gnloperation.h"
+#include <gnl/gnl.h>
 #include "gnlcomposition.h"
 
 static GstElementDetails gnl_composition_details = GST_ELEMENT_DETAILS ( "GNL Composition",
@@ -473,6 +472,8 @@ gnl_composition_add_object (GnlComposition *comp, GnlObject *object)
       gnl_source_get_pad_for_stream (GNL_SOURCE (object), "src");
     }
   
+    gnl_object_set_active (object, FALSE);
+
     entry->priorityhandler = g_signal_connect(object, "notify::priority", G_CALLBACK (child_priority_changed), comp);
     entry->starthandler = g_signal_connect(object, "notify::start", G_CALLBACK (child_start_stop_changed), comp);
     entry->stophandler = g_signal_connect(object, "notify::stop", G_CALLBACK (child_start_stop_changed), comp);

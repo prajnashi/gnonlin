@@ -23,8 +23,7 @@
 
 #include <gst/gst.h>
 #include "config.h"
-#include "gnlsource.h"
-#include "gnlcomposition.h"
+#include <gnl/gnl.h>
 
 struct _elements_entry {
   gchar *name;

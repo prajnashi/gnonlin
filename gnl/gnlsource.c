@@ -18,7 +18,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>
+/* #include <string.h> */
 #include "config.h"
 #include "gnlsource.h"
 #include "gnlmarshal.h"
@@ -936,7 +936,7 @@ source_element_new_pad (GstElement *element, GstPad *pad, LinkData *data)
   GST_INFO ("link %s new pad %s %d", data->padname, gst_pad_get_name (pad),
      					GST_PAD_IS_LINKED (data->target));
 
-  if (!strcmp (gst_pad_get_name (pad), data->padname) && 
+  if (!g_ascii_strcasecmp (gst_pad_get_name (pad), data->padname) && 
      !GST_PAD_IS_LINKED (data->target)) 
   {
      gst_pad_link (pad, data->target);

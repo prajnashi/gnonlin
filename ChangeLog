@@ -1,0 +1,9 @@
+2005-03-22  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/gnl*.[ch]: updated all class files for correct *.h dependency.
+
+	* test/sourcetest1.c, test/sourcetest2.c, test/sourcetest3.c, test/sourcetest4.c :
+	converted to new API
+
+	* test/Makefile.am: deactivated most tests
+

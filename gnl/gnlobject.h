@@ -25,7 +25,7 @@
 #define __GNL_OBJECT_H__
 
 #include <gst/gst.h>
-#include <gnl/gnl.h>
+
 #include <gnl/gnltypes.h>
 
 G_BEGIN_DECLS

@@ -23,8 +23,15 @@
 
 #include <glib.h>
 #include <gst/gst.h>
-#include <gst/gsttypes.h>
-#include "gnltypes.h"
+
+#include <gnl/gnltypes.h>
+
+#include <gnl/gnlobject.h>
+#include <gnl/gnlsource.h>
+#include <gnl/gnlcomposition.h>
+#include <gnl/gnlgroup.h>
+#include <gnl/gnloperation.h>
+#include <gnl/gnltimeline.h>
 
 G_BEGIN_DECLS
 

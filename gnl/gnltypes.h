@@ -22,14 +22,16 @@
 #ifndef __GNL_TYPES_H__
 #define __GNL_TYPES_H__
 
+#include <glib.h>
+
+typedef struct _GnlObject GnlObject;
+typedef struct _GnlObjectClass GnlObjectClass;
+
 typedef struct _GnlComposition GnlComposition;
 typedef struct _GnlCompositionClass GnlCompositionClass;
 
 typedef struct _GnlGroup GnlGroup;
 typedef struct _GnlGroupClass GnlGroupClass;
-
-typedef struct _GnlObject GnlObject;
-typedef struct _GnlObjectClass GnlObjectClass;
 
 typedef struct _GnlOperation GnlOperation;
 typedef struct _GnlOperationClass GnlOperationClass;

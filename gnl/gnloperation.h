@@ -24,8 +24,7 @@
 #ifndef __GNL_OPERATION_H__
 #define __GNL_OPERATION_H__
 
-#include <gnl/gnl.h>
-#include <gnl/gnltypes.h>
+#include <gst/gst.h>
 #include <gnl/gnlobject.h>
 
 G_BEGIN_DECLS

@@ -22,8 +22,8 @@ main (gint argc, gchar *argv[])
   a_sink = gst_element_factory_make ("fakesink", "a_sink");
   //g_object_set (G_OBJECT (a_sink), "sync", FALSE, NULL);
 
-  gnl_source_set_media_start_stop (source, 10 * GST_SECOND, 12 * GST_SECOND);
-  gnl_source_set_start_stop (source, 0 * GST_SECOND, 2 * GST_SECOND);
+  gnl_object_set_media_start_stop (GNL_OBJECT (source), 10 * GST_SECOND, 12 * GST_SECOND);
+  gnl_object_set_start_stop (GNL_OBJECT (source), 0 * GST_SECOND, 2 * GST_SECOND);
 
   v_pad = gnl_source_get_pad_for_stream (source, "v_src");
   a_pad = gnl_source_get_pad_for_stream (source, "a_src");
@@ -42,7 +42,7 @@ main (gint argc, gchar *argv[])
   while (gst_bin_iterate (GST_BIN (pipeline)));
   gst_element_set_state (pipeline, GST_STATE_PAUSED);
 
-  gnl_source_set_media_start_stop (source, 60 * GST_SECOND, 64 * GST_SECOND);
+  gnl_object_set_media_start_stop (GNL_OBJECT (source), 60 * GST_SECOND, 64 * GST_SECOND);
 
   gst_element_send_event (GST_ELEMENT (source), 
 		          gst_event_new_segment_seek (

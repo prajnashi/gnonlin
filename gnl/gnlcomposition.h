@@ -24,11 +24,7 @@
 #ifndef __GNL_COMPOSITION_H__
 #define __GNL_COMPOSITION_H__
 
-#include <glib/gprintf.h>
-
 #include <gst/gst.h>
-#include <gnl/gnl.h>
-#include <gnl/gnltypes.h>
 #include <gnl/gnlobject.h>
 
 G_BEGIN_DECLS

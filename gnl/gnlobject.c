@@ -183,7 +183,7 @@ gnl_object_init (GnlObject *object)
   object->media_stop = GST_CLOCK_TIME_NONE;
   object->current_time = 0;
   object->priority = 0;
-  object->active = FALSE;
+  object->active = TRUE;
   object->rate_control = GNL_OBJECT_FIX_MEDIA_STOP;
 }
 

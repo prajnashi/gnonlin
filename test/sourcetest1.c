@@ -14,10 +14,12 @@ main (gint argc, gchar *argv[])
 
   fakesrc = gst_element_factory_make ("fakesrc", "fakesrc");
   source = gnl_source_new ("source", fakesrc);
+  g_object_set (G_OBJECT (fakesrc), "pattern", "coucou\n", NULL);
   fakesink = gst_element_factory_make ("fakesink", "fakesink");
+  g_object_set (G_OBJECT (fakesink), "dump", TRUE, NULL);
 
-  gnl_source_set_media_start_stop (source, 0, 6);
-  gnl_source_set_start_stop (source, 0, 6);
+  gnl_object_set_media_start_stop (GNL_OBJECT (source), 0, 6);
+  gnl_object_set_start_stop (GNL_OBJECT (source), 0, 6);
 
   pad = gnl_source_get_pad_for_stream (source, "src");
 
@@ -33,7 +35,7 @@ main (gint argc, gchar *argv[])
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
   while (gst_bin_iterate (GST_BIN (pipeline)));
 
-  gnl_source_set_media_start_stop (source, 40, 45);
+  gnl_object_set_media_start_stop (GNL_OBJECT (source), 40, 45);
 
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
   while (gst_bin_iterate (GST_BIN (pipeline)));
