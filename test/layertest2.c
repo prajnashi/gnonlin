@@ -56,7 +56,7 @@ main (int argc, gchar *argv[])
   source2 = gnl_source_new ("my_source2");
   fakesrc2 = gst_elementfactory_make ("fakesrc", "src2");
   gnl_source_set_element (source2, create_source());
-  gnl_source_set_start_stop (source2, 13500000, 22500000);
+  gnl_source_set_start_stop (source2, 13500000, 14900000);
 
   layer1 = gnl_layer_new ("my_layer1");
   gnl_layer_add_source (layer1, source1, 0);
