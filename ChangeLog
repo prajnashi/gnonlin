@@ -1,3 +1,11 @@
+2005-04-06  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnonlin-config.in: 
+	forgot to update it with new values
+
+	* gnl/gnlsource.c: (source_getfunction):
+	gcc-2.95.* compilation error
+
 2005-04-04  Edward Hervey  <bilboed@bilboed.com>
 
 	* test/sourcetest2.c:

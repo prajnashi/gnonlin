@@ -47,14 +47,14 @@ while test $# -gt 0; do
       elif test @includedir@ != /usr/include ; then
         includes=-I@includedir@ 
       fi
-      echo $includes @CORE_CFLAGS@ @GNL_DEFINE_CFLAGS@
+      echo $includes @GNL_CFLAGS@
       ;;
     --libs)
       if test $prefix -ef @builddir@ ; then
-        echo @builddir@/libgnl.la @CORE_LIBS@
+        echo @builddir@/libgnl.la
       else
         libdirs=-L@libdir@
-        echo $libdirs -lgnl @CORE_LIBS@
+        echo $libdirs -lgnl @GNL_LIBS@
       fi
       ;;
     *)

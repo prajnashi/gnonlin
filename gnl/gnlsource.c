@@ -743,7 +743,7 @@ source_chainfunction (GstPad *pad, GstData *buf)
 static GstData*
 source_getfunction (GstPad *pad)
 {
-  GstBuffer *buffer, *qbuffer = NULL;
+  GstBuffer *buffer = NULL, *qbuffer = NULL;
   SourcePadPrivate *private;
   GnlSource *source;
   GnlObject *object;
