@@ -1,6 +1,8 @@
 
 #include <gnl/gnl.h>
 
+gchar *filename;
+
 static GstElement*
 create_source (void)
 {
@@ -11,7 +13,7 @@ create_source (void)
   bin = gst_elementfactory_make ("bin", "bin");
 
   src = gst_elementfactory_make ("filesrc", "filesrc");
-  g_object_set (G_OBJECT (src), "location", "/opt/data/south.mp3", NULL);
+  g_object_set (G_OBJECT (src), "location", filename, NULL);
   mad = gst_elementfactory_make ("mad", "mad");
 
   gst_bin_add (GST_BIN (bin), src);
@@ -37,26 +39,33 @@ main (int argc, gchar *argv[])
 
   gnl_init (&argc, &argv);
 
+  if (argc > 1) {
+    filename = argv[1];
+  }
+  else {
+    filename = "/opt/data/south.mp3";
+  }
+
   pipeline = gst_pipeline_new ("main_pipeline");
   timeline = gnl_timeline_new ("main_timeline");
 
   source1 = gnl_source_new ("my_source1");
   gnl_source_set_element (source1, create_source());
-  gnl_source_set_start_stop (source1, 300000, 500000);
+  gnl_source_set_start_stop (source1, 3000000, 5000000);
 
   source2 = gnl_source_new ("my_source2");
   fakesrc2 = gst_elementfactory_make ("fakesrc", "src2");
-  gnl_source_set_element (source2, fakesrc2);
-  gnl_source_set_start_stop (source2, 600000, 800000);
+  gnl_source_set_element (source2, create_source());
+  gnl_source_set_start_stop (source2, 13500000, 22500000);
 
   layer1 = gnl_layer_new ("my_layer1");
   gnl_layer_add_source (layer1, source1, 0);
-  gnl_layer_add_source (layer1, source2, 20);
+  gnl_layer_add_source (layer1, source2, 2000000);
 
-  sink = gst_elementfactory_make ("fakesink", "sink");
+  sink = gst_elementfactory_make ("osssink", "sink");
   gst_bin_add (GST_BIN (pipeline), sink);
 
-  gst_element_connect (GST_ELEMENT (layer1), "src", sink, "sink");
+  gst_element_connect (GST_ELEMENT (timeline), "src", sink, "sink");
 
   gnl_composition_append_layer (GNL_COMPOSITION (timeline), layer1);
 

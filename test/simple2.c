@@ -7,17 +7,17 @@
  !                                                         !
  ! (-----------------------------------------------------) !
  ! ! my_layer1                                           ! !
- ! ! (-------------------------------)                   ! !
- ! ! ! source1                       !                   ! !
- ! ! !                               !                   ! !
- ! ! (-------------------------------)                   ! !
+ ! !                  (-------------------------------)  ! !
+ ! !                  ! source1                       !  ! !
+ ! !                  !                               !  ! !
+ ! !                  (-------------------------------)  ! !
  ! (-----------------------------------------------------) !
  ! (-----------------------------------------------------) !
  ! ! my_layer2                                           ! !
- ! !                  (-------------------------------)  ! !
- ! !                  ! source2                       !  ! !
- ! !                  !                               !  ! !
- ! !                  (-------------------------------)  ! !
+ ! ! (-------------------------------)                   ! !
+ ! ! ! source2                       !                   ! !
+ ! ! !                               !                   ! !
+ ! ! (-------------------------------)                   ! !
  ! (-----------------------------------------------------) !
  !                                                         !
  (---------------------------------------------------------)
@@ -48,9 +48,9 @@ main (int argc, gchar *argv[])
   gnl_source_set_start_stop (source2, 0, 6);
 
   layer1 = gnl_layer_new ("my_layer1");
-  gnl_layer_add_source (layer1, source1, 0);
+  gnl_layer_add_source (layer1, source1, 3);
   layer2 = gnl_layer_new ("my_layer2");
-  gnl_layer_add_source (layer2, source2, 3);
+  gnl_layer_add_source (layer2, source2, 0);
 
   gnl_composition_append_layer (GNL_COMPOSITION (timeline), layer1);
   gnl_composition_append_layer (GNL_COMPOSITION (timeline), layer2);

@@ -46,7 +46,7 @@ main (int argc, gchar *argv[])
 
   sink = gst_elementfactory_make ("fakesink", "sink");
   gst_bin_add (GST_BIN (pipeline), sink);
-  gst_element_connect (GST_ELEMENT (layer1), "src", sink, "sink");
+  gst_element_connect (GST_ELEMENT (timeline), "src", sink, "sink");
 
   gnl_composition_append_layer (GNL_COMPOSITION (timeline), layer1);
 

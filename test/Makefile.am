@@ -1,7 +1,9 @@
-noinst_PROGRAMS = simple composition layertest layertest2
+noinst_PROGRAMS = simple composition layertest layertest2 simple2
 
 simple_LDADD = $(GST_LIBS) $(GNL_LIBS) ../gnl/libgnl.la
 simple_CFLAGS = $(GST_CFLAGS) $(GNL_CFLAGS)
+simple2_LDADD = $(GST_LIBS) $(GNL_LIBS) ../gnl/libgnl.la
+simple2_CFLAGS = $(GST_CFLAGS) $(GNL_CFLAGS)
 composition_LDADD = $(GST_LIBS) $(GNL_LIBS) ../gnl/libgnl.la
 composition_CFLAGS = $(GST_CFLAGS) $(GNL_CFLAGS)
 layertest_LDADD = $(GST_LIBS) $(GNL_LIBS) ../gnl/libgnl.la
