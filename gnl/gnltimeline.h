@@ -49,7 +49,7 @@ typedef struct _GnlTimeline GnlTimeline;
 typedef struct _GnlTimelineClass GnlTimelineClass;
 
 struct _GnlTimeline {
-  GnlComposition	pipeline;
+  GnlComposition	parent;
 
 };
 

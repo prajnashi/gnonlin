@@ -26,6 +26,9 @@
 static void 		gnl_source_class_init 		(GnlSourceClass *klass);
 static void 		gnl_source_init 		(GnlSource *source);
 
+static GstElementStateReturn
+			gnl_source_change_state 	(GstElement *element);
+
 static GstBinClass *parent_class = NULL;
 
 GType
@@ -54,10 +57,16 @@ static void
 gnl_source_class_init (GnlSourceClass *klass)
 {
   GObjectClass *gobject_class;
+  GstBinClass *gstbin_class;
+  GstElementClass *gstelement_class;
 
   gobject_class = (GObjectClass*)klass;
+  gstbin_class = (GstBinClass*)klass;
+  gstelement_class = (GstElementClass*)klass;
 
   parent_class = g_type_class_ref (GST_TYPE_BIN);
+
+  gstelement_class->change_state = gnl_source_change_state;
 }
 
 
@@ -91,8 +100,9 @@ gnl_source_set_element (GnlSource *source, GstElement *element)
   source->source = element;
 
   gst_bin_add (GST_BIN (source), element);
-
-  gst_element_add_ghost_pad (GST_ELEMENT (source), gst_element_get_pad (element, "src"), "src");
+  gst_element_add_ghost_pad (GST_ELEMENT (source), 
+		  	     gst_element_get_pad (element, "src"), 
+			     "src");
 }
 
 void
@@ -106,4 +116,13 @@ gnl_source_set_start_stop (GnlSource *source, guint64 start, guint64 stop)
   source->stop = stop;
 }
 
+static GstElementStateReturn
+gnl_source_change_state (GstElement *element)
+{
+  GnlSource *source = GNL_SOURCE (element);
 
+  GST_ELEMENT_CLASS (parent_class)->change_state (element);
+
+  return GST_STATE_SUCCESS;
+  
+}

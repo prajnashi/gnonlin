@@ -13,6 +13,7 @@ libgnl_la_SOURCES =		\
 	gnllayer.c		\
 	gnloperation.c		\
 	gnlsource.c		\
+	gnltimer.c		\
 	gnltimeline.c
 
 libgnlincludedir = $(includedir)/gnl
@@ -22,6 +23,7 @@ libgnlinclude_HEADERS =		\
 	gnllayer.h		\
 	gnloperation.h		\
 	gnlsource.h		\
+	gnltimer.h		\
 	gnltimeline.h
 
 noinst_HEADERS = 	

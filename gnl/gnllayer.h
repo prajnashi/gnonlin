@@ -28,6 +28,7 @@
 #endif
 
 #include <gnl/gnlsource.h>
+#include <gnl/gnltimer.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +52,11 @@ struct _GnlLayer {
   GstBin bin;
 
   GList		*sources;
-  GstElement	*output;
+  GnlTimer	*timer;
+  GnlSource 	*current;
+  guint64	 base_time;
+
+  GstClock	*clock;
 };
 
 struct _GnlLayerClass {

@@ -5,7 +5,7 @@ GnlSource:
   - have one or more output pads, ghosted from the Gst pipeline
 
 GnlLayer:
-  - extends GnlSource
+  - extends GstBin
   - contains sources
   - sources cannot overlap
   - sources have start/length properties inside the layer
@@ -17,6 +17,25 @@ GnlComposition:
 GnlOperation:
   - extends GnlSource
   - also ghosts N input pads in addition to the GnlSources output pads
+
+GnlTimeline
+  - extends GnlComposition
+
+
+
+GstBin
+ !
+ +---- GnlSource
+ !      !
+ !      +----- Operation
+ !	
+ +---- GnlLayer
+        !
+        +---- GnlComposition
+	       !
+               +---- GnlTimeline
+ 
+
 
 
  .-0----->-----------5000----->------10000----->-----15000---.
