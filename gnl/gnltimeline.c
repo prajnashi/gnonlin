@@ -19,12 +19,12 @@
 
 
 
-#include <gnl/gnltimeline.h>
+#include "gnltimeline.h"
 
 static void 		gnl_timeline_class_init 	(GnlTimelineClass *klass);
 static void 		gnl_timeline_init 		(GnlTimeline *timeline);
 
-static GnlTrackClass *parent_class = NULL;
+static GnlLayerClass *parent_class = NULL;
 
 GType
 gnl_timeline_get_type (void)
@@ -45,7 +45,7 @@ gnl_timeline_get_type (void)
     };
     timeline_type = g_type_register_static (G_TYPE_OBJECT, "GnlTimeline", &timeline_info, 0);
   }
-  return object_type;
+  return timeline_type;
 }
 
 static void
@@ -55,7 +55,7 @@ gnl_timeline_class_init (GnlTimelineClass *klass)
 
   gobject_class =       (GObjectClass*)klass;
 
-  parent_class = g_type_class_ref (GNL_TYPE_TRACK);
+  parent_class = g_type_class_ref (GNL_TYPE_LAYER);
 }
 
 

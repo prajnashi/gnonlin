@@ -27,6 +27,7 @@
 #include "config.h"
 #endif
 
+#include <gst/gstbin.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -40,6 +40,7 @@ gnl_init_check (int     *argc,
 
   if (argc && argv) {
     _gnl_progname = g_strdup(*argv[0]);
+  }
 
   if (_gnl_progname == NULL) {
     _gnl_progname = g_strdup("gnlprog");

@@ -19,37 +19,37 @@
 
 
 
-#include <gnl/gnllayer.h>
+#include "gnlcomposition.h"
 
-static void 		gnl_layer_class_init 		(GnlLayerClass *klass);
-static void 		gnl_layer_init 			(GnlLayer *layer);
+static void 		gnl_composition_class_init 		(GnlCompositionClass *klass);
+static void 		gnl_composition_init 			(GnlComposition *composition);
 
-static GnlLayerClass *parent_class = NULL;
+static GnlCompositionClass *parent_class = NULL;
 
 GType
-gnl_layer_get_type (void)
+gnl_composition_get_type (void)
 {
-  static GType layer_type = 0;
+  static GType composition_type = 0;
 
-  if (!layer_type) {
-    static const GTypeInfo layer_info = {
-      sizeof (GnlLayerClass),
+  if (!composition_type) {
+    static const GTypeInfo composition_info = {
+      sizeof (GnlCompositionClass),
       NULL,
       NULL,
-      (GClassInitFunc) gnl_layer_class_init,
+      (GClassInitFunc) gnl_composition_class_init,
       NULL,
       NULL,
-      sizeof (GnlLayer),
+      sizeof (GnlComposition),
       32,
-      (GInstanceInitFunc) gnl_layer_init,
+      (GInstanceInitFunc) gnl_composition_init,
     };
-    layer_type = g_type_register_static (G_TYPE_OBJECT, "GnlLayer", &layer_info, 0);
+    composition_type = g_type_register_static (G_TYPE_OBJECT, "GnlComposition", &composition_info, 0);
   }
-  return layer_type;
+  return composition_type;
 }
 
 static void
-gnl_layer_class_init (GnlLayerClass *klass)
+gnl_composition_class_init (GnlCompositionClass *klass)
 {
   GObjectClass *gobject_class;
 
@@ -60,24 +60,24 @@ gnl_layer_class_init (GnlLayerClass *klass)
 
 
 static void
-gnl_layer_init (GnlLayer *layer)
+gnl_composition_init (GnlComposition *composition)
 {
 }
 
 
-GnlLayer*
-gnl_layer_new (const gchar *name)
+GnlComposition*
+gnl_composition_new (const gchar *name)
 {
   return NULL;
 }
 
 void
-gnl_layer_add_source (GnlLayer *layer, GnlSource *source, guint64 start)
+gnl_composition_append_layer (GnlComposition *composition, GnlLayer *layer)
 {
+  g_return_if_fail (composition != NULL);
+  g_return_if_fail (GNL_IS_COMPOSITION (composition));
   g_return_if_fail (layer != NULL);
   g_return_if_fail (GNL_IS_LAYER (layer));
-  g_return_if_fail (source != NULL);
-  g_return_if_fail (GNL_IS_SOURCE (source));
 
 }
 

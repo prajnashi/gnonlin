@@ -27,6 +27,7 @@
 #include "config.h"
 #endif
 
+#include <gnl/gnlcomposition.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,12 +48,12 @@ typedef struct _GnlTimeline GnlTimeline;
 typedef struct _GnlTimelineClass GnlTimelineClass;
 
 struct _GnlTimeline {
-  GnlTrack 		track;
+  GnlComposition	composition;
 
 };
 
 struct _GnlTimelineClass {
-  GnlTrackClass		parent_class;
+  GnlCompositionClass	parent_class;
 };
 
 GType		gnl_timeline_get_type		(void);

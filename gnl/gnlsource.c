@@ -21,10 +21,12 @@
 
 #include <gnl/gnlsource.h>
 
+#include <gnl/gnllayer.h>
+
 static void 		gnl_source_class_init 		(GnlSourceClass *klass);
 static void 		gnl_source_init 		(GnlSource *source);
 
-static GnlTrackClass *parent_class = NULL;
+static GnlLayerClass *parent_class = NULL;
 
 GType
 gnl_source_get_type (void)
@@ -45,7 +47,7 @@ gnl_source_get_type (void)
     };
     source_type = g_type_register_static (G_TYPE_OBJECT, "GnlSource", &source_info, 0);
   }
-  return object_type;
+  return source_type;
 }
 
 static void
@@ -78,9 +80,8 @@ gnl_source_set_element (GnlSource *source, GstElement *element)
   g_return_if_fail (GST_IS_ELEMENT (element));
   g_return_if_fail (source != NULL);
   g_return_if_fail (GNL_IS_SOURCE (source));
-  g_return_if_fail (source->bin == NULL);
 
-  source->bin = element;
+  source->source = element;
 }
 
 void

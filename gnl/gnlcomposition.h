@@ -27,6 +27,7 @@
 #include "config.h"
 #endif
 
+#include <gnl/gnllayer.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,8 +60,10 @@ struct _GnlCompositionClass {
 GType			gnl_composition_get_type	(void);
 GnlComposition*		gnl_composition_new		(const gchar *name);
 
-void			gnl_composition_add_layer	(GnlComposition *composition,
-							 GnlLayer *layer, guin64 start);
+void			gnl_composition_append_layer	(GnlComposition *composition,
+							 GnlLayer *layer);
+void			gnl_composition_insert_layer	(GnlComposition *composition,
+							 GnlLayer *layer, gint before);
 
 #ifdef __cplusplus
 }

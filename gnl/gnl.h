@@ -24,6 +24,12 @@
 #include <gst/gst.h>
 
 #include <gnl/gnlversion.h>
+#include <gnl/gnloperation.h>
+#include <gnl/gnlcomposition.h>
+#include <gnl/gnllayer.h>
+#include <gnl/gnlsource.h>
+#include <gnl/gnltimeline.h>
+#include <gnl/gnlversion.h>
 
 #ifdef __cplusplus
 extern "C" {

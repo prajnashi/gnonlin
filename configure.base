@@ -72,6 +72,8 @@ dnl ##############################
 dnl Check for tools:
 dnl ================
 
+AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+
 dnl check for gtkdoc
 AC_CHECK_PROG(HAVE_GTK_DOC, gtkdoc-mkdb, true, false)
 AC_CHECK_PROG(HAVE_GTK_DOC, gtkdoc-scanobj, :, false)
@@ -144,6 +146,20 @@ if test x$USE_GLIB2 = xno; then
   CORE_CFLAGS="$CORE_CFLAGS $GLIB_CFLAGS $GTK_CFLAGS"
 fi
 
+AC_MSG_CHECKING(GStreamer flags)
+if $PKG_CONFIG --exists gstreamer ; then
+  GST_LIBS=`$PKG_CONFIG --libs gstreamer`
+  GST_CFLAGS=`$PKG_CONFIG --cflags gstreamer`
+
+  CORE_LIBS="$CORE_LIBS $GST_LIBS"
+  CORE_CFLAGS="$CORE_CFLAGS $GST_CFLAGS"
+
+  AC_MSG_RESULT($GST_CFLAGS $GST_LIBS)
+else
+  AC_MSG_ERROR([
+*** GStreamer not found.
+])
+fi
 
 dnl Check for libxml
 AC_PATH_PROG(XML_CONFIG, xml-config, no)
