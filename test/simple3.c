@@ -17,6 +17,7 @@ main (int argc, gchar *argv[])
 {
   GstElement *pipeline;
   GnlTimeline *timeline;
+  GnlGroup *group;
   GnlLayer *layer1, *layer2;
   GnlSource *source1, *source2;
   GstElement *fakesrc1, *fakesrc2, *sink;
@@ -43,12 +44,16 @@ main (int argc, gchar *argv[])
   gnl_layer_add_source (layer2, source2, 0);
   gnl_layer_add_source (layer2, source2, 8);
 
-  gnl_composition_append_layer (GNL_COMPOSITION (timeline), layer1);
-  gnl_composition_append_layer (GNL_COMPOSITION (timeline), layer2);
+  group = gnl_group_new ("my_group");
+
+  gnl_composition_append_layer (GNL_COMPOSITION (group), layer1);
+  gnl_composition_append_layer (GNL_COMPOSITION (group), layer2);
+
+  gnl_timeline_add_group (timeline, group);
 
   sink = gst_elementfactory_make ("fakesink", "sink");
   gst_bin_add (GST_BIN (pipeline), sink);
-  gst_element_connect (GST_ELEMENT (timeline), "src", sink, "sink");
+  gst_element_connect (GST_ELEMENT (group), "src", sink, "sink");
 
   gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (timeline));
 
