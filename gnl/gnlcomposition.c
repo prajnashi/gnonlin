@@ -639,6 +639,11 @@ gnl_composition_schedule_operation (GnlComposition *comp, GnlOperation *oper,
     if (!gnl_composition_schedule_entries (comp, start, stop, minprio, &newpad))
       return FALSE;
 
+    /* fixes scheduling where there's a gap between the oper's priority and the
+     * child objects's priorities 
+     */
+    minprio = GNL_OBJECT(GST_PAD_PARENT(newpad))->priority;
+
     GST_INFO ("Linking source pad %s:%s to operation pad %s:%s",
 	      GST_DEBUG_PAD_NAME (newpad),
 	      GST_DEBUG_PAD_NAME (sinkpad));

@@ -791,6 +791,15 @@ gnl_timeline_query (GstElement *element, GstQueryType type,
     return FALSE;
 
   if (type == GST_QUERY_POSITION) {
+    
+    /* when the element is queried before anything is scheduled this
+     * would cause a segfault because timeline->timer->current == NULL
+     */
+    if ( ! timeline->timer->current ) {
+      *value = 0;
+      return FALSE;
+    }
+    
     *value = timeline->timer->current->time;
     return TRUE;
   }

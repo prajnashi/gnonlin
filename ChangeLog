@@ -1,5 +1,15 @@
 2005-04-06  Edward Hervey  <bilboed@bilboed.com>
 
+	* gnl/gnltimeline.c: (gnl_timeline_query):
+	Prevent a segfault when querying position before anything is scheduled.
+	Patch by Wouter Paesen.
+
+	* gnl/gnlcomposition.c: (gnl_composition_schedule_operation): 
+	Fixe scheduling when there's a gap between the operation's priority and
+	the child object's priority. Patch by Wouter Paesen.
+
+2005-04-06  Edward Hervey  <bilboed@bilboed.com>
+
 	* gnonlin-config.in: 
 	forgot to update it with new values
 
