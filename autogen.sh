@@ -18,8 +18,8 @@ autogen_options $@
 
 echo "+ checking for build tools"
 version_check "autoconf" "ftp://ftp.gnu.org/pub/gnu/autoconf/" 2 52 || DIE=1
-version_check "automake" "ftp://ftp.gnu.org/pub/gnu/automake/" 1 5 || DIE=1
-version_check "libtool" "ftp://ftp.gnu.org/pub/gnu/libtool/" 1 4 0 || DIE=1
+version_check "automake" "ftp://ftp.gnu.org/pub/gnu/automake/" 1 6 || DIE=1
+version_check "libtoolize" "ftp://ftp.gnu.org/pub/gnu/libtool/" 1 5 0 || DIE=1
 version_check "pkg-config" "http://www.freedesktop.org/software/pkgconfig" 0 8 0 || DIE=1
 
 autoconf_2.52d_check || DIE=1
@@ -45,8 +45,8 @@ toplevel_check $srcfile
 tool_run "aclocal" "-I common/m4 $ACLOCAL_FLAGS"
 
 # FIXME : why does libtoolize keep complaining about aclocal ?
-echo "+ not running libtoolize until libtool fix has flown downstream"
-# tool_run "libtoolize" "--copy --force"
+# echo "+ not running libtoolize until libtool fix has flown downstream"
+tool_run "libtoolize" "--copy --force"
 tool_run "autoheader"
 
 # touch the stamp-h.in build stamp so we don't re-run autoheader in maintainer mode -- wingo
