@@ -1,6 +1,6 @@
 GnlSource:
   - extends from a GstBin
-  - consist of a single GStreamer pipeline with M output pads
+  - consist of a single GStreamer pipeline with 1 output pad
   - have a start and stop time
   - have one or more output pads, ghosted from the Gst pipeline
 
@@ -8,19 +8,23 @@ GnlLayer:
   - extends GstBin
   - contains sources
   - sources cannot overlap
-  - sources have start/length properties inside the layer
+  - sources have start property inside the layer
 
 GnlComposition:
   - extends GnlLayer
   - can contain GnlLayers, possibly overlapping
+  - can hold a layer of non overlapping operations.
 
 GnlOperation:
   - extends GnlSource
-  - also ghosts N input pads in addition to the GnlSources output pads
+  - also ghosts N input pads in addition to the GnlSources output pad
 
 GnlTimeline
   - extends GnlComposition
 
+GnlGroup
+  - ??
+  - contains components of the same media type
 
 
 GstBin
@@ -61,6 +65,8 @@ GstBin
  ! '-------------------------------------------------------' ! 
  '-----------------------------------------------------------'
 
+An operation with N sinkpads uses N layers (in order of priority) to
+create the final ouput on the srcpad.
   
 
       *****		(alpha blend 2 layers)
