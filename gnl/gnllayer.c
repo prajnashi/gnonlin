@@ -305,7 +305,7 @@ gnl_layer_show (GnlLayer *layer)
 
   while (sources) {
     GnlLayerEntry *entry = (GnlLayerEntry *) sources->data;
-    GList *walk = gst_element_get_pad_list (GST_ELEMENT (entry->source));
+    const GList *walk = gst_element_get_pad_list (GST_ELEMENT (entry->source));
 
     while (walk) {
       GstPad *pad = GST_PAD (walk->data);

@@ -73,7 +73,7 @@ gnl_operation_init (GnlOperation *operation)
 static void
 gnl_operation_set_element (GnlSource *source, GstElement *element)
 {
-  GList *walk;
+  const GList *walk;
   GnlOperation *operation = GNL_OPERATION (source);
 
   parent_class->set_element (source, element);
