@@ -20,7 +20,7 @@
 
 /* #include <string.h> */
 #include "config.h"
-#include "gnlsource.h"
+#include "gnl.h"
 #include "gnlmarshal.h"
 
 GstElementDetails gnl_source_details = GST_ELEMENT_DETAILS

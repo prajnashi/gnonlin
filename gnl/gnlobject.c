@@ -20,7 +20,7 @@
 
 #include <string.h>
 #include "config.h"
-#include "gnlobject.h"
+#include "gnl.h"
 #include "gnlmarshal.h"
 
 GstElementDetails gnl_object_details = GST_ELEMENT_DETAILS (

@@ -20,7 +20,6 @@
 
 #include "config.h"
 #include <gnl/gnl.h>
-#include "gnlcomposition.h"
 
 static GstElementDetails gnl_composition_details = GST_ELEMENT_DETAILS ( "GNL Composition",
 		      "Filter/Editor",

@@ -19,9 +19,7 @@
  */
 
 
-#include "gnlgroup.h"
-#include <gnl/gnlobject.h>
-#include <gnl/gnlcomposition.h>
+#include "gnl.h"
 
 static void 		gnl_group_class_init 		(GnlGroupClass *klass);
 static void 		gnl_group_init 			(GnlGroup *group);

@@ -5,7 +5,7 @@
 
 gchar *_gnl_progname;
 
-GST_DEBUG_CATEGORY (GST_CAT_DEFAULT);
+GST_DEBUG_CATEGORY (gnonlin);
 
 #if 0
 extern gboolean gnl_elements_plugin_init (GstPlugin *plugin); 

@@ -1,3 +1,9 @@
+/*
+  sourcetest1.C
+
+  Testing if the GnlSource correctly transposes time
+*/
+
 #include <gnl/gnl.h>
 
 gint
@@ -12,11 +18,16 @@ main (gint argc, gchar *argv[])
 
   pipeline = gst_pipeline_new ("pipeline");
 
+  /* fake source that generates nanoseconds long buffers */
   fakesrc = gst_element_factory_make ("fakesrc", "fakesrc");
+  g_object_set (G_OBJECT (fakesrc),
+		"datarate", GST_SECOND,
+		"sizetype", 2,
+		"sizemax", 1,
+		NULL);
   source = gnl_source_new ("source", fakesrc);
-  g_object_set (G_OBJECT (fakesrc), "pattern", "coucou\n", NULL);
+
   fakesink = gst_element_factory_make ("fakesink", "fakesink");
-  g_object_set (G_OBJECT (fakesink), "dump", TRUE, NULL);
 
   gnl_object_set_media_start_stop (GNL_OBJECT (source), 0, 6);
   gnl_object_set_start_stop (GNL_OBJECT (source), 0, 6);
@@ -35,6 +46,7 @@ main (gint argc, gchar *argv[])
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
   while (gst_bin_iterate (GST_BIN (pipeline)));
 
+  gnl_object_set_start_stop (GNL_OBJECT (source), 6, 11);
   gnl_object_set_media_start_stop (GNL_OBJECT (source), 40, 45);
 
   gst_element_set_state (pipeline, GST_STATE_PLAYING);

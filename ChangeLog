@@ -1,5 +1,9 @@
 2005-03-23  Edward Hervey  <bilboed@bilboed.com>
 
+	* test/sourcetest1.c: modified datarate of fakesrc
+
+	* gnl/gnl*.[ch]: correction for GST_DEBUG_* functions
+
 	* gnonlin.pc.in: updated file to correct dependencies versions
 
 2005-03-22  Edward Hervey  <bilboed@bilboed.com>

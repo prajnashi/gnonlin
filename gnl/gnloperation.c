@@ -19,7 +19,7 @@
  */
 
 
-#include "gnloperation.h"
+#include "gnl.h"
 
 static void 		gnl_operation_class_init 	(GnlOperationClass *klass);
 static void 		gnl_operation_init 		(GnlOperation *operation);
