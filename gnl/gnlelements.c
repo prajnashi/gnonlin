@@ -34,7 +34,7 @@ static struct _elements_entry _elements[] = {
   { "gnlsource", 	gnl_source_get_type },
   { "gnlcomposition", 	gnl_composition_get_type },
   { "gnloperation",	gnl_operation_get_type },
-  { "gnlgroup",		gnl_group_get_type },
+/*   { "gnlgroup",		gnl_group_get_type }, */
   { "gnltimeline",	gnl_timeline_get_type },
   { NULL, 0 }
 };

@@ -13,7 +13,6 @@ libgnl_la_SOURCES =		\
 	gnlobject.c		\
 	gnlcomposition.c	\
 	gnlelements.c		\
-	gnlgroup.c		\
 	gnlmarshal.c		\
 	gnloperation.c		\
 	gnlsource.c		\
@@ -26,7 +25,6 @@ gnl_headers =			\
 	gnlobject.h		\
 	gnlcomposition.h	\
 	gnltypes.h		\
-	gnlgroup.h		\
 	gnloperation.h		\
 	gnlsource.h		\
 	gnltimeline.h

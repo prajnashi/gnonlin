@@ -54,12 +54,16 @@ struct _GnlTimelineClass {
   GnlCompositionClass 	parent_class;
 };
 
-GType		gnl_timeline_get_type		(void);
-GnlTimeline*	gnl_timeline_new		(const gchar *name);
+GType
+gnl_timeline_get_type		(void);
+GnlTimeline*
+gnl_timeline_new		(const gchar *name);
 
-void		gnl_timeline_add_group		(GnlTimeline *timeline, GnlGroup *group);
+void
+gnl_timeline_add_composition	(GnlTimeline *timeline, GnlComposition *comp);
 
-GstPad*		gnl_timeline_get_pad_for_group	(GnlTimeline *timeline, GnlGroup *group);
+GstPad*
+gnl_timeline_get_pad_for_composition	(GnlTimeline *timeline, GnlComposition *comp);
 
 G_END_DECLS
 

@@ -37,7 +37,7 @@
 typedef struct _GnlTimelineTimerClass GnlTimelineTimerClass;
 
 typedef struct {
-  GnlGroup 	*group;
+  GnlComposition 	*comp;
   GstPad	*srcpad;
   GstPad	*sinkpad;
   GstClockTime	 time;
@@ -117,10 +117,10 @@ gnl_timeline_timer_dispose (GObject *object)
   while (walk) {
     link = (TimerGroupLink *) walk->data;
 
-    if (link->group) {
-      GST_INFO ("Doing group %p:%s", 
-		link->group,
-		gst_element_get_name (GST_ELEMENT (link->group)));
+    if (link->comp) {
+      GST_INFO ("Doing composition %p:%s", 
+		link->comp,
+		gst_element_get_name (GST_ELEMENT (link->comp)));
       if (link->srcpad)
 	gst_object_unref (GST_OBJECT (link->srcpad));
       if (link->sinkpad)
@@ -237,22 +237,22 @@ timer_link (GstPad *pad, const GstCaps *caps)
 */
 
 static TimerGroupLink*
-gnl_timeline_timer_create_pad (GnlTimelineTimer *timer, GnlGroup *group)
+gnl_timeline_timer_create_pad (GnlTimelineTimer *timer, GnlComposition *comp)
 {
   TimerGroupLink *link;
   gchar *padname;
   const gchar *objname;
 
-  GST_INFO("timer[%s], group[%s]",
+  GST_INFO("timer[%s], composition[%s]",
 	   gst_element_get_name(GST_ELEMENT(timer)),
-	   gst_element_get_name(GST_ELEMENT(group)));
+	   gst_element_get_name(GST_ELEMENT(comp)));
 
   link = g_new0 (TimerGroupLink, 1);
-  link->group = group;
-  g_object_add_weak_pointer (G_OBJECT (group),
-			     (gpointer *) &(link->group));
+  link->comp = comp;
+  g_object_add_weak_pointer (G_OBJECT (comp),
+			     (gpointer *) &(link->comp));
 
-  objname = gst_object_get_name (GST_OBJECT (group));
+  objname = gst_object_get_name (GST_OBJECT (comp));
   padname = g_strdup_printf ("%s_sink", objname);
   link->sinkpad = gst_pad_new (padname, GST_PAD_SINK);
   g_free (padname);
@@ -290,20 +290,20 @@ gnl_timeline_timer_loop (GstElement *element)
   GstClockTime current = -1;
   TimerGroupLink* to_schedule = NULL;
   
-  /* Check if there is a usable group */
+  /* Check if there is a usable composition */
 
   while (walk) {
     TimerGroupLink* link = (TimerGroupLink *) walk->data;
     GstPad *sinkpad = link->sinkpad;
 
     if (!GST_PAD_PEER (link->sinkpad))
-      GST_INFO("WALK group[%s] time[%lld] Trying pad %s:%s",
-	       gst_element_get_name(GST_ELEMENT(link->group)),
+      GST_INFO("WALK comp[%s] time[%lld] Trying pad %s:%s",
+	       gst_element_get_name(GST_ELEMENT(link->comp)),
 	       link->time,
 	       GST_DEBUG_PAD_NAME(sinkpad));
     else
-      GST_INFO("WALK group[%s] time[%lld] Trying pad %s:%s LINKED TO %s:%s",
-	       gst_element_get_name(GST_ELEMENT(link->group)),
+      GST_INFO("WALK comp[%s] time[%lld] Trying pad %s:%s LINKED TO %s:%s",
+	       gst_element_get_name(GST_ELEMENT(link->comp)),
 	       link->time,
 	       GST_DEBUG_PAD_NAME(sinkpad),
 	       GST_DEBUG_PAD_NAME (GST_PAD_PEER (link->sinkpad)));      
@@ -322,9 +322,9 @@ gnl_timeline_timer_loop (GstElement *element)
     GstPad *sinkpad = to_schedule->sinkpad;
     GstBuffer *buf;
     
-    /* If there is a usable group */
+    /* If there is a usable composition */
 
-    GST_INFO("to_schedule[%s]", gst_element_get_name(GST_ELEMENT(to_schedule->group)));
+    GST_INFO("to_schedule[%s]", gst_element_get_name(GST_ELEMENT(to_schedule->comp)));
 
     if (!GST_PAD_IS_ACTIVE (to_schedule->srcpad)) {
       GST_INFO ("to_schedule->srcpad is not active, returning...");
@@ -344,47 +344,47 @@ gnl_timeline_timer_loop (GstElement *element)
     if (GST_IS_EVENT (buf) && GST_EVENT_TYPE (buf) == GST_EVENT_EOS) {
       GstClockTime time;
       GstPad *srcpad;
-      GnlGroup *group;
+      GnlComposition *comp;
 /*       GstFormat format; */
 
       /* if the buffer is an EOS event */
     
-      group = to_schedule->group;
+      comp = to_schedule->comp;
 
       /* 
-	 Get the selected group's position 
+	 Get the selected composition's position 
 	 (should in fact be the next useful position)
       */
       
 /*       format = GST_FORMAT_TIME; */
 /*       gst_element_query (GST_ELEMENT (group), GST_QUERY_POSITION, &format, &time); */
 
-      time = GNL_OBJECT (group)->current_time;
+      time = GNL_OBJECT (comp)->current_time;
 
-      GST_INFO ("got EOS on group %s, time %lld",
-		 gst_element_get_name (GST_ELEMENT (group)),
+      GST_INFO ("got EOS on composition %s, time %lld",
+		 gst_element_get_name (GST_ELEMENT (comp)),
 	         time);
 
 /*       if (gnl_object_covers (GNL_OBJECT (group), time, G_MAXINT64, GNL_COVER_START)) { */
-      if (time < GNL_OBJECT (group)->stop) {
+      if (time < GNL_OBJECT (comp)->stop) {
 	/* if there is something else at the given position */
 	if (GST_PAD_IS_LINKED(to_schedule->sinkpad))
 	  gst_pad_unlink (to_schedule->sinkpad, GST_PAD_PEER (to_schedule->sinkpad));
 
-        GST_INFO ("reactivating group %s, seek to time %" GST_TIME_FORMAT,
-		  gst_element_get_name (GST_ELEMENT (group)),
+        GST_INFO ("reactivating composition %s, seek to time %" GST_TIME_FORMAT,
+		  gst_element_get_name (GST_ELEMENT (comp)),
 		  GST_TIME_ARGS(time));
-	gst_element_set_state (GST_ELEMENT (group), GST_STATE_PAUSED);
+	gst_element_set_state (GST_ELEMENT (comp), GST_STATE_PAUSED);
 
-	gst_element_send_event (GST_ELEMENT (group),
+	gst_element_send_event (GST_ELEMENT (comp),
 	                          gst_event_new_segment_seek (
 	                            GST_FORMAT_TIME |
 	                            GST_SEEK_METHOD_SET |
 	                            GST_SEEK_FLAG_FLUSH |
 	                            GST_SEEK_FLAG_ACCURATE,
 	                            time,  G_MAXINT64));
-	gst_element_set_state (GST_ELEMENT (group), GST_STATE_PLAYING);
-        srcpad = gst_element_get_pad (GST_ELEMENT (group), "src");
+	gst_element_set_state (GST_ELEMENT (comp), GST_STATE_PLAYING);
+        srcpad = gst_element_get_pad (GST_ELEMENT (comp), "src");
 	if (srcpad) {
 	  GST_INFO("linking %s:%s to %s:%s",
 		   GST_DEBUG_PAD_NAME (srcpad),
@@ -393,14 +393,14 @@ gnl_timeline_timer_loop (GstElement *element)
 	    GST_WARNING ("Couldn't link %s:%s to %s:%s !!",
 			 GST_DEBUG_PAD_NAME(srcpad),
 			 GST_DEBUG_PAD_NAME(to_schedule->sinkpad));
-          gst_element_set_state (GST_ELEMENT (group), GST_STATE_PLAYING);
+          gst_element_set_state (GST_ELEMENT (comp), GST_STATE_PLAYING);
 	} else  {
-	  GST_WARNING ("group %s has no pad", 
-		       gst_element_get_name (GST_ELEMENT (group)));
+	  GST_WARNING ("composition %s has no pad", 
+		       gst_element_get_name (GST_ELEMENT (comp)));
 	}
       } else {
-	/* If there isn't anything else in that group (real EOS) */
-	GST_INFO("Nothing else in that group, sending real EOS and setting timegrouplink time to 0");
+	/* If there isn't anything else in that composition (real EOS) */
+	GST_INFO("Nothing else in that composition, sending real EOS and setting timegrouplink time to 0");
 	gst_pad_unlink (GST_PAD_PEER (sinkpad), sinkpad);
         gst_pad_set_active (sinkpad, FALSE);
         gst_pad_push (to_schedule->srcpad, (GstData *) buf);
@@ -539,21 +539,21 @@ gnl_timeline_dispose (GObject *object)
 {
   GnlTimeline *timeline = GNL_TIMELINE (object);
   GList	*groups = timeline->groups;
-  GnlGroup	*group;
+  GnlComposition	*comp;
 
   GST_INFO ("dispose");
   while (groups) {
     gchar	*pipename;
     GstElement	*pipe;
     
-    group = groups->data;
+    comp = groups->data;
     pipename = g_strdup_printf ("%s_pipeline",
-				gst_object_get_name (GST_OBJECT(group)));
+				gst_object_get_name (GST_OBJECT(comp)));
     pipe = gst_bin_get_by_name (GST_BIN (timeline),
 				pipename);
     g_free (pipename);
 
-    gst_bin_remove (GST_BIN (pipe), GST_ELEMENT (group));
+    gst_bin_remove (GST_BIN (pipe), GST_ELEMENT (comp));
     gst_bin_remove (GST_BIN (timeline), pipe);
 
     groups = g_list_next (groups);
@@ -632,61 +632,61 @@ timeline_update_start_stop(GnlTimeline *timeline)
 }
 
 void
-group_start_stop_changed (GnlGroup *group, GParamSpec *arg, gpointer udata)
+group_start_stop_changed (GnlComposition *comp, GParamSpec *arg, gpointer udata)
 {
   timeline_update_start_stop(GNL_TIMELINE(udata));
 }
 
 /**
- * gnl_timeline_add_group:
+ * gnl_timeline_add_composition:
  * @timeline: The #GnlTimeline to add a group to
- * @group: The #GnlGroup to add to the timeline
+ * @comp: The #GnlComposition to add to the timeline
  */
 
 void
-gnl_timeline_add_group (GnlTimeline *timeline, GnlGroup *group)
+gnl_timeline_add_composition (GnlTimeline *timeline, GnlComposition *composition)
 {
   GstElement *pipeline;
   const gchar *groupname;
   gchar *pipename;
   
-  GST_INFO("timeline[%s](Sched:%p), group[%s](Sched:%p)",
+  GST_INFO("timeline[%s](Sched:%p), comp[%s](Sched:%p)",
 	   gst_element_get_name(GST_ELEMENT(timeline)),
 	   GST_ELEMENT_SCHED (GST_ELEMENT (timeline)),
-	   gst_element_get_name(GST_ELEMENT(group)),
-	   GST_ELEMENT_SCHED (GST_ELEMENT (group)));
+	   gst_element_get_name(GST_ELEMENT(composition)),
+	   GST_ELEMENT_SCHED (GST_ELEMENT (composition)));
 
-  timeline->groups = g_list_prepend (timeline->groups, group);
+  timeline->groups = g_list_prepend (timeline->groups, composition);
 
-  gnl_timeline_timer_create_pad (timeline->timer, group);
+  gnl_timeline_timer_create_pad (timeline->timer, composition);
 
-  groupname = gst_object_get_name (GST_OBJECT (group));
+  groupname = gst_object_get_name (GST_OBJECT (composition));
   pipename = g_strdup_printf ("%s_pipeline", groupname);
   pipeline = gst_bin_new (pipename);
   g_free (pipename);
 
-  g_signal_connect (group, "notify::start", G_CALLBACK (group_start_stop_changed), timeline);
-  g_signal_connect (group, "notify::stop", G_CALLBACK (group_start_stop_changed), timeline);
+  g_signal_connect (composition, "notify::start", G_CALLBACK (group_start_stop_changed), timeline);
+  g_signal_connect (composition, "notify::stop", G_CALLBACK (group_start_stop_changed), timeline);
 
-  gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (group));
+  gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (composition));
   gst_bin_add (GST_BIN (timeline), GST_ELEMENT (pipeline));
   
-  GST_INFO ("Group(Sched:%p) added to timeline(Sched:%p)",
-	    GST_ELEMENT_SCHED (GST_ELEMENT (group)),
+  GST_INFO ("Composition(Sched:%p) added to timeline(Sched:%p)",
+	    GST_ELEMENT_SCHED (GST_ELEMENT (composition)),
 	    GST_ELEMENT_SCHED (GST_ELEMENT (timeline)));
 
   timeline_update_start_stop (timeline);
 }
 
 static TimerGroupLink*
-gnl_timeline_get_link_for_group (GnlTimeline *timeline, GnlGroup *group)
+gnl_timeline_get_link_for_group (GnlTimeline *timeline, GnlComposition *comp)
 {
   GList *walk = timeline->timer->links;
 
   while (walk) {
     TimerGroupLink *link = (TimerGroupLink *) walk->data;
     
-    if (link->group == group) {
+    if (link->comp == comp) {
       return link;
     }
     walk = g_list_next (walk);
@@ -695,24 +695,24 @@ gnl_timeline_get_link_for_group (GnlTimeline *timeline, GnlGroup *group)
 }
 
 /**
- * gnl_timeline_get_pad_for_group:
+ * gnl_timeline_get_pad_for_composition:
  * @timeline: The #GnlTimeline
- * @group: The #GnlGroup we want a #GstPad to
+ * @comp: The #GnlComposition we want a #GstPad to
  *
- * Returns: The corresponding #GstPad, or NULL if the group couldn't be found
+ * Returns: The corresponding #GstPad, or NULL if the composition couldn't be found
  */
 
 GstPad*
-gnl_timeline_get_pad_for_group (GnlTimeline *timeline, GnlGroup *group)
+gnl_timeline_get_pad_for_composition (GnlTimeline *timeline, GnlComposition *comp)
 {
   TimerGroupLink *link;
 
-  GST_INFO("timeline[%s], group[%s]",
+  GST_INFO("timeline[%s], composition[%s]",
 	   gst_element_get_name(GST_ELEMENT(timeline)),
-	   gst_element_get_name(GST_ELEMENT(group)));
+	   gst_element_get_name(GST_ELEMENT(comp)));
 
 
-  link = gnl_timeline_get_link_for_group (timeline, group);
+  link = gnl_timeline_get_link_for_group (timeline, comp);
   if (link) {
     GST_INFO ("Found pad, returning %s:%s",
 	      GST_DEBUG_PAD_NAME (link->srcpad));
@@ -741,35 +741,35 @@ gnl_timeline_prepare (GnlObject *object, GstEvent *event)
   }
 
   while (walk && res) {
-    GnlGroup *group = GNL_GROUP (walk->data);
+    GnlComposition *comp = GNL_COMPOSITION (walk->data);
     GstPad *srcpad;
     
     gst_event_ref (event);
-    res &= gst_element_send_event (GST_ELEMENT (group), event);
+    res &= gst_element_send_event (GST_ELEMENT (comp), event);
 
-    srcpad = gst_element_get_pad (GST_ELEMENT (group), "src");
+    srcpad = gst_element_get_pad (GST_ELEMENT (comp), "src");
     if (srcpad) {
       TimerGroupLink *link;
 
-      link = gnl_timeline_get_link_for_group (timeline, group);
+      link = gnl_timeline_get_link_for_group (timeline, comp);
 
       /* If there is already something linked, unlink it ! Pad'pitie ! */
       if (GST_PAD_IS_LINKED(link->sinkpad))
 	gst_pad_unlink (GST_PAD_PEER(link->sinkpad), link->sinkpad);
       
-      GST_INFO ("About to link group %s(sched:%p) to TimelineTimer(sched:%p). TimelineSched:%p",
-		gst_element_get_name (GST_ELEMENT(group)),
-		GST_ELEMENT_SCHED(GST_ELEMENT (group)),
+      GST_INFO ("About to link composition %s(sched:%p) to TimelineTimer(sched:%p). TimelineSched:%p",
+		gst_element_get_name (GST_ELEMENT(comp)),
+		GST_ELEMENT_SCHED(GST_ELEMENT (comp)),
 		GST_ELEMENT_SCHED (GST_ELEMENT (timeline->timer)),
 		GST_ELEMENT_SCHED (GST_ELEMENT (timeline)));
 
       if (!gst_pad_link (srcpad, link->sinkpad))
-	GST_WARNING ("Couldn't link group [%s] to the Timeline Timer !!",
-		     gst_element_get_name (GST_ELEMENT (group)));
+	GST_WARNING ("Couldn't link composition [%s] to the Timeline Timer !!",
+		     gst_element_get_name (GST_ELEMENT (comp)));
     }
     else {
-      GST_WARNING ("group %s does not have a 'src' pad",
-		   gst_element_get_name (GST_ELEMENT (group)));
+      GST_WARNING ("composition %s does not have a 'src' pad",
+		   gst_element_get_name (GST_ELEMENT (comp)));
     }
 
     walk = g_list_next (walk);

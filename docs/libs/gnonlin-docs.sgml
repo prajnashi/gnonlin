@@ -9,7 +9,6 @@
 <!ENTITY GnlSource SYSTEM "xml/gnlsource.xml">
 <!ENTITY GnlOperation SYSTEM "xml/gnloperation.xml">
 <!ENTITY GnlComposition SYSTEM "xml/gnlcomposition.xml">
-<!ENTITY GnlGroup SYSTEM "xml/gnlgroup.xml">
 <!ENTITY GnlTimeline SYSTEM "xml/gnltimeline.xml">
 
 <!ENTITY gnonlin-tree-index SYSTEM "xml/tree_index.sgml">
@@ -29,7 +28,6 @@
     &GnlSource;
     &GnlOperation;
     &GnlComposition;
-    &GnlGroup;
     &GnlTimeline;
   </chapter>
   <chapter>

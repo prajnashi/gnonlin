@@ -31,7 +31,7 @@ enum {
   ARG_MEDIA_STOP,
   ARG_PRIORITY,
   ARG_ACTIVE,
-  ARG_RATE_CONTROL,
+/*   ARG_RATE_CONTROL, */
 };
 
 enum
@@ -39,22 +39,22 @@ enum
   LAST_SIGNAL
 };
 
-#define GNL_TYPE_OBJECT_RATE_CONTROL (gnl_object_rate_control_get_type())
-static GType
-gnl_object_rate_control_get_type (void)
-{
-  static GType object_rate_control_type = 0;
-  static GEnumValue object_rate_control[] = {
-    { GNL_OBJECT_INVALID_RATE_CONTROL, "0", "Invalid"},
-    { GNL_OBJECT_FIX_MEDIA_STOP,       "1", "Fix media stop time to match object start/stop times"},
-    { GNL_OBJECT_USE_MEDIA_STOP,       "2", "Use media stop time to adjust rate"},
-    { 0, NULL, NULL},
-  };
-  if (!object_rate_control_type) {
-    object_rate_control_type = g_enum_register_static ("GnlObjectRateControlType", object_rate_control);
-  }
-  return object_rate_control_type;
-}
+/* #define GNL_TYPE_OBJECT_RATE_CONTROL (gnl_object_rate_control_get_type()) */
+/* static GType */
+/* gnl_object_rate_control_get_type (void) */
+/* { */
+/*   static GType object_rate_control_type = 0; */
+/*   static GEnumValue object_rate_control[] = { */
+/*     { GNL_OBJECT_INVALID_RATE_CONTROL, "0", "Invalid"}, */
+/*     { GNL_OBJECT_FIX_MEDIA_STOP,       "1", "Fix media stop time to match object start/stop times"}, */
+/*     { GNL_OBJECT_USE_MEDIA_STOP,       "2", "Use media stop time to adjust rate"}, */
+/*     { 0, NULL, NULL}, */
+/*   }; */
+/*   if (!object_rate_control_type) { */
+/*     object_rate_control_type = g_enum_register_static ("GnlObjectRateControlType", object_rate_control); */
+/*   } */
+/*   return object_rate_control_type; */
+/* } */
 
 
 static void 		gnl_object_class_init 		(GnlObjectClass *klass);
@@ -138,9 +138,9 @@ gnl_object_class_init (GnlObjectClass *klass)
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_ACTIVE,
     g_param_spec_boolean ("active", "Active", "The state of the object",
                           TRUE, G_PARAM_READWRITE));
-  g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_RATE_CONTROL,
-    g_param_spec_enum ("rate_control", "Rate control", "Specify the rate control method",
-                       GNL_TYPE_OBJECT_RATE_CONTROL, 1, G_PARAM_READWRITE));
+/*   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_RATE_CONTROL, */
+/*     g_param_spec_enum ("rate_control", "Rate control", "Specify the rate control method", */
+/*                        GNL_TYPE_OBJECT_RATE_CONTROL, 1, G_PARAM_READWRITE)); */
 
   gstelement_class->change_state 	= gnl_object_change_state;
   gstelement_class->send_event 		= gnl_object_send_event;
@@ -159,7 +159,7 @@ gnl_object_init (GnlObject *object)
   object->current_time = 0;
   object->priority = 0;
   object->active = TRUE;
-  object->rate_control = GNL_OBJECT_FIX_MEDIA_STOP;
+/*   object->rate_control = GNL_OBJECT_FIX_MEDIA_STOP; */
 }
 
 /* static void */
@@ -362,13 +362,13 @@ gnl_object_get_media_start_stop (GnlObject *object, GstClockTime *start, GstCloc
  *
  * Returns: The RateControl method used.
  */
-GnlObjectRateControl
-gnl_object_get_rate_control (GnlObject *object)
-{
-  g_return_val_if_fail (GNL_IS_OBJECT (object), GNL_OBJECT_INVALID_RATE_CONTROL);
+/* GnlObjectRateControl */
+/* gnl_object_get_rate_control (GnlObject *object) */
+/* { */
+/*   g_return_val_if_fail (GNL_IS_OBJECT (object), GNL_OBJECT_INVALID_RATE_CONTROL); */
 
-  return object->rate_control;
-}
+/*   return object->rate_control; */
+/* } */
 
 /** 
  * gnl_object_set_rate_control:
@@ -378,19 +378,19 @@ gnl_object_get_rate_control (GnlObject *object)
  * Set the method for handling differences in media and normal
  * start/stop times.
  */
-void
-gnl_object_set_rate_control (GnlObject *object, GnlObjectRateControl control)
-{
-  g_return_if_fail (object != NULL);
-  g_return_if_fail (GNL_IS_OBJECT (object));
-  g_return_if_fail (control >= GNL_OBJECT_FIX_MEDIA_STOP &&
-                    control <= GNL_OBJECT_USE_MEDIA_STOP);
+/* void */
+/* gnl_object_set_rate_control (GnlObject *object, GnlObjectRateControl control) */
+/* { */
+/*   g_return_if_fail (object != NULL); */
+/*   g_return_if_fail (GNL_IS_OBJECT (object)); */
+/*   g_return_if_fail (control >= GNL_OBJECT_FIX_MEDIA_STOP && */
+/*                     control <= GNL_OBJECT_USE_MEDIA_STOP); */
 
-  if (object->rate_control != control) {
-    object->rate_control = control;
-    g_object_notify (G_OBJECT (object), "rate_control");
-  }
-}
+/*   if (object->rate_control != control) { */
+/*     object->rate_control = control; */
+/*     g_object_notify (G_OBJECT (object), "rate_control"); */
+/*   } */
+/* } */
 
 /** 
  * gnl_object_set_priority:
@@ -669,15 +669,15 @@ gnl_object_query (GstElement *element, GstQueryType type,
       break;
     case GST_QUERY_SEGMENT_END:
       break;
-    case GST_QUERY_RATE:
-      if (object->media_stop == object->media_start || object->stop == object->start) {
-        *value = 0;
-      }
-      else {
-        *value = (object->media_stop - object->media_start) * GST_QUERY_TYPE_RATE_DEN / 
-	          (object->stop - object->start);
-      }
-      break;
+/*     case GST_QUERY_RATE: */
+/*       if (object->media_stop == object->media_start || object->stop == object->start) { */
+/*         *value = 0; */
+/*       } */
+/*       else { */
+/*         *value = (object->media_stop - object->media_start) * GST_QUERY_TYPE_RATE_DEN /  */
+/* 	          (object->stop - object->start); */
+/*       } */
+/*       break; */
     default:
       res = FALSE;
       break;
@@ -714,9 +714,9 @@ gnl_object_set_property (GObject *object, guint prop_id,
     case ARG_ACTIVE:
       gnl_object_set_active (gnlobject, g_value_get_boolean (value));
       break;
-    case ARG_RATE_CONTROL:
-      gnl_object_set_rate_control (gnlobject, g_value_get_enum (value));
-      break;
+/*     case ARG_RATE_CONTROL: */
+/*       gnl_object_set_rate_control (gnlobject, g_value_get_enum (value)); */
+/*       break; */
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -752,9 +752,9 @@ gnl_object_get_property (GObject *object, guint prop_id,
     case ARG_ACTIVE:
       g_value_set_boolean (value, gnl_object_is_active (gnlobject));
       break;
-    case ARG_RATE_CONTROL:
-      g_value_set_enum (value, gnl_object_get_rate_control (gnlobject));
-      break;
+/*     case ARG_RATE_CONTROL: */
+/*       g_value_set_enum (value, gnl_object_get_rate_control (gnlobject)); */
+/*       break; */
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;

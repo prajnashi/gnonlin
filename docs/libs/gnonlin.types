@@ -2,7 +2,6 @@
 #include <gnl/gnl.h>
 
 gnl_composition_get_type
-gnl_group_get_type
 gnl_object_get_type
 gnl_operation_get_type
 gnl_source_get_type

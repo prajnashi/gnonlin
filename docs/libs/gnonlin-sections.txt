@@ -46,7 +46,6 @@ gnl_composition_details
 <FILE>gnlobject</FILE>
 GnlObject
 GnlObjectClass
-GnlObjectRateControl
 GnlCoverType
 GnlDirection
 <TITLE>GnlObject</TITLE>
@@ -56,8 +55,6 @@ gnl_object_set_start_stop
 gnl_object_get_start_stop
 gnl_object_set_priority
 gnl_object_get_priority
-gnl_object_get_rate_control
-gnl_object_set_rate_control
 gnl_object_is_active
 gnl_object_set_active
 gnl_object_covers
@@ -80,8 +77,8 @@ gnl_object_get_type
 GnlTimeline
 GnlTimelineClass
 gnl_timeline_new
-gnl_timeline_add_group
-gnl_timeline_get_pad_for_group
+gnl_timeline_add_composition
+gnl_timeline_get_pad_for_composition
 <SUBSECTION Standard>
 GNL_TIMELINE
 GNL_IS_TIMELINE
@@ -110,24 +107,6 @@ GNL_OPERATION_CLASS
 GNL_IS_OPERATION_CLASS
 <SUBSECTION Private>
 gnl_operation_details
-</SECTION>
-
-<SECTION>
-<FILE>gnlgroup</FILE>
-<TITLE>GnlGroup</TITLE>
-GnlGroup
-GnlGroupClass
-gnl_group_new
-gnl_group_append_layer
-<SUBSECTION Standard>
-GNL_GROUP
-GNL_IS_GROUP
-GNL_TYPE_GROUP
-gnl_group_get_type
-GNL_GROUP_CLASS
-GNL_IS_GROUP_CLASS
-<SUBSECTION Private>
-gnl_group_details
 </SECTION>
 
 <SECTION>

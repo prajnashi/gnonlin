@@ -37,22 +37,22 @@ used in any GStreamer pipeline.
 @Returns: 
 
 
-<!-- ##### FUNCTION gnl_timeline_add_group ##### -->
+<!-- ##### FUNCTION gnl_timeline_add_composition ##### -->
 <para>
 
 </para>
 
 @timeline: 
-@group: 
+@comp: 
 
 
-<!-- ##### FUNCTION gnl_timeline_get_pad_for_group ##### -->
+<!-- ##### FUNCTION gnl_timeline_get_pad_for_composition ##### -->
 <para>
 
 </para>
 
 @timeline: 
-@group: 
+@comp: 
 @Returns: 
 
 

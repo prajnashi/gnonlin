@@ -41,11 +41,11 @@ G_BEGIN_DECLS
 #define GNL_IS_OBJECT_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OBJECT))
 
-typedef enum {
-  GNL_OBJECT_INVALID_RATE_CONTROL = 0,
-  GNL_OBJECT_FIX_MEDIA_STOP = 1,
-  GNL_OBJECT_USE_MEDIA_STOP = 2,
-} GnlObjectRateControl;
+/* typedef enum { */
+/*   GNL_OBJECT_INVALID_RATE_CONTROL = 0, */
+/*   GNL_OBJECT_FIX_MEDIA_STOP = 1, */
+/*   GNL_OBJECT_USE_MEDIA_STOP = 2, */
+/* } GnlObjectRateControl; */
 		
 typedef enum
 {
@@ -71,7 +71,7 @@ struct _GnlObject {
   gint			 priority;
   gboolean		 active;
 
-  GnlObjectRateControl	 rate_control;
+/*   GnlObjectRateControl	 rate_control; */
   GstClockTime  	 current_time;
 
   gpointer		 comp_private;
@@ -97,8 +97,8 @@ void			gnl_object_get_start_stop	(GnlObject *object, GstClockTime *start, GstClo
 void			gnl_object_set_priority		(GnlObject *object, gint priority);
 gint			gnl_object_get_priority		(GnlObject *object);
 
-GnlObjectRateControl	gnl_object_get_rate_control	(GnlObject *object);
-void			gnl_object_set_rate_control	(GnlObject *object, GnlObjectRateControl control);
+/* GnlObjectRateControl	gnl_object_get_rate_control	(GnlObject *object); */
+/* void			gnl_object_set_rate_control	(GnlObject *object, GnlObjectRateControl control); */
 
 gboolean		gnl_object_is_active		(GnlObject *object);
 void			gnl_object_set_active		(GnlObject *object, gboolean active);

@@ -1,3 +1,27 @@
+2005-03-30  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/Makefile.am:
+	* gnl/gnl.h:
+	* gnl/gnltypes.h:
+	* gnl/gnlgroup.c:
+	* gnl/gnlgroup.h:
+	* gnl/gnltimeline.h:
+	* gnl/gnltimeline.c:
+	* gnl/gnlelements.c:
+	* docs/libs/gnonlin-docs.sgml:
+	* docs/libs/gnonlin-sections.txt:
+	* docs/libs/gnonlin.types:
+	* docs/libs/tmpl/gnltimeline.sgml:
+	* docs/libs/tmpl/gnlgroup.sgml:
+	Removing GnlGroup
+
+	* docs/libs/gnonlin-docs.sgml
+	* docs/libs/gnonlin-sections.txt
+	* docs/libs/tmpl/gnlobject.sgml
+	* gnl/gnlobject.h:
+	* gnl/gnlobject.c:
+	Removing rate control property for GnlObject
+
 2005-03-29  Edward Hervey  <bilboed@bilboed.com>
 
 	* test/Makefile.am: 
