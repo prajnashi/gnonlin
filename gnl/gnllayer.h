@@ -23,16 +23,9 @@
 #ifndef __GNL_LAYER_H__
 #define __GNL_LAYER_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <gnl/gnlsource.h>
-#include <gnl/gnltimer.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+G_BEGIN_DECLS
 
 #define GNL_TYPE_LAYER \
   (gnl_layer_get_type())
@@ -45,50 +38,69 @@ extern "C" {
 #define GNL_IS_LAYER_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_LAYER))
 
+extern GstElementDetails gnl_layer_details;
+
 typedef struct _GnlLayer GnlLayer;
 typedef struct _GnlLayerClass GnlLayerClass;
 
-typedef void (*GnlLayerCutDoneCallback)	(GnlLayer *layer, GstClockTime time, gpointer user_data);
+typedef struct _GnlLayerEntry GnlLayerEntry;
+
+typedef enum
+{
+  GNL_FIND_AT,
+  GNL_FIND_AFTER,
+  GNL_FIND_START,
+} GnlFindMethod;
+
+typedef enum
+{
+  GNL_COVER_ALL,
+  GNL_COVER_SOME,
+  GNL_COVER_START,
+  GNL_COVER_STOP,
+} GnlCoverType;
+
+typedef enum
+{
+  GNL_DIRECTION_FORWARD,
+  GNL_DIRECTION_BACKWARD,
+} GnlDirection;
 
 struct _GnlLayer {
   GstBin bin;
 
   GList		*sources;
 
-  GnlSource 	*current;
+  GnlLayerEntry	*current;
 
-  GnlLayerCutDoneCallback cut_done_func;
-  gpointer 	user_data;
-  
+  GstClockTime	 start_pos;
+  GstClockTime	 stop_pos;
 };
 
 struct _GnlLayerClass {
   GstBinClass	parent_class;
 
-  gboolean	(*prepare_cut)		(GnlLayer *layer, guint64 start, guint64 stop,
-		  			 GnlLayerCutDoneCallback func, gpointer user_data);
-
-  guint64	(*next_change)		(GnlLayer *layer, guint64 time);
-  gboolean	(*occupies_time)	(GnlLayer *layer, guint64 time);
+  GstClockTime	(*get_time)			(GnlLayer *layer);
+  GstClockTime	(*nearest_cover)		(GnlLayer *layer, GstClockTime start, GnlDirection direction);
+  gboolean	(*covers)			(GnlLayer *layer, GstClockTime start, GstClockTime stop, GnlCoverType);
+  void 		(*scheduling_paused)		(GnlLayer *layer);
+  gboolean 	(*prepare)			(GnlLayer *layer, GstClockTime start, GstClockTime stop);
 };
 
 GType		gnl_layer_get_type		(void);
 GnlLayer*	gnl_layer_new			(const gchar *name);
 
-void		gnl_layer_add_source 		(GnlLayer *layer, GnlSource *source, guint64 start);
+void		gnl_layer_add_source 		(GnlLayer *layer, 
+						 GnlSource *source, 
+						 const gchar *padname); 
 
-gboolean	gnl_layer_prepare_cut	 	(GnlLayer *layer, guint64 start, guint64 stop,
-		  			 	 GnlLayerCutDoneCallback func, gpointer user_data);
+GstClockTime	gnl_layer_get_time		(GnlLayer *layer);
+GstClockTime	gnl_layer_nearest_cover		(GnlLayer *layer, GstClockTime start, GnlDirection direction);
+gboolean	gnl_layer_covers		(GnlLayer *layer, GstClockTime start, GstClockTime stop, GnlCoverType);
 
-guint64		gnl_layer_next_change 		(GnlLayer *layer, guint64 time);
-gboolean	gnl_layer_occupies_time 	(GnlLayer *layer, guint64 time);
-GnlSource* 	gnl_layer_get_source_for_time 	(GnlLayer *layer, guint64 time);
+GnlSource*	gnl_layer_find_source		(GnlLayer *layer, GstClockTime time, GnlFindMethod method);
 
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
+G_END_DECLS
 
 #endif /* __GNL_LAYER_H__ */
 

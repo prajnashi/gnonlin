@@ -27,12 +27,9 @@
 #include "config.h"
 #endif
 
-#include <gnl/gnlcomposition.h>
-#include <gnl/gnltimer.h>
+#include <gnl/gnlvlayer.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+G_BEGIN_DECLS
 
 #define GNL_TYPE_GROUP \
   (gnl_group_get_type())
@@ -49,25 +46,22 @@ typedef struct _GnlGroup GnlGroup;
 typedef struct _GnlGroupClass GnlGroupClass;
 
 struct _GnlGroup {
-  GnlComposition	 parent;
+  GnlVLayer		 parent;
 
-  guint64		 stop;
-  GnlTimer		*timer;
-  GstElement		*eos_element;
-  gboolean		 has_eos;
+  GList			*layers;
 };
 
 struct _GnlGroupClass {
-  GnlCompositionClass	parent_class;
+  GnlVLayerClass	parent_class;
 };
 
 /* normal GGroup stuff */
 GType		gnl_group_get_type		(void);
 GnlGroup*	gnl_group_new			(const gchar *name);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+void		gnl_group_append_layer		(GnlGroup *group, GnlLayer *layer);
+
+G_END_DECLS
 
 
 #endif /* __GNL_GROUP_H__ */

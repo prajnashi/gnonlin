@@ -20,19 +20,12 @@
 
 
 #include <gnl/gnlgroup.h>
-
 #include <gnl/gnllayer.h>
 
 static void 		gnl_group_class_init 		(GnlGroupClass *klass);
 static void 		gnl_group_init 			(GnlGroup *group);
 
-static gboolean 	gnl_group_prepare_cut 		(GnlLayer *layer, guint64 start, guint64 stop,
-							 GnlLayerCutDoneCallback func, gpointer user_data);
-
-static GstElementStateReturn
-			gnl_group_change_state 		(GstElement *element);
-
-static GnlCompositionClass *parent_class = NULL;
+static GnlVLayerClass *parent_class = NULL;
 
 #define CLASS(group)  GNL_GROUP_CLASS (G_OBJECT_GET_CLASS (group))
 
@@ -53,7 +46,7 @@ gnl_group_get_type (void)
       32,
       (GInstanceInitFunc) gnl_group_init,
     };
-    group_type = g_type_register_static (GNL_TYPE_COMPOSITION, "GnlGroup", &group_info, 0);
+    group_type = g_type_register_static (GNL_TYPE_VLAYER, "GnlGroup", &group_info, 0);
   }
   return group_type;
 }
@@ -64,38 +57,19 @@ gnl_group_class_init (GnlGroupClass *klass)
   GObjectClass 		*gobject_class;
   GstBinClass 		*gstbin_class;
   GstElementClass 	*gstelement_class;
-  GnlLayerClass 	*gnllayer_class;
 
   gobject_class = 	(GObjectClass*)klass;
   gstbin_class = 	(GstBinClass*)klass;
   gstelement_class = 	(GstElementClass*)klass;
-  gnllayer_class = 	(GnlLayerClass*)klass;
 
-  parent_class = g_type_class_ref (GNL_TYPE_COMPOSITION);
-
-  gstelement_class->change_state = 	gnl_group_change_state;
-  gnllayer_class->prepare_cut = 	gnl_group_prepare_cut;
+  parent_class = g_type_class_ref (GNL_TYPE_VLAYER);
 }
 
 
 static void
 gnl_group_init (GnlGroup *group)
 {
-  group->timer = gnl_timer_new ();
-
-  gst_object_set_name (GST_OBJECT (group->timer), "group_timer");
-  gst_bin_add (GST_BIN (group), GST_ELEMENT (group->timer));
-
-  gst_element_add_ghost_pad (GST_ELEMENT (group), 
-		  	     gst_element_get_pad (GST_ELEMENT (group->timer), "src"), 
-			     "src");
-
-  group->eos_element = gst_element_factory_make ("fakesrc", "internal_fakesrc");
-  g_object_set (G_OBJECT (group->eos_element), "num_buffers", 0, NULL);
-
-  group->has_eos = FALSE;
 }
-
 
 GnlGroup*
 gnl_group_new (const gchar *name)
@@ -107,123 +81,11 @@ gnl_group_new (const gchar *name)
   new = g_object_new (GNL_TYPE_GROUP, NULL);
   gst_object_set_name (GST_OBJECT (new), name);
 
-  gst_object_set_name (GST_OBJECT (new->timer), g_strdup_printf ("group_timer_%s", name));
-
   return new;
 }
 
-static void
-gnl_group_cut_done (GnlLayer *layer, GstClockTime time, gpointer user_data)
+void
+gnl_group_append_layer (GnlGroup *group, GnlLayer *layer)
 {
-  GnlGroup *group = GNL_GROUP (user_data);
-  GstPad *pad, *peer;
-
-  g_print ("group %s cut done for layer %s\n", GST_ELEMENT_NAME (group), GST_ELEMENT_NAME (layer));
-
-  gst_element_set_state (GST_ELEMENT (group), GST_STATE_PAUSED);
-
-  pad = gst_element_get_pad (GST_ELEMENT (group->timer), "sink");
-  peer = GST_PAD_PEER (pad);
-  if (peer) {
-    gst_pad_disconnect (pad, peer);
-  }
-
-  if (gnl_group_prepare_cut (GNL_LAYER (group), time + 1, group->stop, gnl_group_cut_done, group)) {
-    gst_element_set_state (GST_ELEMENT (group), GST_STATE_PLAYING);
-  }
-  else {
-    gst_element_connect_pads (group->eos_element, "src", GST_ELEMENT (group->timer), "sink");
-    gst_bin_add (GST_BIN (group), group->eos_element);
-
-    gst_element_set_state (group->eos_element, GST_STATE_PLAYING);
-    gst_element_set_state (GST_ELEMENT (group->timer), GST_STATE_PLAYING);
-    group->has_eos = TRUE;
-  }
-}
-
-#if 0
-static void
-group_ended (GnlTimer *timer, gpointer user_data)
-{
-  GnlGroup *group = GNL_GROUP (user_data);
-  GstPad *pad, *peer;
-  GstClockTime time = gnl_timer_get_time (timer);
-
-  g_print ("group %s ended %lld\n", GST_ELEMENT_NAME (group), time);
-
-  gst_element_set_state (GST_ELEMENT (group), GST_STATE_PAUSED);
-
-  pad = gst_element_get_pad (GST_ELEMENT (group->timer), "sink");
-  peer = GST_PAD_PEER (pad);
-  if (peer) {
-    gst_pad_disconnect (pad, peer);
-  }
-
-  if (gnl_group_prepare_cut (GNL_LAYER (group), time + 1, group->stop, gnl_group_cut_done, group)) {
-    gst_element_set_state (GST_ELEMENT (group), GST_STATE_PLAYING);
-  }
-  else {
-    gst_element_connect (group->eos_element, "src", GST_ELEMENT (group->timer), "sink");
-    gst_bin_add (GST_BIN (group), group->eos_element);
-
-    gst_element_set_state (group->eos_element, GST_STATE_PLAYING);
-    gst_element_set_state (GST_ELEMENT (group->timer), GST_STATE_PLAYING);
-    group->has_eos = TRUE;
-  }
-}
-#endif
-
-		
-static gboolean
-gnl_group_prepare_cut (GnlLayer *layer, guint64 start, guint64 stop,
-		       GnlLayerCutDoneCallback func, gpointer user_data)
-{
-  GnlGroup *group = GNL_GROUP (layer);
-  GstClockTime next_change;
-
-  group->stop = stop;
-
-  if (group->has_eos) {
-    gst_element_disconnect_pads (group->eos_element, "src", GST_ELEMENT (group->timer), "sink");
-    gst_bin_remove (GST_BIN (group), group->eos_element);
-    group->has_eos = FALSE;
-  }
-  
-  next_change = MIN (gnl_layer_next_change (layer, start + 1), stop);
-
-  g_print ("group: %s prepare for %lld->%lld %lld\n", GST_ELEMENT_NAME (group), start, stop, next_change);
-
-  if (!GNL_LAYER_CLASS (parent_class)->prepare_cut (layer, start, next_change, gnl_group_cut_done, group)) {
-    g_print ("group %s nothing to schedule %lld\n", GST_ELEMENT_NAME (group), start);
-    return FALSE;
-  }
-  gst_element_connect_pads (GST_ELEMENT (layer), "internal_src", GST_ELEMENT (group->timer), "sink");
-
-  /*
-  gnl_timer_notify_async (group->timer,
-                          start,
-                          next_change - 1,
-                          start,
-                          group_ended, group);
-			  */
-
-
-  return TRUE;
-} 
-
-static GstElementStateReturn
-gnl_group_change_state (GstElement *element)
-{
-  GnlGroup *group = GNL_GROUP (element);
-  
-  switch (GST_STATE_TRANSITION (group)) {
-    case GST_STATE_PAUSED_TO_PLAYING:
-    default:
-      break;
-  }
-
-  GST_ELEMENT_CLASS (parent_class)->change_state (element);
-
-  return GST_STATE_SUCCESS;
-  
+  gnl_vlayer_append_layer (GNL_VLAYER (group), layer);
 }

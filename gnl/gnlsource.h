@@ -23,16 +23,9 @@
 #ifndef __GNL_SOURCE_H__
 #define __GNL_SOURCE_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <gst/gst.h>
 
-#include <gst/gstbin.h>
-#include <gnl/gnltimer.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+G_BEGIN_DECLS
 
 #define GNL_TYPE_SOURCE \
   (gnl_source_get_type())
@@ -45,48 +38,69 @@ extern "C" {
 #define GNL_IS_SOURCE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_SOURCE))
 
+extern GstElementDetails gnl_source_details;
+
+typedef enum {
+  GNL_SOURCE_INVALID_RATE_CONTROL = 0,
+  GNL_SOURCE_FIX_MEDIA_STOP = 1,
+  GNL_SOURCE_USE_MEDIA_STOP = 2,
+} GnlSourceRateControl;
 		
 typedef struct _GnlSource GnlSource;
 typedef struct _GnlSourceClass GnlSourceClass;
 
-typedef void (*GnlCutDoneCallback) (GnlSource *source, GstClockTime time, gpointer user_data);
-
 struct _GnlSource {
-  GstBin 	 bin;
+  GstElement 		 parent;
 
-  guint64  	 start;
-  guint64 	 stop;
+  GstClockTime  	 start;
+  GstClockTime 		 stop;
+  GstClockTime  	 media_start;
+  GstClockTime 		 media_stop;
 
-  GstElement 	*element;
-  GnlTimer	*timer;
+  GnlSourceRateControl	 rate_control;
 
-  GnlCutDoneCallback cut_done_func;
-  gpointer	 user_data;
+  GstElement 		*element;
+  GstElement		*bin;
+
+  gboolean		 element_added;
+  gint 			 connected_pads;
+  gint 			 total_pads;
+  GSList		*connections;
+
+  GstClockTime 		 real_start;
+  GstClockTime 		 real_stop;
+  GstSeekType		 seek_type;
+
+  GstClockTime  	 current_time;
 };
 
 struct _GnlSourceClass {
-  GstBinClass	parent_class;
+  GstElementClass	parent_class;
 
-  void 		(*set_element)		(GnlSource *source, GstElement *element);
-  void 		(*prepare_cut)		(GnlSource *source, guint64 start, guint64 stop, guint64 out,
-		  			 GnlCutDoneCallback func, gpointer user_data);
+  GstPad*	(*get_pad_for_stream)	(GnlSource *source, const gchar *padname);
 };
 
 /* normal GSource stuff */
-GType		gnl_source_get_type		(void);
-GnlSource*	gnl_source_new			(const gchar *name);
+GType			gnl_source_get_type		(void);
+GnlSource*		gnl_source_new			(const gchar *name, GstElement *element);
 
-void		gnl_source_set_element		(GnlSource *source, GstElement *element);
-void		gnl_source_set_start_stop	(GnlSource *source, guint64 start, guint64 stop);
-GstClockTime	gnl_source_get_time		(GnlSource *source);
+void			gnl_source_set_element		(GnlSource *source, GstElement *element);
+GstElement*		gnl_source_get_element		(GnlSource *source);
 
-void		gnl_source_prepare_cut		(GnlSource *source, guint64 start, guint64 stop, guint64 out,
-					 	 GnlCutDoneCallback func, gpointer user_data);
+void			gnl_source_set_media_start_stop	(GnlSource *source, GstClockTime start, GstClockTime stop);
+void			gnl_source_get_media_start_stop	(GnlSource *source, GstClockTime *start, GstClockTime *stop);
+void			gnl_source_set_start_stop	(GnlSource *source, GstClockTime start, GstClockTime stop);
+void			gnl_source_get_start_stop	(GnlSource *source, GstClockTime *start, GstClockTime *stop);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+GstPad*			gnl_source_get_pad_for_stream	(GnlSource *source, const gchar *padname);
 
+GnlSourceRateControl	gnl_source_get_rate_control	(GnlSource *source);
+void			gnl_source_set_rate_control	(GnlSource *source, GnlSourceRateControl control);
+
+GstClockTime		gnl_source_get_time		(GnlSource *source);
+gfloat			gnl_source_get_rate		(GnlSource *source);
+
+G_END_DECLS
 
 #endif /* __GNL_SOURCE_H__ */
 

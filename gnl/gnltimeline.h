@@ -27,13 +27,10 @@
 #include "config.h"
 #endif
 
-#include <gst/gstpipeline.h>
+#include <gnl/gnlvlayer.h>
 #include <gnl/gnlgroup.h>
-#include <gnl/gnlcomposition.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+G_BEGIN_DECLS
 
 #define GNL_TYPE_TIMELINE \
   (gnl_timeline_get_type())
@@ -48,15 +45,17 @@ extern "C" {
 
 typedef struct _GnlTimeline GnlTimeline;
 typedef struct _GnlTimelineClass GnlTimelineClass;
+typedef struct _GnlTimelineTimer GnlTimelineTimer;
 
 struct _GnlTimeline {
-  GstBin	 parent;
+  GnlVLayer		 parent;
 
-  GList		*groups;
+  GList			*groups;
+  GnlTimelineTimer 	*timer;
 };
 
 struct _GnlTimelineClass {
-  GstBinClass	parent_class;
+  GnlVLayerClass	 parent_class;
 };
 
 GType		gnl_timeline_get_type		(void);
@@ -64,10 +63,9 @@ GnlTimeline*	gnl_timeline_new		(const gchar *name);
 
 void		gnl_timeline_add_group		(GnlTimeline *timeline, GnlGroup *group);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+GstPad*		gnl_timeline_get_pad_for_group	(GnlTimeline *timeline, GnlGroup *group);
 
+G_END_DECLS
 
 #endif /* __GNL_TIMELINE_H__ */
 

@@ -24,7 +24,7 @@
 static void 		gnl_operation_class_init 	(GnlOperationClass *klass);
 static void 		gnl_operation_init 		(GnlOperation *operation);
 
-static void 		gnl_operation_set_element 	(GnlSource *source, GstElement *element);
+//static void 		gnl_operation_set_element 	(GnlSource *source, GstElement *element);
 
 static GnlSourceClass *parent_class = NULL;
 
@@ -60,8 +60,6 @@ gnl_operation_class_init (GnlOperationClass *klass)
   gnlsource_class =     (GnlSourceClass*)klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_SOURCE);
-
-  gnlsource_class->set_element =        gnl_operation_set_element;
 }
 
 static void
@@ -69,14 +67,12 @@ gnl_operation_init (GnlOperation *operation)
 {
   operation->num_sinks = 0;
 }
-
+/*
 static void
 gnl_operation_set_element (GnlSource *source, GstElement *element)
 {
   const GList *walk;
   GnlOperation *operation = GNL_OPERATION (source);
-
-  parent_class->set_element (source, element);
 
   walk = gst_element_get_pad_list (element);
   while (walk) {
@@ -90,9 +86,10 @@ gnl_operation_set_element (GnlSource *source, GstElement *element)
     walk = g_list_next (walk);
   }
 }
+*/
 
 GnlOperation*
-gnl_operation_new (const gchar *name)
+gnl_operation_new (const gchar *name, GstElement *element)
 {
   GnlOperation *new;
 

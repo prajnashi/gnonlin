@@ -27,13 +27,12 @@
 #include <gnl/gnloperation.h>
 #include <gnl/gnlcomposition.h>
 #include <gnl/gnllayer.h>
+#include <gnl/gnlvlayer.h>
 #include <gnl/gnlsource.h>
 #include <gnl/gnltimeline.h>
 #include <gnl/gnlversion.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+G_BEGIN_DECLS
 
 /* initialize GNL */
 void gnl_init(int *argc,char **argv[]);
@@ -41,8 +40,6 @@ void gnl_init(int *argc,char **argv[]);
 void gnl_main		(void);
 void gnl_main_quit	(void);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+G_END_DECLS
 
 #endif /* __GST_H__ */
