@@ -2,7 +2,7 @@ GnlSource:
   - extends from a GstBin
   - consist of a single GStreamer pipeline with 1 output pad
   - have a start and stop time
-  - have one or more output pads, ghosted from the Gst pipeline
+  - have one output pad, ghosted from the Gst bin
 
 GnlLayer:
   - extends GstBin
@@ -20,25 +20,29 @@ GnlOperation:
   - also ghosts N input pads in addition to the GnlSources output pad
 
 GnlTimeline
-  - extends GnlComposition
+  - extends GstBin
+  - can be added to a GstThread or GstPipeline to be rendered
+  - contains one or more groups
 
 GnlGroup
-  - ??
+  - extends GnlComposition
   - contains components of the same media type
+  - has a sink pad with final rendered output
 
 
 GstBin
  !
  +---- GnlSource
  !      !
- !      +----- Operation
+ !      +----- GnlOperation
  !	
  +---- GnlLayer
-        !
-        +---- GnlComposition
-	       !
-               +---- GnlTimeline
- 
+ !      !
+ !      +---- GnlComposition
+ !             !
+ !             +---- GnlGroup
+ !
+ +---- GnlTimeline
 
 
 

@@ -1,7 +1,10 @@
 
-src/   		- core source files
-
+docs/		- docs.
+gnl/   		- core source files
 test/  		- test apps
+tools/		- some tools..
+
+Maybe in separate module:
 
 gui/   		- gui stuff
     widgets/ 	- usefull widgets.
