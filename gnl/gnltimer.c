@@ -32,6 +32,10 @@ static GstElementDetails gnl_timer_details =
 static void 		gnl_timer_class_init 	(GnlTimerClass *klass);
 static void 		gnl_timer_init 		(GnlTimer *timer);
 
+static void 		gnl_timer_set_clock 	(GstElement *element, GstClock *clock);
+
+static GstPadConnectReturn
+			gnl_timer_connect 	(GstPad *pad, GstCaps *caps);
 static void 		gnl_timer_chain 	(GstPad *pad, GstBuffer *buf);
 
 static GstElementStateReturn
@@ -92,12 +96,17 @@ gnl_timer_init (GnlTimer *timer)
   timer->sinkpad = gst_pad_new ("sink", GST_PAD_SINK);
   gst_pad_set_chain_function (timer->sinkpad, gnl_timer_chain);
   gst_element_add_pad (GST_ELEMENT (timer), timer->sinkpad);
+  gst_pad_set_connect_function (timer->sinkpad, gnl_timer_connect);
   
   timer->srcpad = gst_pad_new ("src", GST_PAD_SRC);
   gst_element_add_pad (GST_ELEMENT (timer), timer->srcpad);
+  gst_pad_set_connect_function (timer->srcpad, gnl_timer_connect);
 
   timer->time = 0LL;
   timer->eos = FALSE;
+  timer->master = FALSE;
+
+  GST_ELEMENT (timer)->setclockfunc = gnl_timer_set_clock;
 
   GST_FLAG_SET (timer, GST_ELEMENT_EVENT_AWARE);
 }
@@ -112,17 +121,45 @@ gnl_timer_new (void)
   return timer;
 }
 
+static void
+gnl_timer_set_clock (GstElement *element, GstClock *clock)
+{
+  GnlTimer *timer = GNL_TIMER (element);
+
+  g_print ("%s: got clock\n", GST_ELEMENT_NAME (element));
+
+  timer->clock = clock;
+}
+
+static GstPadConnectReturn
+gnl_timer_connect (GstPad *pad, GstCaps *caps)
+{   
+  GnlTimer *timer = GNL_TIMER (gst_pad_get_parent (pad));
+  GstPad *otherpad;
+	      
+  if (pad == timer->srcpad) 
+    otherpad = timer->sinkpad;
+  else
+    otherpad = timer->srcpad;
+
+  return gst_pad_proxy_connect (otherpad, caps);
+}
+
 void
 gnl_timer_notify_async (GnlTimer *timer, 
 		        guint64 start_time, 
 		        guint64 end_time, 
+		        guint64 out_time, 
 		        GnlTimerNotify notify_func, 
 		        gpointer user_data)
 {
   timer->start_time  = start_time;
   timer->notify_time = end_time;
+  timer->out_time    = out_time;
   timer->notify_func = notify_func;
   timer->user_data   = user_data;
+
+  g_print ("timer configured for start:%lld end:%lld out:%lld\n", start_time, end_time, out_time);
 
   timer->need_seek   = TRUE;
 }
@@ -141,22 +178,44 @@ gnl_timer_chain (GstPad *pad, GstBuffer *buf)
   }
 
   timestamp = GST_BUFFER_TIMESTAMP (buf);
-  
-  g_print ("timer got buffer %lld %lld\n", timestamp, timer->notify_time);
 
-  gst_pad_push (timer->srcpad, buf);
+  if (timer->need_seek || timestamp < timer->start_time) {
+    GstRealPad *peer = GST_RPAD_PEER (timer->sinkpad);
 
-  timer->time = timestamp;
+    //g_print ("not at start time %lld, sending seek (now at %lld)\n", timer->start_time, timestamp);
 
-  if (timestamp >= timer->notify_time) {
-    timer->notify_time = -1;
-    timer->notify_func (timer, timer->user_data);
+    if (gst_pad_send_event (GST_PAD (peer), gst_event_new_seek (GST_SEEK_TIMEOFFSET_SET, timer->start_time, TRUE))) {
+      timer->need_seek = FALSE;
+    }
+    gst_buffer_unref (buf);
+  }
+  else {
+    g_print ("%s %d got buffer %lld %lld %lld\n", GST_ELEMENT_NAME (timer), timer->master, timestamp, timer->notify_time,
+                    timestamp - timer->start_time + timer->out_time);
 
-    if (timer->eos) {
-      gst_pad_push (timer->srcpad, GST_BUFFER (gst_event_new (GST_EVENT_EOS)));
-      timer->eos = FALSE;
+    timer->time = timestamp;
+
+    GST_BUFFER_TIMESTAMP (buf) = timer->time - timer->start_time + timer->out_time;
+    gst_pad_push (timer->srcpad, buf);
+
+    if (timestamp >= timer->notify_time && timer->notify_func) {
+      timer->notify_time = -1;
+      gst_element_set_state (GST_ELEMENT (timer), GST_STATE_PAUSED);
+      timer->notify_func (timer, timer->user_data);
+
+      g_print ("%s eos %d\n", GST_ELEMENT_NAME (timer), timer->eos);
+      if (timer->eos && GST_PAD_IS_CONNECTED (timer->srcpad)) {
+        gst_pad_push (timer->srcpad, GST_BUFFER (gst_event_new (GST_EVENT_EOS)));
+        timer->eos = FALSE;
+      }
     }
   }
+}
+
+void
+gnl_timer_set_master (GnlTimer *timer)
+{
+  timer->master = TRUE;
 }
 
 guint64
@@ -165,7 +224,16 @@ gnl_timer_get_time (GnlTimer *timer)
   g_return_val_if_fail (timer != NULL, 0LL);
   g_return_val_if_fail (GNL_IS_TIMER (timer), 0LL);
 
-  return timer->time;
+  return timer->time - timer->start_time + timer->out_time;
+}
+
+void
+gnl_timer_set_time (GnlTimer *timer, guint64 time)
+{
+  g_return_if_fail (timer != NULL);
+  g_return_if_fail (GNL_IS_TIMER (timer));
+
+  timer->time = timer->start_time - timer->out_time + time;
 }
 
 static GstElementStateReturn
@@ -173,20 +241,13 @@ gnl_timer_change_state (GstElement *element)
 {
   GnlTimer *timer = GNL_TIMER (element);
 
-  switch (GST_STATE_TRANSITION (element)) {
+  switch (GST_STATE_TRANSITION (timer)) {
     case GST_STATE_PAUSED_TO_PLAYING:
-    if (timer->need_seek) {
-      GstRealPad *peer = GST_RPAD_PEER (timer->sinkpad);
-
-      gst_pad_send_event (GST_PAD (peer), gst_event_new_seek (GST_SEEK_TIMEOFFSET_SET, timer->start_time, TRUE));
-      timer->need_seek = FALSE;
-      break;
-    }
     default:
       break;
   }
 
-  GST_ELEMENT_CLASS (parent_class)->change_state (element);
+  parent_class->change_state (element);
 
   return GST_STATE_SUCCESS;
   

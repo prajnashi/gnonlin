@@ -52,22 +52,30 @@ struct _GnlLayer {
   GstBin bin;
 
   GList		*sources;
+
   GnlTimer	*timer;
   GnlSource 	*current;
-  guint64	 base_time;
-
-  GstClock	*clock;
 };
 
 struct _GnlLayerClass {
   GstBinClass	parent_class;
+
+  void		(*set_timer)		(GnlLayer *layer, GnlTimer *timer);
+  gboolean	(*prepare_for)		(GnlLayer *layer, guint64 start, guint64 stop);
+
+  guint64	(*next_change)		(GnlLayer *layer, guint64 time);
+  gboolean	(*occupies_time)	(GnlLayer *layer, guint64 time);
 };
 
 GType		gnl_layer_get_type		(void);
 GnlLayer*	gnl_layer_new			(const gchar *name);
 
 void		gnl_layer_add_source 		(GnlLayer *layer, GnlSource *source, guint64 start);
-void		gnl_layer_set_output 		(GnlLayer *layer, GstElement *output);
+
+void		gnl_layer_set_timer 		(GnlLayer *layer, GnlTimer *timer);
+guint64		gnl_layer_next_change 		(GnlLayer *layer, guint64 time);
+gboolean	gnl_layer_occupies_time 	(GnlLayer *layer, guint64 time);
+gboolean	gnl_layer_prepare_for	 	(GnlLayer *layer, guint64 start, guint64 stop);
 
 #ifdef __cplusplus
 }

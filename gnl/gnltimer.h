@@ -59,11 +59,14 @@ struct _GnlTimer {
 
   guint64	 start_time;
   guint64	 notify_time;
+  guint64	 out_time;
   GnlTimerNotify notify_func;
   gpointer	 user_data;
+  GstClock	*clock;
 
   gboolean 	 eos;
   gboolean 	 need_seek;
+  gboolean 	 master;
 };
 
 struct _GnlTimerClass {
@@ -77,9 +80,13 @@ GType		gnl_timer_get_type		(void);
 GnlTimer*	gnl_timer_new			(void);
 
 guint64		gnl_timer_get_time		(GnlTimer *timer);
+void		gnl_timer_set_time		(GnlTimer *timer, guint64 time);
 void		gnl_timer_notify_async		(GnlTimer *timer, guint64 start_time, guint64 end_time, 
+						 guint64 out_time,
 						 GnlTimerNotify notify_func, 
 						 gpointer user_data);
+
+void		gnl_timer_set_master		(GnlTimer *timer);
 
 #ifdef __cplusplus
 }

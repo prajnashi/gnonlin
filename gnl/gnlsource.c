@@ -119,7 +119,7 @@ gnl_source_set_start_stop (GnlSource *source, guint64 start, guint64 stop)
 static GstElementStateReturn
 gnl_source_change_state (GstElement *element)
 {
-  GnlSource *source = GNL_SOURCE (element);
+  //GnlSource *source = GNL_SOURCE (element);
 
   GST_ELEMENT_CLASS (parent_class)->change_state (element);
 

@@ -20,9 +20,14 @@
 
 
 #include "gnltimeline.h"
+#include "gnltimer.h"
 
 static void 		gnl_timeline_class_init 	(GnlTimelineClass *klass);
 static void 		gnl_timeline_init 		(GnlTimeline *timeline);
+
+static GstElementStateReturn
+			gnl_timeline_change_state 	(GstElement *element);
+
 
 static GnlCompositionClass *parent_class = NULL;
 
@@ -52,18 +57,34 @@ static void
 gnl_timeline_class_init (GnlTimelineClass *klass)
 {
   GObjectClass *gobject_class;
+  GstElementClass *gstelement_class;
 
   gobject_class =       (GObjectClass*)klass;
+  gstelement_class = (GstElementClass*)klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_COMPOSITION);
+
+  gstelement_class->change_state = gnl_timeline_change_state;
 }
 
 
 static void
 gnl_timeline_init (GnlTimeline *timeline)
 {
-}
+  GnlTimer *timer;
 
+  timer = gnl_timer_new ();  
+  timeline->timer = timer;
+  GNL_LAYER (timeline)->timer = timer;
+
+  gst_object_set_name (GST_OBJECT (timer), "main_timer");
+
+  gnl_timer_set_master (timer);
+  gst_bin_add (GST_BIN (timeline), GST_ELEMENT (timer));
+
+  gst_element_add_ghost_pad (GST_ELEMENT (timeline),
+		  gst_element_get_pad (GST_ELEMENT (timer), "src"), "src");
+}
 
 GnlTimeline*
 gnl_timeline_new (const gchar *name)
@@ -77,5 +98,39 @@ gnl_timeline_new (const gchar *name)
 
   return new;
 }
+
+static void
+distribute_timers (GnlTimeline *timeline)
+{
+  GnlTimer *timer = timeline->timer;
+  GList *walk = GNL_COMPOSITION (timeline)->layers;
+
+  g_print ("distribute timers\n");
+
+  while (walk) {
+    GnlLayer *layer = GNL_LAYER (walk->data);
+
+    gnl_layer_set_timer (layer, timer);
+
+    walk = g_list_next (walk);
+  }
+}
+
+static GstElementStateReturn
+gnl_timeline_change_state (GstElement *element)
+{
+  GnlTimeline *timeline = GNL_TIMELINE (element);
+
+  switch (GST_STATE_TRANSITION (element)) {
+    case GST_STATE_NULL_TO_READY:
+      break;
+    case GST_STATE_PAUSED_TO_PLAYING:
+      distribute_timers (timeline);
+      break;
+  }
+	  
+  return GST_ELEMENT_CLASS (parent_class)->change_state (element);
+}
+
 
 

@@ -50,6 +50,10 @@ typedef struct _GnlCompositionClass GnlCompositionClass;
 struct _GnlComposition {
   GnlLayer layer;
 
+  GList    *layers;
+
+  GnlLayer *current;
+  gulong    handler;
 };
 
 struct _GnlCompositionClass {

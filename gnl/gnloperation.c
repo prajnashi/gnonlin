@@ -43,7 +43,7 @@ gnl_operation_get_type (void)
       32,
       (GInstanceInitFunc) gnl_operation_init,
     };
-    operation_type = g_type_register_static (G_TYPE_OBJECT, "GnlOperation", &operation_info, 0);
+    operation_type = g_type_register_static (GST_TYPE_BIN, "GnlOperation", &operation_info, 0);
   }
   return operation_type;
 }

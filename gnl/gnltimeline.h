@@ -49,8 +49,9 @@ typedef struct _GnlTimeline GnlTimeline;
 typedef struct _GnlTimelineClass GnlTimelineClass;
 
 struct _GnlTimeline {
-  GnlComposition	parent;
+  GnlComposition	 parent;
 
+  GnlTimer		*timer;
 };
 
 struct _GnlTimelineClass {
