@@ -112,7 +112,7 @@ gnl_composition_next_change (GnlLayer *layer, guint64 time)
 {
   GnlComposition *composition = GNL_COMPOSITION (layer);
   GList *layers = composition->layers;
-  guint64 res = -1;
+  guint64 res = G_MAXINT64;
 
   while (layers) {
     GnlLayer *clayer = GNL_LAYER (layers->data);
@@ -120,7 +120,7 @@ gnl_composition_next_change (GnlLayer *layer, guint64 time)
 
     lnext = gnl_layer_next_change (clayer, time);
 
-    if (lnext != -1 && lnext < res) {
+    if (lnext != G_MAXINT64 && lnext < res) {
       res = lnext;
     }
     layers = g_list_next (layers);
@@ -155,7 +155,7 @@ gnl_composition_reschedule (GnlComposition *composition, GstClockTime time, gboo
 next:
   layer = find_layer_for_time (composition, time);
   if (layer) { 
-    guint64 next_change = -1;
+    guint64 next_change = G_MAXINT64;
     GnlLayer *next_layer;
 
     next_change = gnl_layer_next_change (GNL_LAYER (composition), time+1),
@@ -165,7 +165,7 @@ next:
 		    next_change,
 		    gnl_layer_next_change (GNL_LAYER (layer), time+1));
 
-    if (next_change != -1) {
+    if (next_change != G_MAXINT64) {
       next_layer = find_layer_for_time (composition, next_change);
       if (next_layer) {
         g_print ("%s layer at next_change: %s\n", 
@@ -173,7 +173,7 @@ next:
                     GST_ELEMENT_NAME (next_layer));
 
 	if (next_layer == layer) {
-          next_change = -1;
+          next_change = G_MAXINT64;
 	}
       }
     }
@@ -211,7 +211,7 @@ next:
   }
   else {
     guint64 next_time = gnl_composition_next_change (GNL_LAYER (composition), time);
-    if (next_time == -1) {
+    if (next_time == G_MAXINT64) {
       g_print ("%s nothing more to do %lld %p %d\n", GST_ELEMENT_NAME (composition), time, layer, change_state);
     }
     else {

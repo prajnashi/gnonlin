@@ -122,7 +122,7 @@ gnl_layer_next_change_func (GnlLayer *layer, guint64 time)
     sources = g_list_next (sources);
   }
 
-  return -1;
+  return G_MAXUINT64;
 }
 
 static GnlLayerEntry*
@@ -155,7 +155,7 @@ gnl_layer_next_change (GnlLayer *layer, guint64 time)
   if (CLASS (layer)->next_change)
     return CLASS (layer)->next_change (layer, time);
 
-  return -1;
+  return 0;
 }
 
 gboolean
@@ -251,6 +251,7 @@ gnl_layer_schedule (GnlTimer *timer, GstClockTime start, GstClockTime stop, gpoi
   if (entry) {
     GnlSource *source = entry->source;
     GstPad *pad;
+    guint64 duration, real_start;
 
     pad = gst_element_get_pad (GST_ELEMENT (layer), "src");
     if (pad) {
@@ -270,9 +271,13 @@ gnl_layer_schedule (GnlTimer *timer, GstClockTime start, GstClockTime stop, gpoi
 		    	       gst_element_get_pad (GST_ELEMENT (source), "src"), 
 			       "src");
 
+    duration = MIN (stop - start, source->stop - source->start) - 1; 
+    real_start = start - entry->start + source->start, 
+    g_print ("%lld %lld %lld %lld -> %lld\n", stop, start, source->stop, source->start, duration);
+
     gnl_timer_notify_async (layer->timer, 
-	 	      	    start - entry->start + source->start, 
-	 	      	    MIN (stop, source->stop - source->start) + source->start - 1, 
+	 	      	    real_start,
+	 	      	    real_start + duration, 
 	 	      	    start, 
 			    source_ended, layer);
     return TRUE;
