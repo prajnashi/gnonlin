@@ -1,5 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
+ *               2004 Edward Hervey <bilboed@bilboed.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -20,12 +21,12 @@
 
 
 #include <gnl/gnlgroup.h>
-#include <gnl/gnllayer.h>
+#include <gnl/gnlcomposition.h>
 
 static void 		gnl_group_class_init 		(GnlGroupClass *klass);
 static void 		gnl_group_init 			(GnlGroup *group);
 
-static GnlVLayerClass *parent_class = NULL;
+static GnlCompositionClass *parent_class = NULL;
 
 #define CLASS(group)  GNL_GROUP_CLASS (G_OBJECT_GET_CLASS (group))
 
@@ -46,7 +47,7 @@ gnl_group_get_type (void)
       32,
       (GInstanceInitFunc) gnl_group_init,
     };
-    group_type = g_type_register_static (GNL_TYPE_VLAYER, "GnlGroup", &group_info, 0);
+    group_type = g_type_register_static (GNL_TYPE_COMPOSITION, "GnlGroup", &group_info, 0);
   }
   return group_type;
 }
@@ -62,7 +63,7 @@ gnl_group_class_init (GnlGroupClass *klass)
   gstbin_class = 	(GstBinClass*)klass;
   gstelement_class = 	(GstElementClass*)klass;
 
-  parent_class = g_type_class_ref (GNL_TYPE_VLAYER);
+  parent_class = g_type_class_ref (GNL_TYPE_COMPOSITION);
 }
 
 
@@ -85,7 +86,7 @@ gnl_group_new (const gchar *name)
 }
 
 void
-gnl_group_append_layer (GnlGroup *group, GnlLayer *layer)
+gnl_group_append_composition (GnlGroup *group, GnlComposition *comp)
 {
-  gnl_vlayer_append_layer (GNL_VLAYER (group), layer);
+  gnl_composition_add_object (GNL_COMPOSITION (group), GNL_OBJECT (comp));
 }

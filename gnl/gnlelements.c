@@ -1,6 +1,7 @@
 /* GStreamer
  * Copyright (C) 1999,2000 Erik Walthinsen <omega@cse.ogi.edu>
  *                    2000 Wim Taymans <wtay@chello.be>
+ *                    2004 Edward Hervey <bilboed@bilboed.com>
  *
  * gstelements.c:
  *
@@ -20,34 +21,71 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <gst/gst.h>
 #include "config.h"
 #include "gnlsource.h"
-#include "gnllayer.h"
+#include "gnlcomposition.h"
 
-GST_DEBUG_CATEGORY (gnl_debug);
+struct _elements_entry {
+  gchar *name;
+  GType (*type) (void);
+};
 
-static gboolean
-plugin_init (GstPlugin *plugin)
+
+/*extern GType gst_filesrc_get_type(void);*/
+/*extern GstElementDetails gst_filesrc_details;*/
+
+static struct _elements_entry _elements[] = {
+  { "gnlsource", 	gnl_source_get_type },
+  { "gnlcomposition", 	gnl_composition_get_type },
+  { NULL, 0 }
+};
+
+gboolean
+gnl_elements_plugin_init (GstPlugin *plugin)
 {
-  GST_DEBUG_CATEGORY_INIT (gnl_debug, "gnl", 0, "gnonlinear");
+  gint i = 0;
 
-  /* XXX is GST_RANK_NONE correct? */
-  if (!gst_element_register (plugin, "gnlsource", GST_RANK_NONE, GNL_TYPE_SOURCE))
-    return FALSE;
-  if (!gst_element_register (plugin, "gnllayer", GST_RANK_NONE, GNL_TYPE_LAYER))
-    return FALSE;
+  /*  gst_plugin_set_longname (plugin, "Standard GNL Elements");*/
+
+  for ( ; _elements[i].name; i++ )
+    if (!(gst_element_register(plugin,
+			       _elements[i].name,
+			       GST_RANK_NONE,
+			       (_elements[i].type) () )))
+      return FALSE;
+	
   
+  /*	factory = gst_element_factory_new (_elements[i].name,
+	(_elements[i].type) (),
+	_elements[i].details);
+	
+	if (!factory) {
+	g_warning ("gst_element_factory_new failed for `%s'",
+	_elements[i].name);
+	continue;
+  
+  
+	gst_plugin_add_feature (plugin, GST_PLUGIN_FEATURE (factory));
+	if (_elements[i].factoryinit) {
+	_elements[i].factoryinit (factory);
+	}*/
   return TRUE;
 }
 
-GST_PLUGIN_DEFINE (
-  GST_VERSION_MAJOR,
-  GST_VERSION_MINOR,
-  "gnlelements",
-  "Standard elements for nonlinear video editing",
-  plugin_init,
-  VERSION,
-  GNL_LICENSE,
-  GNL_PACKAGE,
-  GNL_ORIGIN)
+/* GstPluginDesc plugin_desc = { */
+/*   GST_VERSION_MAJOR, */
+/*   GST_VERSION_MINOR, */
+/*   "gnlelements", */
+/*   gnl_elements_plugin_init */
+/* }; */
+
+GST_PLUGIN_DEFINE ( GST_VERSION_MAJOR, GST_VERSION_MINOR,
+		    "gnlelements",
+		    "Standard elements for nonlinear video editing",
+		    gnl_elements_plugin_init,
+		    VERSION,
+		    "LGPL",
+		    "Gnonlin",
+		    "http://gnonlin.sf.net/")
 

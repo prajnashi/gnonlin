@@ -12,12 +12,10 @@ libgnl_la_SOURCES =		\
 	gnlcomposition.c	\
 	gnlelements.c		\
 	gnlgroup.c		\
-	gnllayer.c		\
 	gnlmarshal.c		\
 	gnloperation.c		\
 	gnlsource.c		\
-	gnltimeline.c		\
-	gnlvlayer.c
+	gnltimeline.c
 
 BUILT_SOURCES = gnlmarshal.h gnlmarshal.c
 
@@ -30,11 +28,9 @@ gnl_headers =			\
 	gnl.h			\
 	gnlcomposition.h	\
 	gnlgroup.h		\
-	gnllayer.h		\
 	gnloperation.h		\
 	gnlsource.h		\
-	gnltimeline.h		\
-	gnlvlayer.h
+	gnltimeline.h
 
 libgnlinclude_HEADERS =	$(gnl_headers) $(built_headers)
 

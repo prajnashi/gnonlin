@@ -1,61 +1,67 @@
 dnl This is the configure.ac for the gnonlin library
 AC_INIT
+AC_CANONICAL_TARGET
+
+dnl AM_MAINTAINER_MODE only provides the option to configure to enable it
+AM_MAINTAINER_MODE
 
 dnl when going to/from release please set the nano (fourth number) right !
-AS_VERSION(gnonlin, GNL_VERSION, 0, 1, 9, 0, GNL_CVS="no", GNL_CVS="yes")
+AS_VERSION(gnonlin, GNL_VERSION, 0, 1, 9, 1, GNL_CVS="no", GNL_CVS="yes")
+
+dnl Required GStreamer version
+GST_REQ=0.8.9
+
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
 
-dnl We disable static building for development, for time savings
-dnl AM_DISABLE_STATIC
-AS_LIBTOOL(GNL, 0, 0, 0, yes)
-dnl AC_LIBTOOL_DLOPEN
-AM_PROG_LIBTOOL
+GST_MAJORMINOR=0.8
+AC_SUBST(GST_MAJORMINOR)
 
-AC_CONFIG_SRCDIR([gnl/gnl.c])
+dnl CURRENT, REVISION, AGE
+dnl - library source changed -> increment REVISION
+dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
+dnl - interfaces added -> increment AGE
+dnl - interfaces removed -> AGE = 0
+AS_LIBTOOL(GNL, 1, 0, 0)
+AM_PROG_LIBTOOL()
+
+AC_CONFIG_SRCDIR(configure.ac)
 AM_CONFIG_HEADER(config.h)
-
-dnl libtool
-dnl GNL_CURRENT=0
-dnl GNL_REVISION=0
-dnl GNL_AGE=0
 
 dnl Add parameters for aclocal
 dnl (This must come after AM_INIT_AUTOMAKE, since it modifies ACLOCAL)
-ACLOCAL="$ACLOCAL -I common/m4 $ACLOCAL_FLAGS"
+AC_SUBST(ACLOCAL_AMFLAGS, "-I m4 -I common/m4 $ACLOCAL_FLAGS")
 
 AC_PROG_CC
 AC_PROG_CC_STDC
+AS="${CC}"
 
-dnl stuff found by autoscan
-AC_CHECK_FUNCS([strstr])
-AC_CHECK_HEADERS([unistd.h])
-AC_C_CONST
-AC_FUNC_STAT
+dnl decide on error flags
+AS_COMPILER_FLAG(-Wall, GST_WALL="yes", GST_WALL="no")
 
-dnl GST_DEBUGINFO
+if test "x$GST_WALL" = "xyes"; then
+   GST_ERROR="$GST_ERROR -Wall"
 
-dnl modify pkg-config path
-AC_ARG_WITH(pkg-config-path, 
-   AC_HELP_STRING([--with-pkg-config-path],[colon-separated list of pkg-config(1) dirs]),
-   [export PKG_CONFIG_PATH=${withval}])
-
-dnl check for appropriate GStreamer libs. first check for 0.8, then 0.7.
-HAVE_GSTREAMER=no
-GSTREAMER_REQ="0.7.1"
-AC_SUBST(GSTREAMER_REQ)
-
-GSTREAMER_MAJORMINOR="0.8"
-PKG_CHECK_MODULES(GST, gstreamer-$GSTREAMER_MAJORMINOR >= $GSTREAMER_REQ,
-                       HAVE_GSTREAMER=yes,HAVE_GSTREAMER=no)
-if test "x$HAVE_GSTREAMER" = "xno"; then
-GSTREAMER_MAJORMINOR="0.7"
-PKG_CHECK_MODULES(GST, gstreamer-$GSTREAMER_MAJORMINOR >= $GSTREAMER_REQ,
-                       HAVE_GSTREAMER=yes,HAVE_GSTREAMER=no)
+   if test "x$GST_CVS" = "xyes"; then
+     AS_COMPILER_FLAG(-Werror,GST_ERROR="$GST_ERROR -Werror",GST_ERROR="$GST_ERROR")
+     GST_ERROR="$GST_ERROR -DG_DISABLE_DEPRECATED"
+   fi
 fi
 
-if test "x$HAVE_GSTREAMER" = "xno"; then
-   AC_MSG_ERROR([No GStreamer development libraries found])
+AC_HEADER_STDC([])
+
+dnl check for gstreamer; uninstalled is selected preferentially -- see pkg-config(1)
+PKG_CHECK_MODULES(GST, gstreamer-$GST_MAJORMINOR >= $GST_REQ,
+  HAVE_GST="yes", HAVE_GST="no")
+                                                                                
+if test "x$HAVE_GST" = "xno"; then
+  AC_MSG_ERROR(no GStreamer found)
 fi
+
+GST_PLUGIN_LDFLAGS="-module -avoid-version $EXPORT_LDFLAGS"
+AC_SUBST(GST_PLUGIN_LDFLAGS)
+
+plugindir = "\$(libdir)/gstreamer-$GST_MAJORMINOR"
+AC_SUBST(plugindir)
 
 dnl get the genmarshal command for the *.list files
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
@@ -75,4 +81,5 @@ AC_OUTPUT([
   test/Makefile
   gnonlin-config
   gnonlin.pc
+  gnonlin.spec
 ])

@@ -1,5 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
+ *               2004 Edward Hervey <bilboed@bilboed.com>
  *
  * gnlgroup.h: Header for base GnlGroup
  *
@@ -23,11 +24,9 @@
 #ifndef __GNL_GROUP_H__
 #define __GNL_GROUP_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <gnl/gnlvlayer.h>
+#include <gnl/gnl.h>
+#include <gnl/gnltypes.h>
+#include <gnl/gnlcomposition.h>
 
 G_BEGIN_DECLS
 
@@ -42,24 +41,22 @@ G_BEGIN_DECLS
 #define GNL_IS_GROUP_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_GROUP))
 
-typedef struct _GnlGroup GnlGroup;
-typedef struct _GnlGroupClass GnlGroupClass;
 
 struct _GnlGroup {
-  GnlVLayer		 parent;
+  GnlComposition	 parent;
 
   GList			*layers;
 };
 
 struct _GnlGroupClass {
-  GnlVLayerClass	parent_class;
+  GnlCompositionClass	parent_class;
 };
 
 /* normal GGroup stuff */
 GType		gnl_group_get_type		(void);
 GnlGroup*	gnl_group_new			(const gchar *name);
 
-void		gnl_group_append_layer		(GnlGroup *group, GnlLayer *layer);
+void		gnl_group_append_layer		(GnlGroup *group, GnlComposition *layer);
 
 G_END_DECLS
 

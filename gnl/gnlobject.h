@@ -1,5 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
+ *               2004 Edward Hervey <bilboed@bilboed.com>
  *
  * gnlobject.h: Header for base GnlObject
  *
@@ -23,33 +24,11 @@
 #ifndef __GNL_OBJECT_H__
 #define __GNL_OBJECT_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-
-#ifdef USE_GLIB2
-#include <glib-object.h>	// note that this gets wrapped in __GNL_OBJECT_H__ 
-#include <gnl/gnlmarshal.h>
-#else
-#include <gnl/gobject2gtk.h>
-#endif
-
-#include <gnl/gnltrace.h>
-#include <parser.h>
-
+#include <gst/gst.h>
+#include <gnl/gnl.h>
 #include <gnl/gnltypes.h>
 
-#ifdef HAVE_ATOMIC_H
-#include <asm/atomic.h>
-#endif
-
-// FIXME
-#include "gnllog.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+G_BEGIN_DECLS
 
 #define GNL_TYPE_OBJECT \
   (gnl_object_get_type())
@@ -62,33 +41,82 @@ extern "C" {
 #define GNL_IS_OBJECT_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OBJECT))
 
-//typedef struct _GnlObject GnlObject;
-//typedef struct _GnlObjectClass GnlObjectClass;
-//
+extern GstElementDetails gnl_object_details;
+gboolean gnl_object_factory_init (GstElementFactory *factory);
+
+typedef enum {
+  GNL_OBJECT_INVALID_RATE_CONTROL = 0,
+  GNL_OBJECT_FIX_MEDIA_STOP = 1,
+  GNL_OBJECT_USE_MEDIA_STOP = 2,
+} GnlObjectRateControl;
+		
 typedef enum
 {
-  GNL_DESTROYED   = 0,
-  GNL_FLOATING,
+  GNL_COVER_ALL,
+  GNL_COVER_SOME,
+  GNL_COVER_START,
+  GNL_COVER_STOP,
+} GnlCoverType;
 
-  GNL_OBJECT_FLAG_LAST   = 4,
-} GnlObjectFlags;
+typedef enum
+{
+  GNL_DIRECTION_FORWARD,
+  GNL_DIRECTION_BACKWARD,
+} GnlDirection;
 
 struct _GnlObject {
-  GstObject object;
+  GstBin 		 parent;
+
+  GstClockTime  	 start;
+  GstClockTime 		 stop;
+  GstClockTime  	 media_start;
+  GstClockTime 		 media_stop;
+  gint			 priority;
+  gboolean		 active;
+
+  GnlObjectRateControl	 rate_control;
+  GstClockTime  	 current_time;
+
+  gpointer		 comp_private;
 };
 
 struct _GnlObjectClass {
-  GstObjectClass	parent_class;
+  GstBinClass		parent_class;
+
+  gboolean		(*prepare)		(GnlObject *object, GstEvent *event);
+  gboolean		(*covers)		(GnlObject *object, 
+		   				 GstClockTime start, GstClockTime stop, GnlCoverType);
+  GstClockTime		(*nearest_change)	(GnlObject *object, GstClockTime time, 
+		                                 GnlDirection direction);
 };
 
 /* normal GObject stuff */
-GType		gnl_object_get_type		(void);
-GnlObject*	gnl_object_new			(void);
+GType			gnl_object_get_type		(void);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+void			gnl_object_set_media_start_stop	(GnlObject *object, GstClockTime start, GstClockTime stop);
+void			gnl_object_get_media_start_stop	(GnlObject *object, GstClockTime *start, GstClockTime *stop);
+void			gnl_object_set_start_stop	(GnlObject *object, GstClockTime start, GstClockTime stop);
+void			gnl_object_get_start_stop	(GnlObject *object, GstClockTime *start, GstClockTime *stop);
+void			gnl_object_set_priority		(GnlObject *object, gint priority);
+gint			gnl_object_get_priority		(GnlObject *object);
 
+GnlObjectRateControl	gnl_object_get_rate_control	(GnlObject *object);
+void			gnl_object_set_rate_control	(GnlObject *object, GnlObjectRateControl control);
+
+gboolean		gnl_object_is_active		(GnlObject *object);
+void			gnl_object_set_active		(GnlObject *object, gboolean active);
+
+gboolean 		gnl_object_covers 		(GnlObject *object, GstClockTime start,
+		                  			 GstClockTime stop, GnlCoverType type);
+GstClockTime    	gnl_object_nearest_change 	(GnlObject *object, GstClockTime time, 
+							 GnlDirection direction);
+gboolean		gnl_object_to_media_time	(GnlObject *object, GstClockTime objecttime,
+							 GstClockTime *mediatime);
+gboolean		gnl_media_to_object_time	(GnlObject *object, GstClockTime mediatime,
+							 GstClockTime *objecttime);
+
+
+G_END_DECLS
 
 #endif /* __GNL_OBJECT_H__ */
 

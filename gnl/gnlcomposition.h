@@ -1,5 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
+ *               2004 Edward Hervey <bilboed@bilboed.com>
  *
  * gnlcomposition.h: Header for base GnlComposition
  *
@@ -23,12 +24,12 @@
 #ifndef __GNL_COMPOSITION_H__
 #define __GNL_COMPOSITION_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <glib/gprintf.h>
 
-#include <gnl/gnlvlayer.h>
-#include <gnl/gnloperation.h>
+#include <gst/gst.h>
+#include <gnl/gnl.h>
+#include <gnl/gnltypes.h>
+#include <gnl/gnlobject.h>
 
 G_BEGIN_DECLS
 
@@ -43,27 +44,46 @@ G_BEGIN_DECLS
 #define GNL_IS_COMPOSITION_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_COMPOSITION))
 
-typedef struct _GnlComposition GnlComposition;
-typedef struct _GnlCompositionClass GnlCompositionClass;
+extern GstElementDetails gnl_composition_details;
+
+typedef struct _GnlCompositionEntry GnlCompositionEntry;
+
+typedef enum
+{
+  GNL_FIND_AT,
+  GNL_FIND_AFTER,
+  GNL_FIND_START,
+} GnlFindMethod;
 
 struct _GnlComposition {
-  GnlVLayer 		 layer;
+  GnlObject		 parent;
 
-  gulong   		 handler;
-  GnlOperation 		*ocurrent;
-  GList			*active;
+  GList			*objects;
+
+  GstClockTime	 	 next_stop;
+  GList			*active_objects;	/* List of currently active objects */
+  GList			*to_remove;		/* List of objects to deactivate */
 };
 
 struct _GnlCompositionClass {
-  GnlVLayerClass	parent_class;
+  GnlObjectClass	parent_class;
+
+  GstClockTime		(*nearest_cover)	(GnlComposition *comp, 
+		  				 GstClockTime start, GnlDirection direction);
 };
 
-/* normal GComposition stuff */
 GType			gnl_composition_get_type	(void);
 GnlComposition*		gnl_composition_new		(const gchar *name);
 
-void            	gnl_composition_add_operation   (GnlComposition *composition, 
-							 GnlOperation *operation, guint64 start);
+void			gnl_composition_add_object 	(GnlComposition *comp, 
+							 GnlObject *object); 
+void			gnl_composition_remove_object 	(GnlComposition *comp, 
+							 GnlObject *object); 
+void			gnl_composition_set_default_source (GnlComposition *comp,
+							    GnlSource *source);
+
+GnlObject*		gnl_composition_find_object	(GnlComposition *comp, 
+							 GstClockTime time, GnlFindMethod method);
 
 G_END_DECLS
 

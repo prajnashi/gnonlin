@@ -1,5 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
+ *               2004 Edward Hervey <bilboed@bilboed.com>
  *
  * gnloperation.h: Header for base GnlOperation
  *
@@ -23,15 +24,11 @@
 #ifndef __GNL_OPERATION_H__
 #define __GNL_OPERATION_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <gnl/gnl.h>
+#include <gnl/gnltypes.h>
+#include <gnl/gnlobject.h>
 
-#include <gnl/gnlsource.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+G_BEGIN_DECLS
 
 #define GNL_TYPE_OPERATION \
   (gnl_operation_get_type())
@@ -44,17 +41,16 @@ extern "C" {
 #define GNL_IS_OPERATION_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OPERATION))
 
-typedef struct _GnlOperation GnlOperation;
-typedef struct _GnlOperationClass GnlOperationClass;
-
 struct _GnlOperation {
-  GnlSource 		source;
+  GnlObject 		parent;
 
   guint			num_sinks;
+  GstElement		*queue;
+  GstElement		*element;
 };
 
 struct _GnlOperationClass {
-  GnlSourceClass	parent_class;
+  GnlObjectClass	parent_class;
 };
 
 /* normal GOperation stuff */
@@ -63,10 +59,7 @@ GnlOperation*	gnl_operation_new		(const gchar *name, GstElement *element);
 
 guint		gnl_operation_get_num_sinks	(GnlOperation *operation);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
+G_END_DECLS
 
 #endif /* __GNL_OPERATION_H__ */
 

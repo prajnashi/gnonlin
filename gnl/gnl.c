@@ -1,11 +1,24 @@
-
 #include <stdlib.h>
-
-#include "gnl.h"
+#include <gnl/gnl.h>
 
 #define MAX_PATH_SPLIT	16
 
 gchar *_gnl_progname;
+
+GST_DEBUG_CATEGORY (GST_CAT_DEFAULT);
+
+#if 0
+extern gboolean gnl_elements_plugin_init (GstPlugin *plugin); 
+ 
+static GstPluginDesc gnl_elements_plugin_desc = { 
+  GST_VERSION_MAJOR, 
+  GST_VERSION_MINOR, 
+  "gnlelements", 
+  "gnonlin pipeline handling elements",
+  gnl_elements_plugin_init, NULL,
+  "0.1", "LGPL", "gnonlin", "http://gnonlin.sf.net"
+}; 
+#endif
 
 
 static gboolean 	gnl_init_check 		(int *argc, gchar ***argv);
@@ -18,16 +31,30 @@ static gboolean 	gnl_init_check 		(int *argc, gchar ***argv);
  * Initializes the GStreamer library, setting up internal path lists,
  * registering built-in elements, and loading standard plugins.
  */
+
 void 
 gnl_init (int *argc, char **argv[]) 
 {
+#if 0
+  GstPlugin *plugin;
+#endif
+
+  GST_DEBUG_CATEGORY_INIT (gnonlin, "gnonlin", GST_DEBUG_FG_GREEN, "gnonlin non-linear library"); 
+ 
   if (!gnl_init_check (argc,argv)) {
     exit (0);
   }
 
   gst_init (argc, argv);
-  gst_scheduler_factory_set_default_name ("basicgthread");
-  /* gst_scheduler_factory_set_default_name ("optwingo"); */
+
+  gst_scheduler_factory_set_default_name ("opt");
+
+#if 0
+  plugin = gst_registry_pool_find_plugin ("gnlelements");
+  if (plugin == NULL) {
+    _gst_plugin_register_static (&gnl_elements_plugin_desc);
+  }
+#endif
 }
 
 /* returns FALSE if the program can be aborted */
@@ -58,6 +85,7 @@ gnl_init_check (int     *argc,
 void 
 gnl_main (void) 
 {
+
 }
 
 /**
@@ -68,4 +96,6 @@ gnl_main (void)
 void 
 gnl_main_quit (void) 
 {
+
 }
+

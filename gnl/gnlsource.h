@@ -1,5 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
+ *               2004 Edward Hervey <bilboed@bilboed.com>
  *
  * gnlsource.h: Header for base GnlSource
  *
@@ -23,7 +24,9 @@
 #ifndef __GNL_SOURCE_H__
 #define __GNL_SOURCE_H__
 
-#include <gst/gst.h>
+#include <gnl/gnl.h>
+#include <gnl/gnltypes.h>
+#include <gnl/gnlobject.h>
 
 G_BEGIN_DECLS
 
@@ -38,42 +41,30 @@ G_BEGIN_DECLS
 #define GNL_IS_SOURCE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_SOURCE))
 
-typedef enum {
-  GNL_SOURCE_INVALID_RATE_CONTROL = 0,
-  GNL_SOURCE_FIX_MEDIA_STOP = 1,
-  GNL_SOURCE_USE_MEDIA_STOP = 2,
-} GnlSourceRateControl;
-		
-typedef struct _GnlSource GnlSource;
-typedef struct _GnlSourceClass GnlSourceClass;
+extern GstElementDetails gnl_source_details;
+gboolean gnl_source_factory_init (GstElementFactory *factory);
+
+typedef struct _GnlSourcePrivate GnlSourcePrivate;
 
 struct _GnlSource {
-  GstElement 		 parent;
-
-  GstClockTime  	 start;
-  GstClockTime 		 stop;
-  GstClockTime  	 media_start;
-  GstClockTime 		 media_stop;
-
-  GnlSourceRateControl	 rate_control;
+  GnlObject 		 parent;
 
   GstElement 		*element;
   GstElement		*bin;
 
   gboolean		 element_added;
-  gint 			 connected_pads;
+  gint 			 linked_pads;
   gint 			 total_pads;
-  GSList		*connections;
+  GSList		*links;
 
-  GstClockTime 		 real_start;
-  GstClockTime 		 real_stop;
-  GstSeekType		 seek_type;
+  GstEvent		*pending_seek;
 
-  GstClockTime  	 current_time;
+  gboolean		 queueing;
+  GnlSourcePrivate	*private;
 };
 
 struct _GnlSourceClass {
-  GstElementClass	parent_class;
+  GnlObjectClass	parent_class;
 
   GstPad*	(*get_pad_for_stream)	(GnlSource *source, const gchar *padname);
 };
@@ -85,18 +76,7 @@ GnlSource*		gnl_source_new			(const gchar *name, GstElement *element);
 void			gnl_source_set_element		(GnlSource *source, GstElement *element);
 GstElement*		gnl_source_get_element		(GnlSource *source);
 
-void			gnl_source_set_media_start_stop	(GnlSource *source, GstClockTime start, GstClockTime stop);
-void			gnl_source_get_media_start_stop	(GnlSource *source, GstClockTime *start, GstClockTime *stop);
-void			gnl_source_set_start_stop	(GnlSource *source, GstClockTime start, GstClockTime stop);
-void			gnl_source_get_start_stop	(GnlSource *source, GstClockTime *start, GstClockTime *stop);
-
 GstPad*			gnl_source_get_pad_for_stream	(GnlSource *source, const gchar *padname);
-
-GnlSourceRateControl	gnl_source_get_rate_control	(GnlSource *source);
-void			gnl_source_set_rate_control	(GnlSource *source, GnlSourceRateControl control);
-
-GstClockTime		gnl_source_get_time		(GnlSource *source);
-gfloat			gnl_source_get_rate		(GnlSource *source);
 
 G_END_DECLS
 

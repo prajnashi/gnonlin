@@ -1,5 +1,6 @@
 /* Gnonlin
  * Copyright (C) <2001> Wim Taymans <wim.taymans@chello.be>
+ *		 <2004> Edward Hervey <bilboed@bilboed.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -22,17 +23,13 @@
 
 #include <glib.h>
 #include <gst/gst.h>
-
-#include <gnl/gnlversion.h>
-#include <gnl/gnloperation.h>
-#include <gnl/gnlcomposition.h>
-#include <gnl/gnllayer.h>
-#include <gnl/gnlvlayer.h>
-#include <gnl/gnlsource.h>
-#include <gnl/gnltimeline.h>
-#include <gnl/gnlversion.h>
+#include <gst/gsttypes.h>
+#include "gnltypes.h"
 
 G_BEGIN_DECLS
+
+#define GST_CAT_DEFAULT gnonlin
+GST_DEBUG_CATEGORY_EXTERN(GST_CAT_DEFAULT);
 
 /* initialize GNL */
 void gnl_init(int *argc,char **argv[]);

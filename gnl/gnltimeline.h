@@ -1,5 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
+ *               2004 Edward Hervey <bilboed@bilboed.com>
  *
  * gnltimeline.h: Header for base GnlTimeline
  *
@@ -23,11 +24,9 @@
 #ifndef __GNL_TIMELINE_H__
 #define __GNL_TIMELINE_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <gnl/gnlvlayer.h>
+#include <gnl/gnl.h>
+#include <gnl/gnltypes.h>
+#include <gnl/gnlcomposition.h>
 #include <gnl/gnlgroup.h>
 
 G_BEGIN_DECLS
@@ -43,19 +42,17 @@ G_BEGIN_DECLS
 #define GNL_IS_TIMELINE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_TIMELINE))
 
-typedef struct _GnlTimeline GnlTimeline;
-typedef struct _GnlTimelineClass GnlTimelineClass;
 typedef struct _GnlTimelineTimer GnlTimelineTimer;
 
 struct _GnlTimeline {
-  GnlVLayer		 parent;
+  GnlComposition	 parent;
 
   GList			*groups;
   GnlTimelineTimer 	*timer;
 };
 
 struct _GnlTimelineClass {
-  GnlVLayerClass	 parent_class;
+  GnlCompositionClass 	parent_class;
 };
 
 GType		gnl_timeline_get_type		(void);
