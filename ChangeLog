@@ -1,6 +1,15 @@
+2005-03-31  Edward Hervey  <bilboed@bilboed.com>
+
+	* docs/random/design: 
+	Updated explanatory documentation
+
 2005-03-30  Edward Hervey  <bilboed@bilboed.com>
 
-	* gnl/gnl.h: 
+	* docs/libs/tmpl/gnlcomposition.sgml: 
+
+2005-03-30  Edward Hervey  <bilboed@bilboed.com>
+
+ 	* gnl/gnl.h: 
 	* gnl/gnlobject.h:
 	* docs/libs/gnonlin-sections.txt:
 	* docs/libs/tmpl/gnlobject.sgml:

@@ -1,80 +1,59 @@
-GnlSource:
-  - extends from a GstBin
-  - consist of a single GStreamer pipeline with 1 output pad
-  - have a start and stop time
-  - have one output pad, ghosted from the Gst bin
+GNonLin overview
 
-GnlLayer:
-  - extends GstBin
-  - contains sources
-  - sources cannot overlap
-  - sources have start property inside the layer
+GNonLin works as a companion library for GStreamer, in order to be able to
+easily manipulate and assemble media streams through time, and use that 
+composition in any GStreamer graph.
 
-GnlComposition:
-  - extends GnlLayer
-  - can contain GnlLayers, possibly overlapping
-  - can hold a layer of non overlapping operations.
+* GnlObject
 
-GnlOperation:
-  - extends GnlSource
-  - also ghosts N input pads in addition to the GnlSources output pad
+ All gnonlin objects derive from this base class. It has the following 
+properties:
 
-GnlTimeline
-  - extends GstBin
-  - can be added to a GstThread or GstPipeline to be rendered
-  - contains one or more groups
+ * Media start/stop time. This allows to select a specific time range from the 
+   underlying media stream.
 
-GnlGroup
-  - extends GnlComposition
-  - contains components of the same media type
-  - has a sink pad with final rendered output
+ * Start/Stop time. This allows to position the given object in it's parent 
+   object.
 
+ * (Order of) Priority. When you assemble several objects together and they 
+   overlap in time, this property allows you to decide which one has priority 
+   over the others. The lower the value, the higher the priority.
+
+ * It derives from a GstBin, therefore all GNonLin elements can be used alone in
+   a GStreamer graph.
+
+* GnlSource
+
+ Wrapper to use GStreamer source elements in GNonLin. In addition to GnlObject 
+properties it has an element property which is the wrapped element.
+
+* GnlOperation
+
+ Wrapper to use GStreamer filter/effects elements in GNonLin. It can only support
+elements with one output pad.
+
+* GnlComposition
+
+ Class for "combining" several "one source output" GnlObjects. Used as such it 
+can only handle same-media type. In addition to adding/removing GnlObjects to 
+it, you can also set a default source which will be played during "gaps".
+
+* GnlTimeline
+
+ Class for "combining" several GnlComposition together. This is the highest level
+GNonLin element.
+
+
+Object Hierarchy:
 
 GstBin
  !
- +---- GnlSource
- !      !
- !      +----- GnlOperation
- !	
- +---- GnlLayer
- !      !
- !      +---- GnlComposition
- !             !
- !             +---- GnlGroup
- !
- +---- GnlTimeline
-
-
-
- .-0----->-----------5000----->------10000----->-----15000---.
- ! main_timeline                                             !
- !                                                           !
- ! .- composition -----------------------------------------. !
- ! !                  .- operation ---.                    ! !
- ! !                  !               !                    ! !
- ! !                  ! blend         !                    ! !
- ! !                  '---------------'                    ! !
- ! ! .- layer2 ------------------------------------------. ! !
- ! ! ! .-- source1 -------------------.                  ! ! !
- ! ! ! !                              !                  ! ! !
- ! ! ! ! /myfile.avi                  !                  ! ! !
- ! ! ! '------------------------------'                  ! ! !
- ! ! '---------------------------------------------------' ! !
- ! ! .- layer3 ------------------------------------------. ! !
- ! ! !                .- source2 ---------------------.  ! ! !
- ! ! !                !                               !  ! ! !
- ! ! !                ! /myfile2.avi                  !  ! ! !
- ! ! !                '-------------------------------'  ! ! !
- ! ! '---------------------------------------------------' ! !
- ! '-------------------------------------------------------' ! 
- '-----------------------------------------------------------'
-
-An operation with N sinkpads uses N layers (in order of priority) to
-create the final ouput on the srcpad.
-  
-
-      *****		(alpha blend 2 layers)
-===========
-      *********		(monochrome 1 layer)
-      =========
-      
+ +--- GnlObject
+       !
+       +--- GnlSource
+       !
+       +--- GnlOperation
+       !
+       +--- GnlComposition
+             !
+             +--- GnlTimeline
