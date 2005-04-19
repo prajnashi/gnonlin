@@ -1,3 +1,8 @@
+2005-04-19  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/gnlcomposition.c: 
+	gnl_composition_dispose was superfluous, now removed
+
 2005-04-12  Edward Hervey  <bilboed@bilboed.com>
 
 	* configure.ac: releasing 0.2.0 !!

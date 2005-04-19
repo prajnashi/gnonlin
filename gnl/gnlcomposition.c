@@ -31,7 +31,6 @@ static GstElementDetails gnl_composition_details = GST_ELEMENT_DETAILS (
 static void		gnl_composition_base_init		(gpointer g_class);
 static void 		gnl_composition_class_init 		(GnlCompositionClass *klass);
 static void 		gnl_composition_init 			(GnlComposition *comp);
-static void 		gnl_composition_dispose 		(GObject *object);
 static void 		gnl_composition_finalize 		(GObject *object);
 
 static GstElementStateReturn
@@ -115,7 +114,6 @@ gnl_composition_class_init (GnlCompositionClass *klass)
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
 
-  gobject_class->dispose 	 = gnl_composition_dispose;
   gobject_class->finalize 	 = gnl_composition_finalize;
 
   gstelement_class->change_state = gnl_composition_change_state;
@@ -140,27 +138,6 @@ gnl_composition_init (GnlComposition *comp)
   comp->next_stop = 0;
   comp->active_objects = NULL;
   comp->to_remove = NULL;
-}
-
-static void
-gnl_composition_dispose (GObject *object)
-{
-  GnlComposition *comp = GNL_COMPOSITION (object);
-  GList *objects = comp->objects;
-  GnlCompositionEntry *entry = NULL;
-
-  GST_INFO("dispose");
-  while (objects) {
-    entry = (GnlCompositionEntry *) (objects->data);
-    GST_INFO ("Removing %s",
-	      gst_element_get_name (GST_ELEMENT (entry->object)));
-
-    g_object_unref (entry->object);
-
-    objects = g_list_next (objects);
-  }
-
-  G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
 static void
