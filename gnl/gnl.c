@@ -5,8 +5,6 @@
 
 gchar *_gnl_progname;
 
-GST_DEBUG_CATEGORY (gnonlin);
-
 extern gboolean gnl_elements_plugin_init (GstPlugin *plugin); 
  
 static GstPluginDesc gnl_elements_plugin_desc = { 
@@ -35,8 +33,6 @@ gnl_init (int *argc, char **argv[])
 {
   GstPlugin *plugin;
 
-  GST_DEBUG_CATEGORY_INIT (gnonlin, "gnonlin", GST_DEBUG_FG_GREEN, "gnonlin non-linear library"); 
- 
   if (!gnl_init_check (argc,argv)) {
     exit (0);
   }

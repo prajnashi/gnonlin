@@ -21,6 +21,9 @@
 
 #include "gnl.h"
 
+GST_DEBUG_CATEGORY_STATIC (gnltimeline);
+#define GST_CAT_DEFAULT gnltimeline
+
 #define GNL_TYPE_TIMELINE_TIMER \
   (gnl_timeline_timer_get_type())
 #define GNL_TIMELINE_TIMER(obj) \
@@ -458,6 +461,11 @@ gnl_timeline_timer_loop (GstElement *element)
  * timeline
  */
 
+GstStaticPadTemplate gnl_timeline_src_template = GST_STATIC_PAD_TEMPLATE ("src_%s",
+    GST_PAD_SRC,
+    GST_PAD_REQUEST,
+    GST_STATIC_CAPS_ANY);
+
 static GstElementDetails gnl_timeline_details = GST_ELEMENT_DETAILS ( 
   "GNL Timeline",
   "Filter Editor",
@@ -510,6 +518,8 @@ gnl_timeline_base_init (gpointer g_class)
   GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
 
   gst_element_class_set_details (gstclass, &gnl_timeline_details);
+  gst_element_class_add_pad_template (gstclass,
+      gst_static_pad_template_get (&gnl_timeline_src_template));
 }
 
 static void
@@ -528,6 +538,8 @@ gnl_timeline_class_init (GnlTimelineClass *klass)
   gnlobject_class 	= (GnlObjectClass*)klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_COMPOSITION);
+
+  GST_DEBUG_CATEGORY_INIT (gnltimeline, "gnltimeline", 0, "GNonLin Timeline");
 
   gobject_class->dispose = gnl_timeline_dispose;
   gobject_class->finalize = gnl_timeline_finalize;
@@ -587,6 +599,12 @@ static void
 gnl_timeline_init (GnlTimeline *timeline)
 {
   timeline->groups = NULL;
+
+  GST_INFO ("init");
+  timeline->timer = g_object_new (GNL_TYPE_TIMELINE_TIMER, NULL);
+  gst_object_set_name (GST_OBJECT (timeline->timer), "timeline_timer");
+/*   gst_object_ref (GST_OBJECT (timeline->timer)); */
+  gst_bin_add (GST_BIN (timeline), GST_ELEMENT (timeline->timer));  
 }
 
 /**
@@ -608,10 +626,10 @@ gnl_timeline_new (const gchar *name)
   timeline = g_object_new (GNL_TYPE_TIMELINE, NULL);
   gst_object_set_name (GST_OBJECT (timeline), name);
 
-  timeline->timer = g_object_new (GNL_TYPE_TIMELINE_TIMER, NULL);
-  gst_object_set_name (GST_OBJECT (timeline->timer), g_strdup_printf ("%s_timer", name));
-  gst_object_ref (GST_OBJECT (timeline->timer));
-  gst_bin_add (GST_BIN (timeline), GST_ELEMENT (timeline->timer));
+/*   timeline->timer = g_object_new (GNL_TYPE_TIMELINE_TIMER, NULL); */
+/*   gst_object_set_name (GST_OBJECT (timeline->timer), g_strdup_printf ("%s_timer", name)); */
+/*   gst_object_ref (GST_OBJECT (timeline->timer)); */
+/*   gst_bin_add (GST_BIN (timeline), GST_ELEMENT (timeline->timer)); */
 
   return timeline;
 }
@@ -685,7 +703,7 @@ gnl_timeline_add_composition (GnlTimeline *timeline, GnlComposition *composition
     
     timeline_update_start_stop (timeline);
   } else {
-    gst_bin_add (GST_BIN (timeline), GST_ELEMENT (composition));
+    GST_BIN_CLASS(parent_class)->add_element(GST_BIN(timeline), GST_ELEMENT(composition));
   }
 }
 
@@ -741,13 +759,15 @@ gnl_timeline_request_new_pad	(GstElement *element, GstPadTemplate *templ,
   GnlTimeline	*timeline = GNL_TIMELINE (element);
   GList	*walk = timeline->groups;
 
+  GST_INFO ("Requesting new pad for composition : %s", name);
+
   /* look for the composition called name */
   while (walk) {
     GnlComposition	*comp = GNL_COMPOSITION (walk->data);
 
     /* if there's one return gnl_timeline_get_pad_for_composition() */
 
-    if (!g_ascii_strcasecmp(gst_element_get_name(comp), name))
+    if (!g_ascii_strcasecmp(gst_element_get_name(comp), name + 4))
       return gnl_timeline_get_pad_for_composition (timeline, comp);
   }
   return NULL;

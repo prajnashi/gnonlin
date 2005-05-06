@@ -117,6 +117,5 @@ gnl_init
 gnl_main
 gnl_main_quit
 <SUBSECTION Private>
-GST_CAT_DEFAULT
 gnl_marshal_OBJECT__STRING
 </SECTION>

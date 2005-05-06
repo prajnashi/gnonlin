@@ -1,6 +1,23 @@
 2005-05-06  Edward Hervey  <bilboed@bilboed.com>
 
 	* gnl/gnltimeline.c:
+	Added "src_%s" PadTemplate so _request_new_pad() works...
+	
+	* gnl/gnl.c: 
+	* gnl/gnl.h:
+	* gnl/gnlcomposition.c:
+	* gnl/gnlobject.c:
+	* gnl/gnloperation.c:
+	* gnl/gnltimeline.c:
+	No more using global "gnonlin" debug category, using element specific categories
+
+	* docs/libs/tmpl/gnloperation.sgml: added "element" property documentation
+
+	* docs/libs/gnonlin-sections.txt: removed GST_CAT_DEFAULT
+
+2005-05-06  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/gnltimeline.c:
 	Implemented GstElement->request_new_pad() in order to get a pad
 	corresponding to a composition using standard API.
 	Implement GstBin->add_element() in order to add a composition to the

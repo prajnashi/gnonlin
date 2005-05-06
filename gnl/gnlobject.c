@@ -23,6 +23,9 @@
 #include "gnl.h"
 #include "gnlmarshal.h"
 
+GST_DEBUG_CATEGORY_STATIC (gnlobject);
+#define GST_CAT_DEFAULT gnlobject
+
 enum {
   ARG_0,
   ARG_START,
@@ -109,6 +112,8 @@ gnl_object_class_init (GnlObjectClass *klass)
   gnlobject_class = 	(GnlObjectClass*)klass;
 
   parent_class = g_type_class_ref (GST_TYPE_BIN);
+
+  GST_DEBUG_CATEGORY_INIT (gnlobject, "gnlobject", 0, "GNonLin Base class");
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_object_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_object_get_property);

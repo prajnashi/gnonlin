@@ -34,9 +34,6 @@
 
 G_BEGIN_DECLS
 
-GST_DEBUG_CATEGORY_EXTERN(gnonlin);
-#define GST_CAT_DEFAULT gnonlin
-
 /* initialize GNL */
 void gnl_init(int *argc,char **argv[]);
 

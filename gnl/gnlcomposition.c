@@ -28,6 +28,9 @@ static GstElementDetails gnl_composition_details = GST_ELEMENT_DETAILS (
    "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
    );
 
+GST_DEBUG_CATEGORY_STATIC (gnlcomposition);
+#define GST_CAT_DEFAULT gnlcomposition
+
 static void		gnl_composition_base_init		(gpointer g_class);
 static void 		gnl_composition_class_init 		(GnlCompositionClass *klass);
 static void 		gnl_composition_init 			(GnlComposition *comp);
@@ -113,6 +116,8 @@ gnl_composition_class_init (GnlCompositionClass *klass)
   gnlobject_class  = (GnlObjectClass*)klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
+
+  GST_DEBUG_CATEGORY_INIT (gnlcomposition, "gnlcomposition", 0, "GNonLin Composition");
 
   gobject_class->finalize 	 = gnl_composition_finalize;
 

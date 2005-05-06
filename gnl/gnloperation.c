@@ -28,6 +28,9 @@ static GstElementDetails gnl_operation_details = GST_ELEMENT_DETAILS (
   "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
   );
 
+GST_DEBUG_CATEGORY_STATIC (gnloperation);
+#define GST_CAT_DEFAULT gnloperation
+
 enum {
   ARG_0,
   ARG_ELEMENT,
@@ -87,6 +90,8 @@ gnl_operation_class_init (GnlOperationClass *klass)
   gnlobject_class =     (GnlObjectClass*)klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
+
+  GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation", 0, "GNonLin Operation element");
 
   gobject_class->set_property	= GST_DEBUG_FUNCPTR (gnl_operation_set_property);
   gobject_class->get_property	= GST_DEBUG_FUNCPTR (gnl_operation_get_property);
