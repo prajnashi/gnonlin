@@ -1,3 +1,15 @@
+2005-05-06  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/gnltimeline.c:
+	Implemented GstElement->request_new_pad() in order to get a pad
+	corresponding to a composition using standard API.
+	Implement GstBin->add_element() in order to add a composition to the
+	timeline using standard API.
+
+	* gnl/gnloperation.c:
+	GstElement of a GnlOperation can now be set/get using the "element" 
+	property
+
 2005-04-19  Edward Hervey  <bilboed@bilboed.com>
 
 	* gnl/gnlcomposition.c: 

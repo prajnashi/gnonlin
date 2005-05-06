@@ -28,9 +28,18 @@ static GstElementDetails gnl_operation_details = GST_ELEMENT_DETAILS (
   "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
   );
 
+enum {
+  ARG_0,
+  ARG_ELEMENT,
+};
+
 static void		gnl_operation_base_init		(gpointer g_class);
 static void 		gnl_operation_class_init 	(GnlOperationClass *klass);
 static void 		gnl_operation_init 		(GnlOperation *operation);
+static void		gnl_operation_set_property 	(GObject *object, guint prop_id,
+							 const GValue *value, GParamSpec *pspec);
+static void		gnl_operation_get_property 	(GObject *object, guint prop_id, GValue *value,
+		                                         GParamSpec *pspec);
 
 static GstElementStateReturn	gnl_operation_change_state (GstElement *element);
 
@@ -79,6 +88,13 @@ gnl_operation_class_init (GnlOperationClass *klass)
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
 
+  gobject_class->set_property	= GST_DEBUG_FUNCPTR (gnl_operation_set_property);
+  gobject_class->get_property	= GST_DEBUG_FUNCPTR (gnl_operation_get_property);
+
+  g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_ELEMENT,
+    g_param_spec_object ("element", "Element", "The element to manage",
+                         GST_TYPE_ELEMENT, G_PARAM_READWRITE));
+
   gstelement_class->change_state	= gnl_operation_change_state;
 }
 
@@ -87,6 +103,14 @@ gnl_operation_init (GnlOperation *operation)
 {
 /*   GST_FLAG_SET (GST_ELEMENT (operation), GST_ELEMENT_DECOUPLED); */
   operation->num_sinks = 0;
+}
+
+static GstElement *
+gnl_operation_get_element (GnlOperation *operation)
+{
+  g_return_val_if_fail (GNL_IS_OPERATION (operation), NULL);
+
+  return operation->element;
 }
 
 static void
@@ -196,4 +220,44 @@ gnl_operation_change_state (GstElement *element)
   }
 
   return GST_ELEMENT_CLASS (parent_class)->change_state (element);
+}
+
+static void
+gnl_operation_set_property (GObject *object, guint prop_id,
+			    const GValue *value, GParamSpec *pspec)
+{
+  GnlOperation *operation;
+
+  g_return_if_fail (GNL_IS_OPERATION (object));
+
+  operation = GNL_OPERATION (object);
+
+  switch (prop_id) {
+    case ARG_ELEMENT:
+      gnl_operation_set_element (operation, GST_ELEMENT (g_value_get_object (value)));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+static void
+gnl_operation_get_property (GObject *object, guint prop_id, 
+			    GValue *value, GParamSpec *pspec)
+{
+  GnlOperation *operation;
+  
+  g_return_if_fail (GNL_IS_OPERATION (object));
+
+  operation = GNL_OPERATION (object);
+
+  switch (prop_id) {
+    case ARG_ELEMENT:
+      g_value_set_object (value, gnl_operation_get_element (operation));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
 }

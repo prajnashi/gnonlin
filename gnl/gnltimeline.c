@@ -477,6 +477,8 @@ static GstElementStateReturn
 			gnl_timeline_change_state 	(GstElement *element);
 static gboolean 	gnl_timeline_query 		(GstElement *element, GstQueryType type,
 		                                         GstFormat *format, gint64 *value);
+static GstPad *		gnl_timeline_request_new_pad	(GstElement *element, GstPadTemplate *templ,
+							 const gchar *name);
 
 static GnlCompositionClass *parent_class = NULL;
 
@@ -515,11 +517,13 @@ gnl_timeline_class_init (GnlTimelineClass *klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
+  GstBinClass	*gstbin_class;
   GnlCompositionClass *gnlcomposition_class;
   GnlObjectClass *gnlobject_class;
 
   gobject_class 	= (GObjectClass*)klass;
   gstelement_class	= (GstElementClass*)klass;
+  gstbin_class		= (GstBinClass*)klass;
   gnlcomposition_class 	= (GnlCompositionClass*)klass;
   gnlobject_class 	= (GnlObjectClass*)klass;
 
@@ -530,6 +534,9 @@ gnl_timeline_class_init (GnlTimelineClass *klass)
 
   gstelement_class->change_state	= gnl_timeline_change_state;
   gstelement_class->query		= gnl_timeline_query;
+  gstelement_class->request_new_pad	= gnl_timeline_request_new_pad;
+
+  gstbin_class->add_element		= (void (*) (GstBin *, GstElement *))gnl_timeline_add_composition;
 
   gnlobject_class->prepare              = gnl_timeline_prepare;
 }
@@ -650,32 +657,36 @@ gnl_timeline_add_composition (GnlTimeline *timeline, GnlComposition *composition
   const gchar *groupname;
   gchar *pipename;
   
-  GST_INFO("timeline[%s](Sched:%p), comp[%s](Sched:%p)",
-	   gst_element_get_name(GST_ELEMENT(timeline)),
-	   GST_ELEMENT_SCHED (GST_ELEMENT (timeline)),
-	   gst_element_get_name(GST_ELEMENT(composition)),
-	   GST_ELEMENT_SCHED (GST_ELEMENT (composition)));
-
-  timeline->groups = g_list_prepend (timeline->groups, composition);
-
-  gnl_timeline_timer_create_pad (timeline->timer, composition);
-
-  groupname = gst_object_get_name (GST_OBJECT (composition));
-  pipename = g_strdup_printf ("%s_pipeline", groupname);
-  pipeline = gst_bin_new (pipename);
-  g_free (pipename);
-
-  g_signal_connect (composition, "notify::start", G_CALLBACK (group_start_stop_changed), timeline);
-  g_signal_connect (composition, "notify::stop", G_CALLBACK (group_start_stop_changed), timeline);
-
-  gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (composition));
-  gst_bin_add (GST_BIN (timeline), GST_ELEMENT (pipeline));
-  
-  GST_INFO ("Composition(Sched:%p) added to timeline(Sched:%p)",
-	    GST_ELEMENT_SCHED (GST_ELEMENT (composition)),
-	    GST_ELEMENT_SCHED (GST_ELEMENT (timeline)));
-
-  timeline_update_start_stop (timeline);
+  if (GNL_IS_COMPOSITION(composition)) {
+    GST_INFO("timeline[%s](Sched:%p), comp[%s](Sched:%p)",
+	     gst_element_get_name(GST_ELEMENT(timeline)),
+	     GST_ELEMENT_SCHED (GST_ELEMENT (timeline)),
+	     gst_element_get_name(GST_ELEMENT(composition)),
+	     GST_ELEMENT_SCHED (GST_ELEMENT (composition)));
+    
+    timeline->groups = g_list_prepend (timeline->groups, composition);
+    
+    gnl_timeline_timer_create_pad (timeline->timer, composition);
+    
+    groupname = gst_object_get_name (GST_OBJECT (composition));
+    pipename = g_strdup_printf ("%s_pipeline", groupname);
+    pipeline = gst_bin_new (pipename);
+    g_free (pipename);
+    
+    g_signal_connect (composition, "notify::start", G_CALLBACK (group_start_stop_changed), timeline);
+    g_signal_connect (composition, "notify::stop", G_CALLBACK (group_start_stop_changed), timeline);
+    
+    gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (composition));
+    gst_bin_add (GST_BIN (timeline), GST_ELEMENT (pipeline));
+    
+    GST_INFO ("Composition(Sched:%p) added to timeline(Sched:%p)",
+	      GST_ELEMENT_SCHED (GST_ELEMENT (composition)),
+	      GST_ELEMENT_SCHED (GST_ELEMENT (timeline)));
+    
+    timeline_update_start_stop (timeline);
+  } else {
+    gst_bin_add (GST_BIN (timeline), GST_ELEMENT (composition));
+  }
 }
 
 static TimerGroupLink*
@@ -721,6 +732,27 @@ gnl_timeline_get_pad_for_composition (GnlTimeline *timeline, GnlComposition *com
 
   return NULL;
 }
+
+
+static GstPad *
+gnl_timeline_request_new_pad	(GstElement *element, GstPadTemplate *templ,
+				 const gchar *name)
+{
+  GnlTimeline	*timeline = GNL_TIMELINE (element);
+  GList	*walk = timeline->groups;
+
+  /* look for the composition called name */
+  while (walk) {
+    GnlComposition	*comp = GNL_COMPOSITION (walk->data);
+
+    /* if there's one return gnl_timeline_get_pad_for_composition() */
+
+    if (!g_ascii_strcasecmp(gst_element_get_name(comp), name))
+      return gnl_timeline_get_pad_for_composition (timeline, comp);
+  }
+  return NULL;
+}
+
 
 static gboolean
 gnl_timeline_prepare (GnlObject *object, GstEvent *event)
