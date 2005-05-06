@@ -23,6 +23,10 @@
 #include "gnl.h"
 #include "gnlmarshal.h"
 
+GST_DEBUG_CATEGORY_STATIC (gnlsource);
+#define GST_CAT_DEFAULT gnlsource
+
+
 GstElementDetails gnl_source_details = GST_ELEMENT_DETAILS
 (
   "GNL Source",
@@ -151,6 +155,8 @@ gnl_source_class_init (GnlSourceClass *klass)
   gnlobject_class = 	(GnlObjectClass*)klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
+
+  GST_DEBUG_CATEGORY_INIT (gnlsource, "gnlsource", 0, "GNonLin Source Element");
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_source_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_source_get_property);
