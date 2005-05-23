@@ -1,3 +1,11 @@
+2005-05-23  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/gnlsource.c:
+	safer pre-rolling
+	* gnl/gnltimeline.c:
+	add query/event handling to timeline timer's pads
+	fixed bug in request pad handling
+
 2005-05-06  Edward Hervey  <bilboed@bilboed.com>
 
 	* gnl/gnlsource.c:

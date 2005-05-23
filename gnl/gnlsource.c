@@ -593,7 +593,8 @@ source_queue_media (GnlSource *source)
 
   /* Disconnect pad and remember it */
   prevpad = GST_PAD_PEER (gst_element_get_pad (source->element, "src"));
-  gst_pad_unlink (gst_element_get_pad (source->element, "src"), prevpad);
+  if (prevpad)
+    gst_pad_unlink (gst_element_get_pad (source->element, "src"), prevpad);
 
   /* moving source->Bin to pre-roll pipeline */
   prerollpipeline = gst_pipeline_new ("preroll-pipeline");
@@ -644,7 +645,8 @@ source_queue_media (GnlSource *source)
   gst_object_unref (GST_OBJECT (prerollpipeline));
 
   /* Reconnect element's pad */
-  gst_pad_link (gst_element_get_pad (source->element, "src"), prevpad);
+  if (prevpad)
+    gst_pad_link (gst_element_get_pad (source->element, "src"), prevpad);
   
   GST_INFO("END : source media is queued [%d]",
 	   filled);
@@ -680,6 +682,7 @@ crop_incoming_buffer (GstPad *pad, GstBuffer *buf, GstClockTime start, GstClockT
 
       if ((offset + size) > GST_BUFFER_SIZE (buf))
 	size -= (offset + size) - GST_BUFFER_SIZE (buf);
+      GST_INFO ("creating buffer with offset %d and size %d", offset, size);
       outbuffer = gst_buffer_create_sub (buf, (guint) offset, (guint) size);
       gst_buffer_unref (buf);
     } else

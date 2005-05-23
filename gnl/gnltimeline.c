@@ -70,6 +70,35 @@ gnl_timeline_timer_change_state (GstElement *element);
 
 static void 		gnl_timeline_timer_loop 		(GstElement *timer);
 
+
+GstStaticPadTemplate gnl_timeline_src_template = GST_STATIC_PAD_TEMPLATE ("src_%s",
+    GST_PAD_SRC,
+    GST_PAD_REQUEST,
+    GST_STATIC_CAPS_ANY);
+
+static GstElementDetails gnl_timeline_details = GST_ELEMENT_DETAILS ( 
+  "GNL Timeline",
+  "Filter/Editor",
+  "Combines GNL Composition",
+  "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
+  );
+
+static void		gnl_timeline_base_init		(gpointer g_class);
+static void 		gnl_timeline_class_init 	(GnlTimelineClass *klass);
+static void 		gnl_timeline_init 		(GnlTimeline *timeline);
+
+static void		gnl_timeline_dispose		(GObject *object);
+static void		gnl_timeline_finalize		(GObject *object);
+
+static gboolean 	gnl_timeline_prepare 		(GnlObject *object, GstEvent *event);
+static GstElementStateReturn
+			gnl_timeline_change_state 	(GstElement *element);
+static gboolean 	gnl_timeline_query 		(GstElement *element, GstQueryType type,
+		                                         GstFormat *format, gint64 *value);
+static GstPad *		gnl_timeline_request_new_pad	(GstElement *element, GstPadTemplate *templ,
+							 const gchar *name);
+
+
 GType
 gnl_timeline_timer_get_type (void)
 {
@@ -233,6 +262,46 @@ timer_link (GstPad *pad, const GstCaps *caps)
   return gst_pad_try_set_caps (otherpad, caps);
 }
 
+static gboolean
+timer_query_function (GstPad *pad, GstQueryType type, GstFormat *format,
+		     gint64 *value)
+{
+  TimerGroupLink	*link;
+
+  GST_INFO ("timer_query_function");
+  link = gst_pad_get_element_private (pad);
+  if (!link)
+    GST_WARNING ("No TimerGroupLink in pad data !");
+
+  if ((type == GST_QUERY_POSITION) && (*format == GST_FORMAT_TIME)) {
+    *value = link->time;
+    return TRUE;
+  }
+  return gst_pad_query(GST_PAD_PEER(link->sinkpad), type, format, value);
+}
+
+static gboolean
+timer_src_event_handler (GstPad *pad, GstEvent *event)
+{
+  GnlTimelineTimer		*timer = GNL_TIMELINE_TIMER (gst_pad_get_parent (pad));
+  TimerGroupLink	*clink;
+  GnlTimeline		*timeline = GNL_TIMELINE (gst_element_get_parent(GST_ELEMENT(timer)));
+
+  clink = gst_pad_get_element_private (pad);
+
+  /* if the event is a seek, we need to _prepare all present groups */
+  if ((GST_EVENT_TYPE(event) == GST_EVENT_SEEK) 
+      && (GST_EVENT_SEEK_FORMAT(event) == GST_FORMAT_TIME)) {
+    GstEvent	*event2;
+
+    event2 = gst_event_new_segment_seek (GST_FORMAT_TIME | GST_SEEK_METHOD_SET | GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE,
+					 GST_EVENT_SEEK_OFFSET (event), G_MAXINT64);
+
+    return gnl_timeline_prepare (GNL_OBJECT (timeline), event2);
+  } else
+    return gst_pad_send_event (GST_PAD_PEER (clink->sinkpad), event);
+}
+
 /*
   Adds the given GnlGroup to the list of groups to be handled by the TimelineTimer
 
@@ -256,7 +325,7 @@ gnl_timeline_timer_create_pad (GnlTimelineTimer *timer, GnlComposition *comp)
 			     (gpointer *) &(link->comp));
 
   objname = gst_object_get_name (GST_OBJECT (comp));
-  padname = g_strdup_printf ("%s_sink", objname);
+  padname = g_strdup_printf ("sink_%s", objname);
   link->sinkpad = gst_pad_new (padname, GST_PAD_SINK);
   g_free (padname);
   gst_element_add_pad (GST_ELEMENT (timer), link->sinkpad);
@@ -264,13 +333,15 @@ gnl_timeline_timer_create_pad (GnlTimelineTimer *timer, GnlComposition *comp)
   gst_pad_set_link_function (link->sinkpad, timer_link);
   gst_pad_set_getcaps_function (link->sinkpad, timer_getcaps);
   
-  padname = g_strdup_printf ("%s_src", objname);
+  padname = g_strdup_printf ("src_%s", objname);
   link->srcpad = gst_pad_new (padname, GST_PAD_SRC);
   g_free (padname);
   gst_element_add_pad (GST_ELEMENT (timer), link->srcpad);
   gst_pad_set_element_private (link->srcpad, link);
   gst_pad_set_link_function (link->srcpad, timer_link);
   gst_pad_set_getcaps_function (link->srcpad, timer_getcaps);
+  gst_pad_set_query_function (link->srcpad, timer_query_function);
+  gst_pad_set_event_function (link->srcpad, timer_src_event_handler);
 
   timer->links = g_list_prepend (timer->links, link);
 
@@ -460,33 +531,6 @@ gnl_timeline_timer_loop (GstElement *element)
 /*
  * timeline
  */
-
-GstStaticPadTemplate gnl_timeline_src_template = GST_STATIC_PAD_TEMPLATE ("src_%s",
-    GST_PAD_SRC,
-    GST_PAD_REQUEST,
-    GST_STATIC_CAPS_ANY);
-
-static GstElementDetails gnl_timeline_details = GST_ELEMENT_DETAILS ( 
-  "GNL Timeline",
-  "Filter Editor",
-  "Combines GNL Composition",
-  "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
-  );
-
-static void		gnl_timeline_base_init		(gpointer g_class);
-static void 		gnl_timeline_class_init 	(GnlTimelineClass *klass);
-static void 		gnl_timeline_init 		(GnlTimeline *timeline);
-
-static void		gnl_timeline_dispose		(GObject *object);
-static void		gnl_timeline_finalize		(GObject *object);
-
-static gboolean 	gnl_timeline_prepare 		(GnlObject *object, GstEvent *event);
-static GstElementStateReturn
-			gnl_timeline_change_state 	(GstElement *element);
-static gboolean 	gnl_timeline_query 		(GstElement *element, GstQueryType type,
-		                                         GstFormat *format, gint64 *value);
-static GstPad *		gnl_timeline_request_new_pad	(GstElement *element, GstPadTemplate *templ,
-							 const gchar *name);
 
 static GnlCompositionClass *parent_class = NULL;
 
@@ -769,6 +813,8 @@ gnl_timeline_request_new_pad	(GstElement *element, GstPadTemplate *templ,
 
     if (!g_ascii_strcasecmp(gst_element_get_name(comp), name + 4))
       return gnl_timeline_get_pad_for_composition (timeline, comp);
+
+    walk = g_list_next(walk);
   }
   return NULL;
 }
@@ -844,6 +890,7 @@ gnl_timeline_query (GstElement *element, GstQueryType type,
 
   if (type == GST_QUERY_POSITION) {
     
+    GST_INFO ("Querying position in timeline");
     /* when the element is queried before anything is scheduled this
      * would cause a segfault because timeline->timer->current == NULL
      */
