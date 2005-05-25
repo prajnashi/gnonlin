@@ -1,5 +1,9 @@
 2005-05-25  Edward Hervey  <bilboed@bilboed.com>
 
+	* configure.ac : Releasing 0.2.1
+
+2005-05-25  Edward Hervey  <bilboed@bilboed.com>
+
 	* gnl/gnlsource.c: (source_queue_media): 
 	missing closing parenthisis
 	removed unused 'filled' variable
