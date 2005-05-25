@@ -828,9 +828,9 @@ source_getfunction (GstPad *pad)
 	  gst_pad_set_active (pad, FALSE);
 	  found = TRUE;
         } else if (GST_EVENT_TYPE (buffer) == GST_EVENT_DISCONTINUOUS) {
-	  gint64	dvalue = 0LL;
+	  guint64	dvalue = 0LL;
 	  
-	  if (!gst_event_discont_get_value (GST_EVENT (buffer), GST_FORMAT_TIME, &dvalue))
+	  if (!gst_event_discont_get_value (GST_EVENT (buffer), GST_FORMAT_TIME, (gint64 *) &dvalue))
 	    GST_WARNING ("couldn't get TIME value from discont event !");
 	  else {
 	    gst_data_unref (GST_DATA(buffer));
@@ -855,7 +855,7 @@ source_getfunction (GstPad *pad)
 	else
 	  in_endtime = GST_CLOCK_TIME_NONE;
 
-	inlimits = gnl_media_to_object_time (object, intime, &outtime);
+	inlimits = gnl_media_to_object_time (object, intime, (guint64 *) &outtime);
 
 	/* check if buffer is outside seek range */
 	if ((GST_CLOCK_TIME_IS_VALID(source->private->seek_stop)

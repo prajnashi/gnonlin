@@ -828,7 +828,7 @@ probe_fired (GstProbe *probe, GstData **data, gpointer user_data)
 		gst_element_get_name (GST_ELEMENT (comp)));
       GNL_OBJECT (comp)->current_time = comp->next_stop;
     } else if (GST_EVENT_TYPE (*data) == GST_EVENT_DISCONTINUOUS)
-      if (!gst_event_discont_get_value (GST_EVENT(*data), GST_FORMAT_TIME, &(GNL_OBJECT(comp)->current_time)))
+      if (!gst_event_discont_get_value (GST_EVENT(*data), GST_FORMAT_TIME, (gint64 *) &(GNL_OBJECT(comp)->current_time)))
 	GST_WARNING ("Got discont, but couldn't get GST_TIME value...");
   }
   GST_INFO("[Probe:%p] %s current_time [%lld] -> [%3lldH:%3lldm:%3llds:%3lld]", 
