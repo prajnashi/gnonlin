@@ -15,7 +15,6 @@ gnl_source_get_type
 GNL_SOURCE_CLASS
 GNL_IS_SOURCE_CLASS
 <SUBSECTION Private>
-gnl_source_details
 GnlSourcePrivate
 </SECTION>
 
@@ -39,7 +38,6 @@ GNL_IS_COMPOSITION_CLASS
 <SUBSECTION Private>
 GnlCompositionEntry
 gnl_composition_get_type
-gnl_composition_details
 </SECTION>
 
 <SECTION>
@@ -86,7 +84,6 @@ gnl_timeline_get_type
 GNL_TIMELINE_CLASS
 GNL_IS_TIMELINE_CLASS
 <SUBSECTION Private>
-gnl_timeline_details
 GnlTimelineTimer
 </SECTION>
 
@@ -105,7 +102,6 @@ gnl_operation_get_type
 GNL_OPERATION_CLASS
 GNL_IS_OPERATION_CLASS
 <SUBSECTION Private>
-gnl_operation_details
 </SECTION>
 
 <SECTION>

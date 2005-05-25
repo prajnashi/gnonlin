@@ -40,8 +40,6 @@ G_BEGIN_DECLS
 #define GNL_IS_COMPOSITION_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_COMPOSITION))
 
-extern GstElementDetails gnl_composition_details;
-
 typedef struct _GnlCompositionEntry GnlCompositionEntry;
 
 typedef enum

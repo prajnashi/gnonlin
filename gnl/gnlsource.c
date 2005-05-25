@@ -323,7 +323,10 @@ gnl_source_set_element (GnlSource *source, GstElement *element)
   source->linked_pads = 0;
   source->total_pads = 0;
   source->links = NULL;
-  source->pending_seek = NULL;
+  if (source->pending_seek) {
+    gst_event_unref(source->pending_seek);
+    source->pending_seek = NULL;
+  }
   source->private->seek_start = GST_CLOCK_TIME_NONE;
   source->private->seek_stop = GST_CLOCK_TIME_NONE;
 
@@ -709,13 +712,25 @@ source_chainfunction (GstPad *pad, GstData *buf)
   source = GNL_SOURCE (gst_pad_get_parent (pad));
   object = GNL_OBJECT (source);
 
-  if (GST_IS_EVENT(buffer))
+  /* 
+     If there's a pending seek we should drop everything until we have either:
+     _ a discontinuity or,
+     _ a buffer (starting at or before mstart) and ending after mstart
+  */
+  if (GST_IS_EVENT(buffer)) {
     GST_INFO("Chaining an event : %d",
 	     GST_EVENT_TYPE(buffer));
+    if (source->pending_seek && (GST_EVENT_TYPE(GST_EVENT(buffer)) == GST_EVENT_DISCONTINUOUS)) {
+      gst_event_unref (source->pending_seek);
+      source->pending_seek = NULL;
+    }
+      
+  }
   else
     GST_INFO("Chaining a buffer time : %" GST_TIME_FORMAT ", duration : %" GST_TIME_FORMAT,
 	     GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (buffer)),
 	     GST_TIME_ARGS (GST_BUFFER_DURATION (buffer)));
+  
   if (GST_IS_BUFFER (buffer) && !source->queueing) {
     intime = GST_BUFFER_TIMESTAMP (buffer);
     dur = GST_BUFFER_DURATION (buffer);
@@ -724,6 +739,15 @@ source_chainfunction (GstPad *pad, GstData *buf)
     mstart = (object->media_start == GST_CLOCK_TIME_NONE) ? object->start : object->media_start;
     mstop = (object->media_stop == GST_CLOCK_TIME_NONE) ? object->stop : object->media_stop;
 
+    if (source->pending_seek && (intime <= mstart) && (intime + dur >= mstart)) {
+      gst_event_unref (source->pending_seek);
+      source->pending_seek = NULL;
+    }
+    if (source->pending_seek) {
+      GST_INFO ("We still haven't reached a correct buffer, unreffing buffer");
+      gst_buffer_unref (buffer);
+      return;
+    }
     if (dur + intime < mstart) {
       GST_INFO ("buffer doesn't start/end before source start, unreffing buffer");
       gst_buffer_unref (buffer);
@@ -967,8 +991,6 @@ gnl_source_change_state (GstElement *element)
   case GST_STATE_NULL_TO_READY:
     break;
   case GST_STATE_READY_TO_PAUSED:
-    source->pending_seek = \
-      gst_event_new_seek (GST_FORMAT_TIME | GST_SEEK_METHOD_SET | GST_SEEK_FLAG_FLUSH, 0LL);
     if (!source_queue_media (source))
       res = GST_STATE_FAILURE;
     break;

@@ -1,5 +1,15 @@
 2005-05-25  Edward Hervey  <bilboed@bilboed.com>
 
+	* gnl/gnlsource.c:
+	Handle case where the seek is delayed (using pending_seek)
+
+	* docs/libs/gnonlin-sections.txt:
+	* gnl/gnltimeline.h:
+	* gnl/gnlsource.h:
+	* gnl/gnloperation.h:
+	* gnl/gnlcomposition.h:
+	removed extern _details
+
 	* configure.ac : Releasing 0.2.1
 
 2005-05-25  Edward Hervey  <bilboed@bilboed.com>

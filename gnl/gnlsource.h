@@ -40,8 +40,6 @@ G_BEGIN_DECLS
 #define GNL_IS_SOURCE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_SOURCE))
 
-extern GstElementDetails gnl_source_details;
-
 typedef struct _GnlSourcePrivate GnlSourcePrivate;
 
 struct _GnlSource {

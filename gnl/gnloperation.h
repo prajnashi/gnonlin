@@ -40,8 +40,6 @@ G_BEGIN_DECLS
 #define GNL_IS_OPERATION_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OPERATION))
 
-extern GstElementDetails gnl_operation_details;
-
 struct _GnlOperation {
   GnlObject 		parent;
 

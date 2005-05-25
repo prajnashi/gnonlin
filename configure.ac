@@ -6,7 +6,7 @@ dnl AM_MAINTAINER_MODE only provides the option to configure to enable it
 AM_MAINTAINER_MODE
 
 dnl when going to/from release please set the nano (fourth number) right !
-AS_VERSION(gnonlin, GNL_VERSION, 0, 2, 1, 0, GNL_CVS="no", GNL_CVS="yes")
+AS_VERSION(gnonlin, GNL_VERSION, 0, 2, 2, 1, GNL_CVS="no", GNL_CVS="yes")
 
 dnl Required GStreamer version
 GST_REQ=0.8.9
