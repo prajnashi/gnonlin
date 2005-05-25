@@ -1,3 +1,8 @@
+2005-05-26  Edward Hervey  <bilboed@bilboed.com>
+
+	* Makefile.am: (EXTRA_DIST):
+	added normal equivalent of .in files
+
 2005-05-25  Christian Schaller  <cschalle@wildsrc.fluendo.lan>
 
 	* gnl/gnltimeline.c:
