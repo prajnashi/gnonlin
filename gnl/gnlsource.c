@@ -581,7 +581,6 @@ queueing_probe (GstProbe *probe, GstData **data, gpointer user_data)
 static gboolean
 source_queue_media (GnlSource *source)
 {
-  gboolean filled = TRUE;
   GstElement		*prerollpipeline;
   GstProbe		*probe;
   GstElement		*fakesink;
@@ -626,7 +625,6 @@ source_queue_media (GnlSource *source)
       break;
     }
     GST_INFO ("Merry go round...");
-/*     filled = source_is_media_queued (source); */
   }
   gst_element_set_state (GST_ELEMENT (prerollpipeline), GST_STATE_PAUSED);
   GST_INFO("Finished iterating");
@@ -647,10 +645,9 @@ source_queue_media (GnlSource *source)
   if (prevpad)
     gst_pad_link (gst_element_get_pad (source->element, "src"), prevpad);
 
-  g_object_unref(GST_OBJECT(source->element);
-  GST_INFO("END : source media is queued [%d]",
-	   filled);
-  return filled;
+  g_object_unref(GST_OBJECT(source->element));
+  GST_INFO("END : source media is queued");
+  return TRUE;
 }
 
 static GstBuffer *
