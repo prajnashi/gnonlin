@@ -96,5 +96,6 @@ AC_CONFIG_FILES([
   gnonlin-config
   gnonlin.pc
   gnonlin.spec
+  gnonlin-uninstalled.pc
 ])
 AC_OUTPUT
