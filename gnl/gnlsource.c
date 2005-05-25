@@ -635,7 +635,6 @@ source_queue_media (GnlSource *source)
 
   source->private->queued = TRUE;
 
-  gst_object_ref (GST_OBJECT (source->element));
   gst_pad_remove_probe (gst_element_get_pad (source->element, "src"),
 			probe);
   gst_probe_destroy (probe);
@@ -647,7 +646,8 @@ source_queue_media (GnlSource *source)
   /* Reconnect element's pad */
   if (prevpad)
     gst_pad_link (gst_element_get_pad (source->element, "src"), prevpad);
-  
+
+  g_object_unref(GST_OBJECT(source->element);
   GST_INFO("END : source media is queued [%d]",
 	   filled);
   return filled;
