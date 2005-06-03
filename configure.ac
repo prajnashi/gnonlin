@@ -87,6 +87,8 @@ AC_DEFINE(GNL_ORIGIN, "http://gnonlin.sf.net", [Gnonlin origin])
 
 AC_CONFIG_FILES([
   Makefile
+  common/Makefile
+  common/m4/Makefile
   gnl/Makefile
   gnl/gnlversion.h
   test/Makefile
