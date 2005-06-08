@@ -1,3 +1,8 @@
+2005-06-08  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/gnltimeline.c: (gnl_timeline_timer_loop):
+	avoid outputting 2 EOS events if there's only one composition
+
 2005-06-03  Edward Hervey  <bilboed@bilboed.com>
 
 	* configure.ac:

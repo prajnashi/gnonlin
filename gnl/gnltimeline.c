@@ -512,13 +512,14 @@ gnl_timeline_timer_loop (GstElement *element)
 
     GST_INFO("Nothing more to schedule");
 
-    for (walk = timer->links; walk; walk = g_list_next(walk)) {
-      TimerGroupLink* link = (TimerGroupLink *) walk->data;
-      
-      GST_INFO ("pushing EOS on pad %s:%s", GST_DEBUG_PAD_NAME (link->srcpad));
-      gst_pad_push (link->srcpad, GST_DATA (gst_event_new (GST_EVENT_EOS)));
-      
-    }
+    if (g_list_length(timer->links) > 1)
+      for (walk = timer->links; walk; walk = g_list_next(walk)) {
+	TimerGroupLink* link = (TimerGroupLink *) walk->data;
+	
+	GST_INFO ("pushing EOS on pad %s:%s", GST_DEBUG_PAD_NAME (link->srcpad));
+	gst_pad_push (link->srcpad, GST_DATA (gst_event_new (GST_EVENT_EOS)));
+	
+      }
     /*     gst_element_set_eos(element); */
     gst_element_set_eos (element);
     gst_element_set_eos (GST_ELEMENT(gst_element_get_parent(element)));
