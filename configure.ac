@@ -30,7 +30,7 @@ AM_CONFIG_HEADER(config.h)
 
 dnl Add parameters for aclocal
 dnl (This must come after AM_INIT_AUTOMAKE, since it modifies ACLOCAL)
-AC_SUBST(ACLOCAL_AMFLAGS, "-I m4 -I common/m4 $ACLOCAL_FLAGS")
+AC_SUBST(ACLOCAL_AMFLAGS, "-I common/m4 $ACLOCAL_FLAGS")
 
 AC_PROG_CC
 AC_PROG_CC_STDC

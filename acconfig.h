@@ -1,2 +1,0 @@
-#undef GNL_VERSION
-#undef GNL_VERSION_RELEASE

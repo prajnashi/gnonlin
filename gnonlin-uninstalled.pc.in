@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: GStreamer Uninstalled
-Description: Non linear editing framework, Not Installed
+Name: gnonlin uninstlaled
+Description: Non-linear editing framework, not installed
 Version: @VERSION@
-Requires: glib >= 1.2.0, gtk+ >= 1.2.0, libxml >= 1.8.1 libgst >= 0.2.1
-Libs: ${pcbuilddir}/${pcfiledir}/gnl/libgnl.la
-Cflags: -I${pcbuilddir}/${pcfiledir} @GNL_DEFINE_CFLAGS@
+Requires: glib-2.0 >= 2.2.0, gstreamer-0.8 >= @GST_REQ@
+Libs: ${pcfiledir}/gnl/libgnl.la
+Cflags: -I${pcfiledir} @GNL_CFLAGS@
