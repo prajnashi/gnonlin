@@ -1,3 +1,12 @@
+2005-06-21  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnltimeline.c: (gnl_timeline_new): 
+	* gnl/gnlcomposition.c: (gnl_composition_new): 
+	* gnl/gnloperation.c: (gnl_operation_new): 
+	* gnl/gnlsource.c: (gnl_source_new): 
+	
+	Removed buggy GST_INFO
+
 2005-06-09  Thomas Vander Stichele  <thomas at apestaart dot org>
 
 	* acconfig.h:

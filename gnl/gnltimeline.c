@@ -666,8 +666,6 @@ gnl_timeline_new (const gchar *name)
 
   g_return_val_if_fail (name != NULL, NULL);
 
-  GST_INFO("name:%s", name);
-
   timeline = g_object_new (GNL_TYPE_TIMELINE, NULL);
   gst_object_set_name (GST_OBJECT (timeline), name);
 

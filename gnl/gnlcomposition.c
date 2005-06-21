@@ -335,8 +335,6 @@ gnl_composition_new (const gchar *name)
 {
   GnlComposition *comp;
 
-  GST_INFO ("name[%s]", name);
-
   g_return_val_if_fail (name != NULL, NULL);
 
   comp = g_object_new (GNL_TYPE_COMPOSITION, NULL);

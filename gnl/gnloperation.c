@@ -170,9 +170,6 @@ gnl_operation_new (const gchar *name, GstElement *element)
 {
   GnlOperation *operation;
 
-  GST_INFO ("new name:%s element:%s",
-	    name, gst_element_get_name(element));
-
   g_return_val_if_fail (name != NULL, NULL);
 
   operation = g_object_new (GNL_TYPE_OPERATION, NULL);

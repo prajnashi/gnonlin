@@ -259,14 +259,11 @@ gnl_source_new (const gchar *name, GstElement *element)
 {
   GnlSource *source;
 
-  GST_INFO ("name[%s], element[%s]", name,
-	    gst_element_get_name( element ) );
- 
   g_return_val_if_fail (name != NULL, NULL);
   g_return_val_if_fail (element != NULL, NULL);
 
   source = g_object_new(GNL_TYPE_SOURCE, NULL);
-		  
+ 
   gst_object_set_name(GST_OBJECT(source), name);
   gnl_source_set_element(source, element);
 
@@ -682,6 +679,10 @@ crop_incoming_buffer (GstPad *pad, GstBuffer *buf, GstClockTime start, GstClockT
 
       if ((offset + size) > GST_BUFFER_SIZE (buf))
 	size -= (offset + size) - GST_BUFFER_SIZE (buf);
+      /*
+	We need to check if size > 0 !!
+	Return NULL if it isn't
+      */
       GST_INFO ("creating buffer with offset %d and size %d", offset, size);
       outbuffer = gst_buffer_create_sub (buf, (guint) offset, (guint) size);
       gst_buffer_unref (buf);
