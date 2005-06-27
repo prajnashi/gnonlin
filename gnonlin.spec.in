@@ -3,14 +3,14 @@ Version: 	@VERSION@
 Release:	1
 Summary: 	GStreamer extension library for non-linear editing
 
-Group: 		Libraries/Multimedia
+Group: 		Applications/Multimedia
 License: 	LGPL
 URL:		http://gnonlin.sf.net/
 Vendor:		GStreamer Backpackers Team <package@gstreamer.net>
 Source:		http://download.sf.net/gnonlin/%{name}-%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-%define		gst_majorminor 	@GST_MAJORMINOR@
+%define		gst_majorminor @GST_MAJORMINOR@
 %define		gst_req @GST_REQ@
 
 Prereq:		%{_bindir}/gst-register-%{gst_majorminor}
@@ -22,6 +22,19 @@ BuildRequires: 	gstreamer-devel >= %{gst_req}
 Gnonlin is a library built on top of GStreamer (http://gstreamer.net) which
 provides support for writing non-linear audio and video editing applications. It
 introduces the concept of a timeline.
+
+%package devel
+Summary:        Libraries/include files for gnonlin development
+Requires: 	gstreamer-devel >= %{gst_req}
+Group:		Development/Libraries
+
+%description
+Gnonlin is a library built on top of GStreamer (http://gstreamer.net) which
+provides support for writing non-linear audio and video editing applications. It
+introduces the concept of a timeline.
+
+This package contains the libraries and includes files necessary to develop
+applications using gnonlin.
 
 %prep
 %setup -q -n gnonlin-%{version}
@@ -49,13 +62,20 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-, root, root, -)
 %doc AUTHORS COPYING README
-%{_bindir}/gnonlin-config
 %{_libdir}/gstreamer-%{gst_majorminor}/libgnl*
-%{_includedir}/gnl/*
+
+%files devel
+%defattr(-, root, root, -)
+%{_includedir}/gnl
+%{_bindir}/gnonlin-config
 %{_libdir}/pkgconfig/gnonlin.pc
-%{_datadir}/gtk-doc/html/gnonlin/*
 %{_mandir}/man1/gnonlin-config.1.gz
 
+%doc %{_datadir}/gtk-doc/html/gnonlin
+
 %changelog
+* Mon Jun 27 2005 Thomas Vander Stichele <thomas at apestaart dot org>
+- cleanup of spec
+
 * Mon Mar 21 2005 Edward Hervey <bilboed at bilboed dot com>
 - First version of spec
