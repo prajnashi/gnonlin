@@ -6,3 +6,5 @@ Makefile.in
 .deps
 .libs
 gnlversion.h
+gnlmarshal.c
+gnlmarshal.h
