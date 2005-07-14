@@ -1,3 +1,14 @@
+2005-07-14  Edward Hervey  <edward@fluendo.com>
+
+	* Makefile.am: 
+	* configure.ac:
+	* gnonlin-config.1:
+	* gnonlin-config.in:
+	* gnonlin.spec.in: (Group): 
+	* gnonlin.pc.in: (Cflags): 
+	Updated to 0.9 dependency,
+	removed gnonlin-config
+
 2005-06-21  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnltimeline.c: (gnl_timeline_new): 

@@ -6,15 +6,15 @@ dnl AM_MAINTAINER_MODE only provides the option to configure to enable it
 AM_MAINTAINER_MODE
 
 dnl when going to/from release please set the nano (fourth number) right !
-AS_VERSION(gnonlin, GNL_VERSION, 0, 2, 2, 1, GNL_CVS="no", GNL_CVS="yes")
+AS_VERSION(gnonlin, GNL_VERSION, 0, 3, 0, 1, GNL_CVS="no", GNL_CVS="yes")
 
 dnl Required GStreamer version
-GST_REQ=0.8.9
+GST_REQ=0.9.0
 AC_SUBST(GST_REQ)
 
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
 
-GST_MAJORMINOR=0.8
+GST_MAJORMINOR=0.9
 AC_SUBST(GST_MAJORMINOR)
 
 dnl CURRENT, REVISION, AGE
@@ -95,7 +95,6 @@ AC_CONFIG_FILES([
   docs/Makefile
   docs/version.entities
   docs/libs/Makefile
-  gnonlin-config
   gnonlin.pc
   gnonlin.spec
   gnonlin-uninstalled.pc

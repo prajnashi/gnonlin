@@ -67,13 +67,14 @@ rm -rf $RPM_BUILD_ROOT
 %files devel
 %defattr(-, root, root, -)
 %{_includedir}/gnl
-%{_bindir}/gnonlin-config
 %{_libdir}/pkgconfig/gnonlin.pc
-%{_mandir}/man1/gnonlin-config.1.gz
 
 %doc %{_datadir}/gtk-doc/html/gnonlin
 
 %changelog
+* Thu Jul 14 2005 Edward Hervey <edward at fluendo dot com>
+- Removed gnonlin-config*
+
 * Mon Jun 27 2005 Thomas Vander Stichele <thomas at apestaart dot org>
 - cleanup of spec
 

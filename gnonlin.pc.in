@@ -6,7 +6,7 @@ plugindir=@plugindir@
 
 Name: gnonlin
 Description: Non-linear editing framework
-Requires: glib-2.0 >= 2.2.0, gstreamer-0.8 >= @GST_REQ@
+Requires: glib-2.0 >= 2.2.0, gstreamer-0.9 >= @GST_REQ@
 Version: @VERSION@
 Libs: -L${libdir} -L${plugindir} -lgnl
 Cflags: -I${includedir} @GNL_CFLAGS@
