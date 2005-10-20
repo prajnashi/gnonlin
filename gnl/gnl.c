@@ -1,91 +1,59 @@
-#include <stdlib.h>
+/* Gnonlin
+ * Copyright (C) <2001> Wim Taymans <wim.taymans@chello.be>
+ *               <2004> Edward Hervey <bilboed@bilboed.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <gnl/gnl.h>
 
-#define MAX_PATH_SPLIT	16
+struct _elements_entry {
+  gchar *name;
+  GType (*type) (void);
+};
 
-gchar *_gnl_progname;
+static struct _elements_entry _elements[] = {
+  { "gnlsource", 	gnl_source_get_type },
+  { "gnlcomposition", 	gnl_composition_get_type },
+  { "gnloperation",	gnl_operation_get_type },
+  { "gnltimeline",	gnl_timeline_get_type },
+  { NULL, 0 }
+};
 
-extern gboolean gnl_elements_plugin_init (GstPlugin *plugin); 
- 
-static GstPluginDesc gnl_elements_plugin_desc = { 
-  GST_VERSION_MAJOR, 
-  GST_VERSION_MINOR, 
-  "gnlelements",
-  "gnonlin pipeline handling elements",
-  gnl_elements_plugin_init, NULL,
-  "0.1", "LGPL", "gnonlin", "http://gnonlin.sf.net"
-}; 
-
-
-static gboolean 	gnl_init_check 		(int *argc, gchar ***argv);
-
-/**
- * gnl_init:
- * @argc: pointer to application's argc
- * @argv: pointer to application's argv
- *
- * Initializes the GStreamer library, setting up internal path lists,
- * registering built-in elements, and loading standard plugins.
- */
-
-void 
-gnl_init (int *argc, char **argv[]) 
-{
-  GstPlugin *plugin;
-
-  if (!gnl_init_check (argc,argv)) {
-    exit (0);
-  }
-
-  gst_init (argc, argv);
-
-  gst_scheduler_factory_set_default_name ("opt");
-
-  plugin = gst_registry_pool_find_plugin ("gnlelements");
-  if (plugin == NULL) {
-    _gst_plugin_register_static (&gnl_elements_plugin_desc);
-  }
-}
-
-/* returns FALSE if the program can be aborted */
 static gboolean
-gnl_init_check (int     *argc,
-		gchar ***argv)
+plugin_init (GstPlugin *plugin)
 {
-  gboolean ret = TRUE;
+  gint i = 0;
 
-  _gnl_progname = NULL;
+  for ( ; _elements[i].name; i++ )
+    if (!(gst_element_register(plugin,
+			       _elements[i].name,
+			       GST_RANK_NONE,
+			       (_elements[i].type) () )))
+      return FALSE;
 
-  if (argc && argv) {
-    _gnl_progname = g_strdup(*argv[0]);
-  }
-
-  if (_gnl_progname == NULL) {
-    _gnl_progname = g_strdup("gnlprog");
-  }
-
-  return ret;
+  return TRUE;
 }
 
-/**
- * gnl_main:
- *
- * Enter the main GStreamer processing loop 
- */
-void 
-gnl_main (void) 
-{
-
-}
-
-/**
- * gnl_main_quit:
- *
- * Exits the main GStreamer processing loop 
- */
-void 
-gnl_main_quit (void) 
-{
-
-}
-
+GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
+		   GST_VERSION_MINOR,
+		   "GNonLin",
+		   "Standard elements for non-linear multimedia editing",
+		   plugin_init, VERSION, "LGPL", GST_PACKAGE, GST_ORIGIN);

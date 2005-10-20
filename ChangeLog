@@ -1,5 +1,32 @@
 2005-10-20  Edward Hervey  <edward@fluendo.com>
 
+	Part II of non-linear world domination.
+
+	* Makefile.am:
+	* docs/Makefile.am:
+	* gnl/Makefile.am:
+	* gnl/gnl.c: (plugin_init):
+	* gnl/gnl.h:
+	* gnl/gnlcomposition.c: (gnl_composition_class_init),
+	(gnl_composition_init):
+	* gnl/gnlcomposition.h:
+	* gnl/gnlobject.c: (gnl_object_base_init), (gnl_object_class_init),
+	(gnl_object_init), (gnl_object_get_property):
+	* gnl/gnlobject.h:
+	* gnl/gnloperation.c: (gnl_operation_class_init),
+	(gnl_operation_init):
+	* gnl/gnloperation.h:
+	* gnl/gnlsource.c: (gnl_source_class_init), (gnl_source_init),
+	(gnl_source_set_element), (gnl_source_get_property):
+	* gnl/gnlsource.h:
+	* gnl/gnltimeline.c: (gnl_timeline_base_init),
+	(gnl_timeline_class_init), (gnl_timeline_init):
+	* gnl/gnltimeline.h:
+	Plugin and ElementFactory are now 0.9 compatible and installable
+	Commented out almost everything, gradually adding features
+
+2005-10-20  Edward Hervey  <edward@fluendo.com>
+
 	* .cvsignore:
 	* Makefile.am:
 	* autogen.sh:

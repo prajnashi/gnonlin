@@ -42,12 +42,12 @@ G_BEGIN_DECLS
 
 typedef struct _GnlCompositionEntry GnlCompositionEntry;
 
-typedef enum
-{
-  GNL_FIND_AT,
-  GNL_FIND_AFTER,
-  GNL_FIND_START,
-} GnlFindMethod;
+/* typedef enum */
+/* { */
+/*   GNL_FIND_AT, */
+/*   GNL_FIND_AFTER, */
+/*   GNL_FIND_START, */
+/* } GnlFindMethod; */
 
 struct _GnlComposition {
   GnlObject		 parent;
@@ -62,22 +62,22 @@ struct _GnlComposition {
 struct _GnlCompositionClass {
   GnlObjectClass	parent_class;
 
-  GstClockTime		(*nearest_cover)	(GnlComposition *comp, 
-		  				 GstClockTime start, GnlDirection direction);
+/*   GstClockTime		(*nearest_cover)	(GnlComposition *comp,  */
+/* 		  				 GstClockTime start, GnlDirection direction); */
 };
 
 GType			gnl_composition_get_type	(void);
-GnlComposition*		gnl_composition_new		(const gchar *name);
+/* GnlComposition*		gnl_composition_new		(const gchar *name); */
 
-void			gnl_composition_add_object 	(GnlComposition *comp, 
-							 GnlObject *object); 
-void			gnl_composition_remove_object 	(GnlComposition *comp, 
-							 GnlObject *object); 
-void			gnl_composition_set_default_source (GnlComposition *comp,
-							    GnlSource *source);
+/* void			gnl_composition_add_object 	(GnlComposition *comp,  */
+/* 							 GnlObject *object);  */
+/* void			gnl_composition_remove_object 	(GnlComposition *comp,  */
+/* 							 GnlObject *object);  */
+/* void			gnl_composition_set_default_source (GnlComposition *comp, */
+/* 							    GnlSource *source); */
 
-GnlObject*		gnl_composition_find_object	(GnlComposition *comp, 
-							 GstClockTime time, GnlFindMethod method);
+/* GnlObject*		gnl_composition_find_object	(GnlComposition *comp,  */
+/* 							 GstClockTime time, GnlFindMethod method); */
 
 G_END_DECLS
 

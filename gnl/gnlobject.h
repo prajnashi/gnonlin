@@ -41,19 +41,19 @@ G_BEGIN_DECLS
 #define GNL_IS_OBJECT_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OBJECT))
 
-typedef enum
-{
-  GNL_COVER_ALL,
-  GNL_COVER_SOME,
-  GNL_COVER_START,
-  GNL_COVER_STOP,
-} GnlCoverType;
+/* typedef enum */
+/* { */
+/*   GNL_COVER_ALL, */
+/*   GNL_COVER_SOME, */
+/*   GNL_COVER_START, */
+/*   GNL_COVER_STOP, */
+/* } GnlCoverType; */
 
-typedef enum
-{
-  GNL_DIRECTION_FORWARD,
-  GNL_DIRECTION_BACKWARD,
-} GnlDirection;
+/* typedef enum */
+/* { */
+/*   GNL_DIRECTION_FORWARD, */
+/*   GNL_DIRECTION_BACKWARD, */
+/* } GnlDirection; */
 
 struct _GnlObject {
   GstBin 		 parent;
@@ -73,31 +73,31 @@ struct _GnlObject {
 struct _GnlObjectClass {
   GstBinClass		parent_class;
   
-  gboolean		(*prepare)		(GnlObject *object, GstEvent *event);
-  gboolean		(*covers)		(GnlObject *object, 
-		   				 GstClockTime start, GstClockTime stop, GnlCoverType);
+/*   gboolean		(*prepare)		(GnlObject *object, GstEvent *event); */
+/*   gboolean		(*covers)		(GnlObject *object,  */
+/* 		   				 GstClockTime start, GstClockTime stop, GnlCoverType); */
 };
 
 /* normal GObject stuff */
 GType			gnl_object_get_type		(void);
 
-void			gnl_object_set_media_start_stop	(GnlObject *object, GstClockTime start, GstClockTime stop);
-void			gnl_object_get_media_start_stop	(GnlObject *object, GstClockTime *start, GstClockTime *stop);
-void			gnl_object_set_start_stop	(GnlObject *object, GstClockTime start, GstClockTime stop);
-void			gnl_object_get_start_stop	(GnlObject *object, GstClockTime *start, GstClockTime *stop);
-void			gnl_object_set_priority		(GnlObject *object, gint priority);
-gint			gnl_object_get_priority		(GnlObject *object);
+/* void			gnl_object_set_media_start_stop	(GnlObject *object, GstClockTime start, GstClockTime stop); */
+/* void			gnl_object_get_media_start_stop	(GnlObject *object, GstClockTime *start, GstClockTime *stop); */
+/* void			gnl_object_set_start_stop	(GnlObject *object, GstClockTime start, GstClockTime stop); */
+/* void			gnl_object_get_start_stop	(GnlObject *object, GstClockTime *start, GstClockTime *stop); */
+/* void			gnl_object_set_priority		(GnlObject *object, gint priority); */
+/* gint			gnl_object_get_priority		(GnlObject *object); */
 
-gboolean		gnl_object_is_active		(GnlObject *object);
-void			gnl_object_set_active		(GnlObject *object, gboolean active);
+/* gboolean		gnl_object_is_active		(GnlObject *object); */
+/* void			gnl_object_set_active		(GnlObject *object, gboolean active); */
 
-gboolean 		gnl_object_covers 		(GnlObject *object, GstClockTime start,
-		                  			 GstClockTime stop, GnlCoverType type);
+/* gboolean 		gnl_object_covers 		(GnlObject *object, GstClockTime start, */
+/* 		                  			 GstClockTime stop, GnlCoverType type); */
 
-gboolean		gnl_object_to_media_time	(GnlObject *object, GstClockTime objecttime,
-							 GstClockTime *mediatime);
-gboolean		gnl_media_to_object_time	(GnlObject *object, GstClockTime mediatime,
-							 GstClockTime *objecttime);
+/* gboolean		gnl_object_to_media_time	(GnlObject *object, GstClockTime objecttime, */
+/* 							 GstClockTime *mediatime); */
+/* gboolean		gnl_media_to_object_time	(GnlObject *object, GstClockTime mediatime, */
+/* 							 GstClockTime *objecttime); */
 
 
 G_END_DECLS

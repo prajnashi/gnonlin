@@ -4,9 +4,10 @@ SUBDIRS = \
 	gnl \
 	docs \
 	m4 \
-	po \
 	common \
 	test
+# po should be enabled when I figure out why it's not building
+#	po
 
 DIST_SUBDIRS = $(SUBDIRS)
 

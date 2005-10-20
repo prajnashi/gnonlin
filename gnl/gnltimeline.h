@@ -25,7 +25,7 @@
 #define __GNL_TIMELINE_H__
 
 #include <gst/gst.h>
-#include <gnl/gnlcomposition.h>
+#include "gnlcomposition.h"
 
 G_BEGIN_DECLS
 
@@ -40,13 +40,13 @@ G_BEGIN_DECLS
 #define GNL_IS_TIMELINE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_TIMELINE))
 
-typedef struct _GnlTimelineTimer GnlTimelineTimer;
+/* typedef struct _GnlTimelineTimer GnlTimelineTimer; */
 
 struct _GnlTimeline {
   GnlComposition	 parent;
 
   GList			*groups;
-  GnlTimelineTimer 	*timer;
+/*   GnlTimelineTimer 	*timer; */
 };
 
 struct _GnlTimelineClass {
@@ -55,14 +55,14 @@ struct _GnlTimelineClass {
 
 GType
 gnl_timeline_get_type		(void);
-GnlTimeline*
-gnl_timeline_new		(const gchar *name);
+/* GnlTimeline* */
+/* gnl_timeline_new		(const gchar *name); */
 
-void
-gnl_timeline_add_composition	(GnlTimeline *timeline, GnlComposition *comp);
+/* void */
+/* gnl_timeline_add_composition	(GnlTimeline *timeline, GnlComposition *comp); */
 
-GstPad*
-gnl_timeline_get_pad_for_composition	(GnlTimeline *timeline, GnlComposition *comp);
+/* GstPad* */
+/* gnl_timeline_get_pad_for_composition	(GnlTimeline *timeline, GnlComposition *comp); */
 
 G_END_DECLS
 

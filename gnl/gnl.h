@@ -21,7 +21,6 @@
 #ifndef __GNL_H__
 #define __GNL_H__
 
-#include <glib.h>
 #include <gst/gst.h>
 
 #include <gnl/gnltypes.h>
@@ -31,15 +30,5 @@
 #include <gnl/gnlcomposition.h>
 #include <gnl/gnloperation.h>
 #include <gnl/gnltimeline.h>
-
-G_BEGIN_DECLS
-
-/* initialize GNL */
-void gnl_init(int *argc,char **argv[]);
-
-void gnl_main		(void);
-void gnl_main_quit	(void);
-
-G_END_DECLS
 
 #endif /* __GST_H__ */

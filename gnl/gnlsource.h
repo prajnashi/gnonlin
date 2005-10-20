@@ -62,17 +62,17 @@ struct _GnlSource {
 struct _GnlSourceClass {
   GnlObjectClass	parent_class;
 
-  GstPad*	(*get_pad_for_stream)	(GnlSource *source, const gchar *padname);
+/*   GstPad*	(*get_pad_for_stream)	(GnlSource *source, const gchar *padname); */
 };
 
 /* normal GSource stuff */
 GType			gnl_source_get_type		(void);
-GnlSource*		gnl_source_new			(const gchar *name, GstElement *element);
+/* GnlSource*		gnl_source_new			(const gchar *name, GstElement *element); */
 
-void			gnl_source_set_element		(GnlSource *source, GstElement *element);
-GstElement*		gnl_source_get_element		(GnlSource *source);
+/* void			gnl_source_set_element		(GnlSource *source, GstElement *element); */
+/* GstElement*		gnl_source_get_element		(GnlSource *source); */
 
-GstPad*			gnl_source_get_pad_for_stream	(GnlSource *source, const gchar *padname);
+/* GstPad*			gnl_source_get_pad_for_stream	(GnlSource *source, const gchar *padname); */
 
 G_END_DECLS
 

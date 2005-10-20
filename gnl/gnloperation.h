@@ -54,9 +54,9 @@ struct _GnlOperationClass {
 
 /* normal GOperation stuff */
 GType		gnl_operation_get_type		(void);
-GnlOperation*	gnl_operation_new		(const gchar *name, GstElement *element);
+/* GnlOperation*	gnl_operation_new		(const gchar *name, GstElement *element); */
 
-guint		gnl_operation_get_num_sinks	(GnlOperation *operation);
+/* guint		gnl_operation_get_num_sinks	(GnlOperation *operation); */
 
 G_END_DECLS
 

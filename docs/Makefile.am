@@ -4,8 +4,8 @@ else
 SUBDIRS_DOCS =
 endif
 
-SUBDIRS = $(SUBDIRS_DOCS)
-DIST_SUBDIRS = libs
+#SUBDIRS = $(SUBDIRS_DOCS)
+#DIST_SUBDIRS = libs
 
 EXTRA_DIST = \
 	upload.mak version.entities.in
