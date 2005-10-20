@@ -1,3 +1,40 @@
+2005-10-20  Edward Hervey  <edward@fluendo.com>
+
+	* .cvsignore:
+	* Makefile.am:
+	* autogen.sh:
+	* configure.ac:
+	* docs/Makefile.am:
+	* m4/Makefile.am:
+	* m4/codeset.m4:
+	* m4/gettext.m4:
+	* m4/glibc21.m4:
+	* m4/iconv.m4:
+	* m4/intdiv0.m4:
+	* m4/inttypes-pri.m4:
+	* m4/inttypes.m4:
+	* m4/inttypes_h.m4:
+	* m4/isc-posix.m4:
+	* m4/lcmessage.m4:
+	* m4/lib-ld.m4:
+	* m4/lib-link.m4:
+	* m4/lib-prefix.m4:
+	* m4/progtest.m4:
+	* m4/stdint_h.m4:
+	* m4/uintmax_t.m4:
+	* m4/ulonglong.m4:
+	* makeconfigure:
+	* po/Makefile.in.in:
+	* po/Rules-quot:
+	* po/boldquot.sed:
+	* po/en@boldquot.header:
+	* po/en@quot.header:
+	* po/insert-header.sin:
+	* po/quot.sed:
+	* po/remove-potcdate.sin:
+	* test/Makefile.am:
+	Make gnonlin more gst-0.9 friendly
+
 2005-07-14  Edward Hervey  <edward@fluendo.com>
 
 	* Makefile.am: 

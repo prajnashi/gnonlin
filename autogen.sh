@@ -5,16 +5,19 @@ DIE=0
 package=gnonlin
 srcfile=gnl/gnl.c
 
-# a quick cvs co if necessary to alleviate the pain - may remove this
-# when developers get a clue ;)
-if test ! -d common; 
-then 
+# a quick cvs co to ease the transition
+if test ! -d common;
+then
   echo "+ getting common/ from cvs"
-  cvs co common 
+  if test -e CVS/Tag
+  then
+    TAG="-r `tail -c +2 CVS/Tag`"
+  fi
+  cvs -d:pserver:anoncvs@anoncvs.freedesktop.org:/cvs/gstreamer co $TAG common
 fi
 
 # source helper functions
-if test ! -e common/gst-autogen.sh;
+if test ! -f common/gst-autogen.sh;
 then
   echo There is something wrong with your source tree.
   echo You are missing common/gst-autogen.sh
@@ -22,19 +25,19 @@ then
 fi
 . common/gst-autogen.sh
 
-CONFIGURE_DEF_OPT='--enable-maintainer-mode --enable-plugin-builddir --enable-debug --enable-DEBUG'
+CONFIGURE_DEF_OPT='--enable-maintainer-mode --enable-gtk-doc'
 
 autogen_options $@
 
 echo -n "+ check for build tools"
-if test ! -z "$NOCHECK"; then echo ": skipped version checks"; else  echo; fi
+if test ! -z "$NOCHECK"; then echo " skipped"; else  echo; fi
 version_check "autoconf" "$AUTOCONF autoconf autoconf-2.54 autoconf-2.53 autoconf-2.52" \
               "ftp://ftp.gnu.org/pub/gnu/autoconf/" 2 52 || DIE=1
-version_check "automake" "$AUTOMAKE automake automake-1.7 automake17 automake-1.6" \
+version_check "automake" "$AUTOMAKE automake automake-1.7 automake-1.6 automake-1.5" \
               "ftp://ftp.gnu.org/pub/gnu/automake/" 1 6 || DIE=1
-#version_check "autopoint" "autopoint" \
-#              "ftp://ftp.gnu.org/pub/gnu/gettext/" 0 11 5 || DIE=1
-version_check "libtoolize" "libtoolize" \
+version_check "autopoint" "autopoint" \
+              "ftp://ftp.gnu.org/pub/gnu/gettext/" 0 11 5 || DIE=1
+version_check "libtoolize" "$LIBTOOLIZE libtoolize" \
               "ftp://ftp.gnu.org/pub/gnu/libtool/" 1 5 0 || DIE=1
 version_check "pkg-config" "" \
               "http://www.freedesktop.org/software/pkgconfig" 0 8 0 || DIE=1
@@ -60,17 +63,16 @@ toplevel_check $srcfile
 
 # autopoint
 #    older autopoint (< 0.12) has a tendency to complain about mkinstalldirs
-#if test -x mkinstalldirs; then rm mkinstalldirs; fi
+if test -x mkinstalldirs; then rm mkinstalldirs; fi
 #    first remove patch if necessary, then run autopoint, then reapply
-#if test -f po/Makefile.in.in;
-#then
-#  patch -p0 -R < common/gettext.patch
-#fi
-#tool_run "$autopoint --force"
-#patch -p0 < common/gettext.patch
+if test -f po/Makefile.in.in;
+then
+  patch -p0 -R < common/gettext.patch
+fi
+tool_run "$autopoint --force"
+patch -p0 < common/gettext.patch
 
-# aclocal
-tool_run "$aclocal" "-I common/m4 $ACLOCAL_FLAGS"
+tool_run "$aclocal" "-I m4 -I common/m4 $ACLOCAL_FLAGS"
 tool_run "$libtoolize" "--copy --force"
 tool_run "$autoheader"
 
@@ -95,8 +97,8 @@ if test -f disable; then
 fi
 
 test -n "$NOCONFIGURE" && {
-  echo "skipping configure stage for package $package, as requested."
-  echo "autogen.sh done."
+  echo "+ skipping configure stage for package $package, as requested."
+  echo "+ autogen.sh done."
   exit 0
 }
 
@@ -106,11 +108,7 @@ test ! -z "$CONFIGURE_EXT_OPT" && echo "  ./configure external flags: $CONFIGURE
 test ! -z "$CONFIGURE_FILE_OPT" && echo "  ./configure enable/disable flags: $CONFIGURE_FILE_OPT"
 echo
 
-echo ./configure $CONFIGURE_DEF_OPT $CONFIGURE_EXT_OPT $CONFIGURE_FILE_OPT
 ./configure $CONFIGURE_DEF_OPT $CONFIGURE_EXT_OPT $CONFIGURE_FILE_OPT || {
         echo "  configure failed"
         exit 1
 }
-
-echo "Now type 'make' to compile $package."
-

@@ -1,18 +1,21 @@
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
+DISTCHECK_CONFIGURE_FLAGS=--enable-gtk-doc
 
-SUBDIRS = common gnl test docs
+SUBDIRS = \
+	gnl \
+	docs \
+	m4 \
+	po \
+	common \
+	test
 
-# These are all the possible subdirs
-DIST_SUBDIRS = common gnl test docs
+DIST_SUBDIRS = $(SUBDIRS)
 
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = gnonlin.pc
+EXTRA_DIST = \
+	gnonlin.spec depcomp \
+	AUTHORS COPYING NEWS README RELEASE REQUIREMENTS \
+	ChangeLog autogen.sh
 
-EXTRA_DIST = gnonlin.spec.in gnonlin.spec gnonlin.pc \
-             gnonlin-uninstalled.pc \
-	     gnonlin.pc.in gnonlin-uninstalled.pc.in \
-	     autogen.sh ChangeLog AUTHORS COPYING NEWS\
-	     LICENSE REQUIREMENTS README ABOUT-NLS $(man_MANS) 
+DISTCLEANFILES = _stdint.h
 
 include $(top_srcdir)/common/release.mak
+include $(top_srcdir)/common/po.mak

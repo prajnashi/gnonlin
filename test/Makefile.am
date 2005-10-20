@@ -1,6 +1,7 @@
 noinst_PROGRAMS = \
 	sourcetest1	\
-	sourcetest2	#\
+	sourcetest2
+#\
 #	sourcetest3	\
 #	sourcetest4
 #\
