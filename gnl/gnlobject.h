@@ -36,18 +36,30 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_CAST((obj),GNL_TYPE_OBJECT,GnlObject))
 #define GNL_OBJECT_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST((klass),GNL_TYPE_OBJECT,GnlObjectClass))
+#define GNL_OBJECT_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), GNL_TYPE_OBJECT, GnlObjectClass))
 #define GNL_IS_OBJECT(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_OBJECT))
 #define GNL_IS_OBJECT_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OBJECT))
 
-/* typedef enum */
-/* { */
-/*   GNL_COVER_ALL, */
-/*   GNL_COVER_SOME, */
-/*   GNL_COVER_START, */
-/*   GNL_COVER_STOP, */
-/* } GnlCoverType; */
+/**
+ * GnlCoverType"
+ * @GNL_COVER_ALL  : Covers all the content
+ * @GNL_COVER_SOME : Covers some of the content
+ * @GNL_COVER_START: Covers the beginning
+ * @GNL_COVER_STOP : Covers the end
+ *
+ * Type of coverage for the given start/stop values
+*/
+
+typedef enum
+{
+  GNL_COVER_ALL,
+  GNL_COVER_SOME,
+  GNL_COVER_START,
+  GNL_COVER_STOP,
+} GnlCoverType;
 
 /* typedef enum */
 /* { */
@@ -58,41 +70,53 @@ G_BEGIN_DECLS
 struct _GnlObject {
   GstBin 		 parent;
   
+  /* Time positionning */
   GstClockTime  	 start;
   GstClockTime 		 stop;
   GstClockTime  	 media_start;
   GstClockTime 		 media_stop;
+
+  gdouble		rate;
+
+  /* priority in parent */
   gint			 priority;
+
+  /* active in parent */
   gboolean		 active;
+
+  /* Filtering caps */
+  GstCaps		 *caps;
   
-  GstClockTime  	 current_time;
-  
-  gpointer		 comp_private;
+  /* FIXME : DO WE STILL NEED THESE ? */
+/*   GstClockTime  	 current_time; */
+/*   gpointer		 comp_private; */
 };
 
 struct _GnlObjectClass {
   GstBinClass		parent_class;
   
-/*   gboolean		(*prepare)		(GnlObject *object, GstEvent *event); */
-/*   gboolean		(*covers)		(GnlObject *object,  */
-/* 		   				 GstClockTime start, GstClockTime stop, GnlCoverType); */
+  /* virtual methods for subclasses */
+  gboolean		(*covers)		(GnlObject *object,
+		   				 GstClockTime start,
+						 GstClockTime stop,
+						 GnlCoverType type);
 };
 
-/* normal GObject stuff */
-GType			gnl_object_get_type		(void);
+GType		gnl_object_get_type		(void);
 
-/* void			gnl_object_set_media_start_stop	(GnlObject *object, GstClockTime start, GstClockTime stop); */
-/* void			gnl_object_get_media_start_stop	(GnlObject *object, GstClockTime *start, GstClockTime *stop); */
-/* void			gnl_object_set_start_stop	(GnlObject *object, GstClockTime start, GstClockTime stop); */
-/* void			gnl_object_get_start_stop	(GnlObject *object, GstClockTime *start, GstClockTime *stop); */
-/* void			gnl_object_set_priority		(GnlObject *object, gint priority); */
-/* gint			gnl_object_get_priority		(GnlObject *object); */
+GstPad*		gnl_object_ghost_pad		(GnlObject	*object,
+						 const gchar	*name,
+						 GstPad		*target);
 
-/* gboolean		gnl_object_is_active		(GnlObject *object); */
-/* void			gnl_object_set_active		(GnlObject *object, gboolean active); */
+gboolean	gnl_object_covers		(GnlObject	*object,
+						 GstClockTime	start,
+						 GstClockTime	stop,
+						 GnlCoverType	type);
 
-/* gboolean 		gnl_object_covers 		(GnlObject *object, GstClockTime start, */
-/* 		                  			 GstClockTime stop, GnlCoverType type); */
+/* 
+   We don't need the following as public functions since all time-shifting is
+   done in GnlObject
+ */
 
 /* gboolean		gnl_object_to_media_time	(GnlObject *object, GstClockTime objecttime, */
 /* 							 GstClockTime *mediatime); */

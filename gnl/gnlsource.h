@@ -45,34 +45,26 @@ typedef struct _GnlSourcePrivate GnlSourcePrivate;
 struct _GnlSource {
   GnlObject 		 parent;
 
+  /* controlled source element, acces with gst_bin_[add|remove]_element */
   GstElement 		*element;
-  GstElement		*bin;
 
-  gboolean		 element_added;
-  gint 			 linked_pads;
-  gint 			 total_pads;
-  GSList		*links;
+/*   GstElement		*bin; */
 
-  GstEvent		*pending_seek;
+/*   gint 			 linked_pads; */
+/*   gint 			 total_pads; */
+/*   GSList		*links; */
 
-  gboolean		 queueing;
+/*   GstEvent		*pending_seek; */
+
+/*   gboolean		 queueing; */
   GnlSourcePrivate	*private;
 };
 
 struct _GnlSourceClass {
   GnlObjectClass	parent_class;
-
-/*   GstPad*	(*get_pad_for_stream)	(GnlSource *source, const gchar *padname); */
 };
 
-/* normal GSource stuff */
 GType			gnl_source_get_type		(void);
-/* GnlSource*		gnl_source_new			(const gchar *name, GstElement *element); */
-
-/* void			gnl_source_set_element		(GnlSource *source, GstElement *element); */
-/* GstElement*		gnl_source_get_element		(GnlSource *source); */
-
-/* GstPad*			gnl_source_get_pad_for_stream	(GnlSource *source, const gchar *padname); */
 
 G_END_DECLS
 
