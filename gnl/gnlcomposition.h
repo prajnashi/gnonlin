@@ -35,49 +35,26 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_CAST((obj),GNL_TYPE_COMPOSITION,GnlComposition))
 #define GNL_COMPOSITION_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST((klass),GNL_TYPE_COMPOSITION,GnlCompositionClass))
+#define GNL_COMPOSITION_GET_CLASS(obj) \
+  (GNL_COMPOSITION_CLASS (G_OBJECT_GET_CLASS (obj)))
 #define GNL_IS_COMPOSITION(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_COMPOSITION))
 #define GNL_IS_COMPOSITION_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_COMPOSITION))
 
-typedef struct _GnlCompositionEntry GnlCompositionEntry;
-
-/* typedef enum */
-/* { */
-/*   GNL_FIND_AT, */
-/*   GNL_FIND_AFTER, */
-/*   GNL_FIND_START, */
-/* } GnlFindMethod; */
+typedef struct _GnlCompositionPrivate GnlCompositionPrivate;
 
 struct _GnlComposition {
   GnlObject		 parent;
 
-  GList			*objects;
-
-  GstClockTime	 	 next_stop;
-  GList			*active_objects;	/* List of currently active objects */
-  GList			*to_remove;		/* List of objects to deactivate */
+  GnlCompositionPrivate	*private;
 };
 
 struct _GnlCompositionClass {
   GnlObjectClass	parent_class;
-
-/*   GstClockTime		(*nearest_cover)	(GnlComposition *comp,  */
-/* 		  				 GstClockTime start, GnlDirection direction); */
 };
 
 GType			gnl_composition_get_type	(void);
-/* GnlComposition*		gnl_composition_new		(const gchar *name); */
-
-/* void			gnl_composition_add_object 	(GnlComposition *comp,  */
-/* 							 GnlObject *object);  */
-/* void			gnl_composition_remove_object 	(GnlComposition *comp,  */
-/* 							 GnlObject *object);  */
-/* void			gnl_composition_set_default_source (GnlComposition *comp, */
-/* 							    GnlSource *source); */
-
-/* GnlObject*		gnl_composition_find_object	(GnlComposition *comp,  */
-/* 							 GstClockTime time, GnlFindMethod method); */
 
 G_END_DECLS
 

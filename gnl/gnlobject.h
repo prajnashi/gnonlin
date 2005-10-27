@@ -61,25 +61,44 @@ typedef enum
   GNL_COVER_STOP,
 } GnlCoverType;
 
-/* typedef enum */
-/* { */
-/*   GNL_DIRECTION_FORWARD, */
-/*   GNL_DIRECTION_BACKWARD, */
-/* } GnlDirection; */
+/**
+ * GnlObjectFlags:
+ * @GNL_OBJECT_IS_SOURCE:
+ * @GNL_OBJECT_IS_OPERATION:
+ * @GNL_OBJECT_LAST_FLAG:
+*/
+
+typedef enum {
+  GNL_OBJECT_SOURCE		= (GST_BIN_FLAG_LAST << 0),
+  GNL_OBJECT_OPERATION		= (GST_BIN_FLAG_LAST << 1),
+  /* padding */
+  GNL_OBJECT_LAST_FLAG		= (GST_BIN_FLAG_LAST << 16)
+} GnlObjectFlags;
+
+#define GNL_OBJECT_IS_SOURCE(obj)	(GST_OBJECT_FLAG_IS_SET(obj, GNL_OBJECT_SOURCE))
+#define GNL_OBJECT_IS_OPERATION(obj)	(GST_OBJECT_FLAG_IS_SET(obj, GNL_OBJECT_OPERATION))
 
 struct _GnlObject {
   GstBin 		 parent;
   
   /* Time positionning */
   GstClockTime  	 start;
+  GstClockTimeDiff	 duration;
+
+  /* read-only */
   GstClockTime 		 stop;
+
   GstClockTime  	 media_start;
+  GstClockTimeDiff	 media_duration;
+  
+  /* read-only */
   GstClockTime 		 media_stop;
 
+  /* read-only */
   gdouble		rate;
 
   /* priority in parent */
-  gint			 priority;
+  guint			 priority;
 
   /* active in parent */
   gboolean		 active;
@@ -100,6 +119,7 @@ struct _GnlObjectClass {
 		   				 GstClockTime start,
 						 GstClockTime stop,
 						 GnlCoverType type);
+  gboolean		(*prepare)		(GnlObject *object);
 };
 
 GType		gnl_object_get_type		(void);

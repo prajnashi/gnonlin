@@ -48,15 +48,6 @@ struct _GnlSource {
   /* controlled source element, acces with gst_bin_[add|remove]_element */
   GstElement 		*element;
 
-/*   GstElement		*bin; */
-
-/*   gint 			 linked_pads; */
-/*   gint 			 total_pads; */
-/*   GSList		*links; */
-
-/*   GstEvent		*pending_seek; */
-
-/*   gboolean		 queueing; */
   GnlSourcePrivate	*private;
 };
 

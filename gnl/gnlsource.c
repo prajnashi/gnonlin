@@ -42,9 +42,6 @@ static GstElementDetails gnl_source_details = GST_ELEMENT_DETAILS
 struct _GnlSourcePrivate {
   gboolean	dispose_has_run;
   GstPad	*ghostpad;
-  gint64	seek_start;	/* Beginning of seek in media_time */
-  gint64	seek_stop;	/* End of seek in media_time */
-  gboolean	queued;
 };
 
 static gboolean
@@ -53,13 +50,14 @@ gnl_source_add_element	(GstBin *bin, GstElement *element);
 static gboolean
 gnl_source_remove_element	(GstBin *bin, GstElement *element);
 
-/* static void 		gnl_source_dispose 		(GObject *object); */
-/* static void 		gnl_source_finalize 		(GObject *object); */
+static void 		gnl_source_dispose 		(GObject *object);
+static void 		gnl_source_finalize 		(GObject *object);
 
 static void		gnl_source_set_property 	(GObject *object, guint prop_id,
 							 const GValue *value, GParamSpec *pspec);
 static void		gnl_source_get_property 	(GObject *object, guint prop_id, GValue *value,
 		                                         GParamSpec *pspec);
+static gboolean		gnl_source_prepare		(GnlObject *object);
 
 /* static GstElementStateReturn */
 /* 			gnl_source_change_state 	(GstElement *element); */
@@ -94,11 +92,13 @@ gnl_source_class_init (GnlSourceClass *klass)
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_source_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_source_get_property);
-/*   gobject_class->dispose      = GST_DEBUG_FUNCPTR (gnl_source_dispose); */
-/*   gobject_class->finalize     = GST_DEBUG_FUNCPTR (gnl_source_finalize); */
+
+/*   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_source_prepare); */
+
+  gobject_class->dispose      = GST_DEBUG_FUNCPTR (gnl_source_dispose);
+  gobject_class->finalize     = GST_DEBUG_FUNCPTR (gnl_source_finalize);
 
 /*   gstelement_class->change_state 	= gnl_source_change_state; */
-/*   gstelement_class->request_new_pad 	= gnl_source_request_new_pad; */
 
 }
 
@@ -106,54 +106,36 @@ gnl_source_class_init (GnlSourceClass *klass)
 static void
 gnl_source_init (GnlSource *source, GnlSourceClass *klass)
 {
-  source->element = 0;
-/*   source->linked_pads = 0; */
-/*   source->total_pads = 0; */
-/*   source->links = NULL; */
-/*   source->pending_seek = NULL; */
+  GST_OBJECT_FLAG_SET (source, GNL_OBJECT_SOURCE);
+  source->element = NULL;
   source->private = g_new0(GnlSourcePrivate, 1);
 }
 
-/* static void */
-/* gnl_source_dispose (GObject *object) */
-/* { */
-/*   GnlSource *source = GNL_SOURCE (object); */
-/*   GSList	*pads = source->links; */
-/*   SourcePadPrivate	*priv; */
+static void
+gnl_source_dispose (GObject *object)
+{
+  GnlSource *source = GNL_SOURCE (object);
 
-/*   if (source->private->dispose_has_run) */
-/*     return; */
+  if (source->private->dispose_has_run)
+    return;
 
-/*   GST_INFO("dispose"); */
-/*   source->private->dispose_has_run = TRUE; */
-
+  GST_INFO_OBJECT (object, "dispose");
+  source->private->dispose_has_run = TRUE;
   
-/*   while (pads) { */
-/*     priv = (SourcePadPrivate *) pads->data; */
+  G_OBJECT_CLASS (parent_class)->dispose (object);
+  GST_INFO_OBJECT (object, "dispose END");
+}
 
-/*     g_slist_free (priv->queue); */
-/*     pads = g_slist_next (pads); */
-/*   } */
+static void
+gnl_source_finalize (GObject *object)
+{
+  GnlSource *source = GNL_SOURCE (object);
 
-/*   if (source->element) */
-/*     gst_bin_remove (GST_BIN (source->bin), source->element); */
-/*   gst_bin_remove(GST_BIN(source), GST_ELEMENT(source->bin)); */
+  GST_INFO_OBJECT (object, "finalize");
+  g_free (source->private);
   
-/*   G_OBJECT_CLASS (parent_class)->dispose (object); */
-/*   GST_INFO("dispose END"); */
-/* } */
-
-/* static void */
-/* gnl_source_finalize (GObject *object) */
-/* { */
-/*   GnlSource *source = GNL_SOURCE (object); */
-
-/*   GST_INFO("finalize"); */
-/*   g_free (source->private); */
-/*   g_slist_free (source->links); */
-  
-/*   G_OBJECT_CLASS (parent_class)->finalize (object); */
-/* } */
+  G_OBJECT_CLASS (parent_class)->finalize (object);
+}
 
 
 static gint
@@ -207,8 +189,10 @@ no_more_pads_in_child (GstElement *element, GnlSource *source)
 						      GST_PAD_NAME (pad),
 						      pad);
   };
+
   if (!(source->private->ghostpad))
     GST_WARNING_OBJECT (source, "Couldn't get a valid source pad");
+  
 }
 
 static gboolean
@@ -264,6 +248,7 @@ gnl_source_remove_element	(GstBin *bin, GstElement *element)
 
   /* try to remove it */
   pret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
+
   if (pret) {
     /* remove ghostpad */
     if (source->private->ghostpad) {
@@ -276,7 +261,29 @@ gnl_source_remove_element	(GstBin *bin, GstElement *element)
   return pret;
 }
 
+/* static gboolean */
+/* gnl_source_prepare	(GnlObject *object) */
+/* { */
+/*   GnlSource	*source = GNL_SOURCE (object); */
+/*   gboolean	ret = TRUE; */
 
+/*   g_return_val_if_fail (source->element, FALSE); */
+
+/*   /\* send initial seek *\/ */
+/*   if ((!source->private->initial_seek) && (source->private->ghostpad)) { */
+/*     GstEvent	*event; */
+
+/*     GST_LOG_OBJECT (object, "Sending initial seek to ghostpad"); */
+/*     event = gst_event_new_seek (1.0, GST_FORMAT_TIME, */
+/* 				GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_SEGMENT, */
+/* 				GST_SEEK_TYPE_SET, object->start, */
+/* 				GST_SEEK_TYPE_SET, object->stop); */
+/*     ret = gst_pad_send_event (source->private->ghostpad, event); */
+/*     source->private->initial_seek = TRUE; */
+/*   } */
+
+/*   return ret; */
+/* } */
 /* /\**  */
 /*  * gnl_source_new: */
 /*  * @name: The name of the new #GnlSource */

@@ -45,8 +45,10 @@ GST_DEBUG_CATEGORY_STATIC (gnlobject);
 enum {
   ARG_0,
   ARG_START,
+  ARG_DURATION,
   ARG_STOP,
   ARG_MEDIA_START,
+  ARG_MEDIA_DURATION,
   ARG_MEDIA_STOP,
   ARG_RATE,
   ARG_PRIORITY,
@@ -70,11 +72,19 @@ gnl_object_covers_func		(GnlObject *object,
 				 GstClockTime start,
 				 GstClockTime stop,
 				 GnlCoverType type);
+static GstStateChangeReturn
+gnl_object_change_state		(GstElement *element, GstStateChange transition);
 
+static gboolean
+gnl_object_prepare_func		(GnlObject *object);
+
+static GstStateChangeReturn
+gnl_object_prepare		(GnlObject *object);
 
 static void
 gnl_object_base_init (gpointer g_class)
 {
+
 };
 
 static void
@@ -88,50 +98,84 @@ gnl_object_class_init (GnlObjectClass *klass)
   gstelement_class = 	(GstElementClass*)klass;
   gnlobject_class = 	(GnlObjectClass*)klass;
 
-  GST_DEBUG_CATEGORY_INIT (gnlobject, "gnlobject", 0, "GNonLin Base class");
+  GST_DEBUG_CATEGORY_INIT (gnlobject, "gnlobject", 0, "GNonLin Object base class");
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_object_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_object_get_property);
 
   gstelement_class->release_pad = GST_DEBUG_FUNCPTR (gnl_object_release_pad);
+  gstelement_class->change_state = GST_DEBUG_FUNCPTR (gnl_object_change_state);
+
 
   gnlobject_class->covers = GST_DEBUG_FUNCPTR (gnl_object_covers_func);
+  gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_object_prepare_func);
 
   g_object_class_install_property (gobject_class, ARG_START,
-    g_param_spec_uint64 ("start", "Start", "The start position relative to the parent",
-                         0, G_MAXINT64, 0, G_PARAM_READWRITE));
+    g_param_spec_uint64 ("start", "Start", 
+			 "The start position relative to the parent",
+                         0, G_MAXUINT64, 0,
+			 G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, ARG_DURATION,
+    g_param_spec_int64 ("duration", "Duration",
+			"Outgoing duration",
+			0, G_MAXINT64, 0,
+			G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, ARG_STOP,
-    g_param_spec_uint64 ("stop", "Stop", "The stop position relative to the parent",
-                         0, G_MAXINT64, 0, G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, ARG_MEDIA_START,
-    g_param_spec_uint64 ("media_start", "Media start", "The media start position",
-                         0, G_MAXINT64, 0, G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, ARG_MEDIA_STOP,
-    g_param_spec_uint64 ("media_stop", "Media stop", "The media stop position",
-                         0, G_MAXINT64, 0, G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, ARG_RATE,
-    g_param_spec_double ("rate", "Rate", "Playback rate of the media",
-			 G_MINDOUBLE, G_MAXDOUBLE, 1.0, G_PARAM_READABLE));
-  g_object_class_install_property (gobject_class, ARG_PRIORITY,
-    g_param_spec_int ("priority", "Priority", "The priority of the object",
-                       0, G_MAXINT, 0, G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, ARG_ACTIVE,
-    g_param_spec_boolean ("active", "Active", "Render this object",
-                          TRUE, G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, ARG_CAPS,
-    g_param_spec_boxed ("caps", "Caps", "Caps used to filter/choose the output stream",
-			GST_TYPE_CAPS, G_PARAM_READWRITE));
-				   
-/*   gstelement_class->change_state 	= gnl_object_change_state; */
+    g_param_spec_uint64 ("stop", "Stop", 
+			 "The stop position relative to the parent",
+                         0, G_MAXUINT64, 0,
+			 G_PARAM_READABLE));
 
+  g_object_class_install_property (gobject_class, ARG_MEDIA_START,
+    g_param_spec_uint64 ("media_start", "Media start", 
+			 "The media start position",
+                         0, G_MAXUINT64, GST_CLOCK_TIME_NONE,
+			 G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, ARG_MEDIA_DURATION,
+    g_param_spec_int64 ("media_duration", "Media duration",
+			 "Duration of the media, can be negative",
+			 G_MININT64, G_MAXINT64, 0,
+			 G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, ARG_MEDIA_STOP,
+    g_param_spec_uint64 ("media_stop", "Media stop",
+			 "The media stop position",
+                         0, G_MAXUINT64, GST_CLOCK_TIME_NONE,
+			 G_PARAM_READABLE));
+
+  g_object_class_install_property (gobject_class, ARG_RATE,
+    g_param_spec_double ("rate", "Rate",
+			 "Playback rate of the media",
+			 - G_MAXDOUBLE, G_MAXDOUBLE, 1.0,
+			 G_PARAM_READABLE));
+
+  g_object_class_install_property (gobject_class, ARG_PRIORITY,
+    g_param_spec_uint ("priority", "Priority",
+		       "The priority of the object",
+                       0, G_MAXUINT, 0,
+		       G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, ARG_ACTIVE,
+    g_param_spec_boolean ("active", "Active",
+			  "Render this object",
+                          TRUE,
+			  G_PARAM_READWRITE));
+
+  g_object_class_install_property (gobject_class, ARG_CAPS,
+    g_param_spec_boxed ("caps", "Caps",
+			"Caps used to filter/choose the output stream",
+			GST_TYPE_CAPS,
+			G_PARAM_READWRITE));
+				   
 }
 
 static void
 gnl_object_init (GnlObject *object, GnlObjectClass *klass)
 {
   object->start = 0;
+  object->duration = 0;
   object->stop = 0;
+
   object->media_start = GST_CLOCK_TIME_NONE;
+  object->media_duration = 0;
   object->media_stop = GST_CLOCK_TIME_NONE;
   object->rate = 1.0;
   object->priority = 0;
@@ -262,6 +306,28 @@ gnl_object_covers (GnlObject *object, GstClockTime start, GstClockTime stop,
   return GNL_OBJECT_GET_CLASS(object)->covers(object, start, stop, type);
 }
 
+static gboolean
+gnl_object_prepare_func	(GnlObject *object)
+{
+
+  return TRUE;
+}
+
+static GstStateChangeReturn
+gnl_object_prepare	(GnlObject *object)
+{
+  GstStateChangeReturn	ret = GST_STATE_CHANGE_SUCCESS;
+
+  GST_DEBUG_OBJECT (object, "preparing");
+
+  if (!(GNL_OBJECT_GET_CLASS(object)->prepare (object)))
+    ret = GST_STATE_CHANGE_FAILURE;
+  
+  GST_DEBUG_OBJECT (object, "finished preparing, returning %d", ret);
+
+  return ret;
+}
+
 static void
 gnl_object_release_pad		(GstElement *element, GstPad *pad)
 {
@@ -271,6 +337,8 @@ gnl_object_release_pad		(GstElement *element, GstPad *pad)
 		    GST_DEBUG_PAD_NAME(pad));
   if (priv)
     g_free (priv);
+
+  GST_ELEMENT_CLASS(parent_class)->release_pad (element, pad);
 
 }
 
@@ -282,8 +350,10 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
   gdouble	rate, nrate;
   GstSeekFlags	flags;
   GstSeekType	curtype, stoptype;
-  gint64	cur, ncur;
-  gint64	stop, nstop;
+  gint64	cur;
+  guint64	ncur;
+  gint64	stop;
+  guint64	nstop;
   GstStructure	*struc;
 
   /* FILL IN */
@@ -297,19 +367,25 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
   }
 
   event2 = GST_EVENT (gst_mini_object_make_writable (GST_MINI_OBJECT (event)));
-  struc = gst_event_get_structure(event2);
+  struc = (GstStructure *) gst_event_get_structure(event2);
 
   /* convert rate */
   nrate = rate * object->rate;
   gst_structure_set (struc, "rate", G_TYPE_DOUBLE, nrate, NULL);
 
   /* convert cur */
-  if ((curtype == GST_SEEK_TYPE_SET) && (gnl_object_to_media_time (object, cur, &ncur)))
-      gst_structure_set (struc, "cur", G_TYPE_INT64, ncur, NULL);
+  if ((curtype == GST_SEEK_TYPE_SET) && (gnl_object_to_media_time (object, cur, &ncur))) {
+    if (ncur > G_MAXINT64)
+      GST_WARNING_OBJECT (object, "return value too big...");
+    gst_structure_set (struc, "cur", G_TYPE_INT64, (gint64) ncur, NULL);
+  }
 
   /* convert stop, we also need to limit it to object->stop */
-  if ((stoptype == GST_SEEK_TYPE_SET) && (gnl_object_to_media_time (object, stop, &nstop)))
-    gst_structure_set (struc, "stop", G_TYPE_INT64, nstop, NULL);
+  if ((stoptype == GST_SEEK_TYPE_SET) && (gnl_object_to_media_time (object, stop, &nstop))) {
+    if (nstop > G_MAXINT64)
+      GST_WARNING_OBJECT (object, "return value too big...");
+    gst_structure_set (struc, "stop", G_TYPE_INT64, (gint64) nstop, NULL);
+  }
 
   /* add segment seekflags */
   if (!(flags && GST_SEEK_FLAG_SEGMENT))
@@ -334,7 +410,7 @@ translate_outgoing_newsegment (GnlObject *object, GstEvent *event)
   gdouble	rate;
   GstFormat	format;
   gint64	start, stop, stream;
-  gint64	nstream;
+  guint64	nstream;
 
   /* only modify the streamtime */
   GST_DEBUG_OBJECT (object, "Modifying stream time for container time domain");
@@ -347,8 +423,11 @@ translate_outgoing_newsegment (GnlObject *object, GstEvent *event)
   
   gnl_media_to_object_time (object, stream, &nstream);
 
+  if (nstream > G_MAXINT64)
+    GST_WARNING_OBJECT (object, "Return value too big...");
+
   event2 = gst_event_new_newsegment (update, rate / object->rate, format,
-				     start, stop, nstream);
+				     start, stop, (gint64) nstream);
 
   return event2;
 }
@@ -563,30 +642,63 @@ gnl_object_set_caps (GnlObject *object, const GstCaps *caps)
 }
 
 static void
+update_values (GnlObject *object)
+{
+  /* check if start/duration has changed */
+  if ((object->start + object->duration) != object->stop) {
+    object->stop = object->start + object->duration;
+    GST_LOG_OBJECT (object, "Updating stop value : %lld [start:%lld, duration:%lld]",
+		    object->stop, object->start, object->duration);
+    g_object_notify (G_OBJECT (object), "stop");
+  }
+  
+  /* check if media start/duration has changed */
+  if ((object->media_start != GST_CLOCK_TIME_NONE) 
+      && ((object->media_start + object->media_duration) != object->media_stop)) {
+    object->media_stop = object->media_start + object->media_duration;
+    GST_LOG_OBJECT (object, "Updated media_stop value : %lld [mstart:%lld, mduration:%lld]",
+		    object->media_stop, object->media_start, object->media_duration);
+    g_object_notify (G_OBJECT (object), "media_stop");
+  }
+  
+  /* check if rate has changed */
+  if ((object->media_duration != GST_CLOCK_TIME_NONE)
+      && (object->duration)
+      && (object->media_duration)
+      && ((object->media_duration / object->duration) != object->rate)) {
+    object->rate = object->media_duration / object->duration;
+    GST_LOG_OBJECT (object, "Updated rate : %f [mduration:%lld, duration:%lld]",
+		    object->rate, object->media_duration, object->duration);
+    g_object_notify (G_OBJECT (object), "rate");
+  }
+}
+
+static void
 gnl_object_set_property (GObject *object, guint prop_id,
 			 const GValue *value, GParamSpec *pspec)
 {
-  GnlObject *gnlobject;
+  GnlObject *gnlobject = GNL_OBJECT (object);
 
   g_return_if_fail (GNL_IS_OBJECT (object));
-
-  gnlobject = GNL_OBJECT (object);
 
   switch (prop_id) {
     case ARG_START:
       gnlobject->start = g_value_get_uint64 (value);
+      update_values (gnlobject);
       break;
-    case ARG_STOP:
-      gnlobject->stop = g_value_get_uint64 (value);
+    case ARG_DURATION:
+      gnlobject->duration = g_value_get_int64 (value);
+      update_values (gnlobject);
       break;
     case ARG_MEDIA_START:
       gnlobject->media_start = g_value_get_uint64 (value);
       break;
-    case ARG_MEDIA_STOP:
-      gnlobject->media_stop = g_value_get_uint64 (value);
+    case ARG_MEDIA_DURATION:
+      gnlobject->media_duration = g_value_get_int64 (value);
+      update_values (gnlobject);
       break;
     case ARG_PRIORITY:
-      gnlobject->priority = g_value_get_int (value);
+      gnlobject->priority = g_value_get_uint (value);
       break;
     case ARG_ACTIVE:
       gnlobject->active = g_value_get_boolean (value);
@@ -614,11 +726,17 @@ gnl_object_get_property (GObject *object, guint prop_id,
     case ARG_START:
       g_value_set_uint64 (value, gnlobject->start);
       break;
+    case ARG_DURATION:
+      g_value_set_int64 (value, gnlobject->duration);
+      break;
     case ARG_STOP:
       g_value_set_uint64 (value, gnlobject->stop);
       break;
     case ARG_MEDIA_START:
       g_value_set_uint64 (value, gnlobject->media_start);
+      break;
+    case ARG_MEDIA_DURATION:
+      g_value_set_int64 (value, gnlobject->media_duration);
       break;
     case ARG_MEDIA_STOP:
       g_value_set_uint64 (value, gnlobject->media_stop);
@@ -627,7 +745,7 @@ gnl_object_get_property (GObject *object, guint prop_id,
       g_value_set_double (value, gnlobject->rate);
       break;
     case ARG_PRIORITY:
-      g_value_set_int (value, gnlobject->priority);
+      g_value_set_uint (value, gnlobject->priority);
       break;
     case ARG_ACTIVE:
       g_value_set_boolean (value, gnlobject->active);
@@ -639,4 +757,23 @@ gnl_object_get_property (GObject *object, guint prop_id,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
   }
+}
+
+static GstStateChangeReturn
+gnl_object_change_state (GstElement *element, GstStateChange transition)
+{
+  GstStateChangeReturn	ret = GST_STATE_CHANGE_SUCCESS;
+
+  switch (transition) {
+  case GST_STATE_CHANGE_READY_TO_PAUSED:
+    /* prepare gnlobject */
+    ret = gnl_object_prepare (GNL_OBJECT (element));
+    break;
+  default:
+    break;
+  }
+
+  ret &= GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
+
+  return ret;
 }

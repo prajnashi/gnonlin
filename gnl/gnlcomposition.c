@@ -36,16 +36,43 @@ static GstElementDetails gnl_composition_details = GST_ELEMENT_DETAILS (
 GST_DEBUG_CATEGORY_STATIC (gnlcomposition);
 #define GST_CAT_DEFAULT gnlcomposition
 
-/* static void		gnl_composition_base_init		(gpointer g_class); */
-/* static void 		gnl_composition_class_init 		(GnlCompositionClass *klass); */
-/* static void 		gnl_composition_init 			(GnlComposition *comp); */
-/* static void 		gnl_composition_finalize 		(GObject *object); */
+struct _GnlCompositionPrivate {
+  gboolean	dispose_has_run;
+
+  /* 
+     Sorted List of GnlObjects , ThreadSafe 
+     objects_start : sorted by start-time then priority
+     objects_stop : sorted by stop-time then priority
+     objects_lock : mutex to acces/modify any of those lists
+  */
+  GList			*objects_start;
+  GList			*objects_stop;
+  GStaticMutex		*objects_lock;  
+  
+  GHashTable		*objects_hash;
+
+  /* current seek */
+  gint64		seek_start;
+  gint64		seek_stop;
+
+  /* current top-level object, whose srcpad is ghost-ed on the composition */
+  GnlObject		*current;
+};
+
+static void
+gnl_composition_dispose		(GObject *object);
+static void
+gnl_composition_finalize 	(GObject *object);
+
+static gboolean
+gnl_composition_add_object	(GstBin *bin, GstElement *element);
+
+static gboolean
+gnl_composition_remove_object	(GstBin *bin, GstElement *element);
 
 /* static GstElementStateReturn */
 /* 			gnl_composition_change_state 		(GstElement *element); */
 	
-/* static GnlObjectClass *parent_class = NULL; */
-
 /* void			gnl_composition_show	 		(GnlComposition *comp); */
 
 /* #define CLASS(comp)  GNL_COMPOSITION_CLASS (G_OBJECT_GET_CLASS (comp)) */
@@ -65,14 +92,16 @@ GST_DEBUG_CATEGORY_STATIC (gnlcomposition);
 
 /* void	composition_update_start_stop(GnlComposition *comp); */
 
-/* struct _GnlCompositionEntry */
-/* { */
-/*   GnlObject *object; */
-/*   gulong	starthandler; */
-/*   gulong	stophandler; */
-/*   gulong	priorityhandler; */
-/*   gulong	activehandler; */
-/* }; */
+typedef struct _GnlCompositionEntry GnlCompositionEntry;
+
+struct _GnlCompositionEntry
+{
+  GnlObject	*object;
+  gulong	starthandler;
+  gulong	stophandler;
+  gulong	priorityhandler;
+  gulong	activehandler;
+};
 
 /* #define GNL_COMP_ENTRY(entry)		((GnlCompositionEntry *)entry) */
 /* #define GNL_COMP_ENTRY_OBJECT(entry)	(GNL_OBJECT (GNL_COMP_ENTRY (entry)->object)) */
@@ -122,13 +151,14 @@ gnl_composition_class_init (GnlCompositionClass *klass)
 
   GST_DEBUG_CATEGORY_INIT (gnlcomposition, "gnlcomposition", 0, "GNonLin Composition");
 
-/*   gobject_class->finalize 	 = gnl_composition_finalize; */
+  gobject_class->dispose	= GST_DEBUG_FUNCPTR (gnl_composition_dispose);
+  gobject_class->finalize 	= GST_DEBUG_FUNCPTR (gnl_composition_finalize);
 
 /*   gstelement_class->change_state = gnl_composition_change_state; */
 /*   gstelement_class->query	 = gnl_composition_query; */
 
-/*   gstbin_class->add_element      = (void (*) (GstBin *, GstElement *))gnl_composition_add_object; */
-/*   gstbin_class->remove_element   = (void (*) (GstBin *, GstElement *))gnl_composition_remove_object; */
+  gstbin_class->add_element      = GST_DEBUG_FUNCPTR (gnl_composition_add_object);
+  gstbin_class->remove_element   = GST_DEBUG_FUNCPTR (gnl_composition_remove_object);
 
 /*   gnlobject_class->prepare       = gnl_composition_prepare; */
 /*   gnlobject_class->covers	 = gnl_composition_covers_func; */
@@ -136,37 +166,68 @@ gnl_composition_class_init (GnlCompositionClass *klass)
 /*   klass->nearest_cover	 	 = gnl_composition_nearest_cover_func; */
 }
 
+static void
+hash_value_destroy	(GnlCompositionEntry *entry)
+{
+  g_signal_handler_disconnect (entry->object, entry->starthandler);
+  g_signal_handler_disconnect (entry->object, entry->stophandler);
+  g_signal_handler_disconnect (entry->object, entry->priorityhandler);
+  g_signal_handler_disconnect (entry->object, entry->activehandler);
+  g_free(entry);
+}
 
 static void
 gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 {
-  comp->objects = NULL;
-  GNL_OBJECT(comp)->start = 0;
-  GNL_OBJECT(comp)->stop = G_MAXINT64;
-  comp->next_stop = 0;
-  comp->active_objects = NULL;
-  comp->to_remove = NULL;
+  GST_OBJECT_FLAG_SET (comp, GNL_OBJECT_SOURCE);
+
+
+  comp->private = g_new0 (GnlCompositionPrivate, 1);
+  comp->private->objects_lock = g_new0 (GStaticMutex, 1);
+  g_static_mutex_init (comp->private->objects_lock);
+  comp->private->objects_start = NULL;
+  comp->private->objects_stop = NULL;
+
+  comp->private->objects_hash = g_hash_table_new_full (g_direct_hash,
+						       g_direct_equal,
+						       NULL,
+						       (GDestroyNotify) hash_value_destroy);
+
+  comp->private->seek_start = 0;
+  comp->private->seek_stop = G_MAXUINT64;
+
+  comp->private->current = NULL;
 }
 
-/* static void */
-/* gnl_composition_finalize (GObject *object) */
-/* { */
-/*   GnlComposition *comp = GNL_COMPOSITION (object); */
-/*   GList *objects = comp->objects; */
-/*   GnlCompositionEntry *entry = NULL; */
+static void
+gnl_composition_dispose (GObject *object)
+{
+  GnlComposition	*comp = GNL_COMPOSITION (object);
 
-/*   GST_INFO("finalize"); */
-/*   while (objects) { */
-/*     entry = (GnlCompositionEntry *) (objects->data); */
-/*     g_free (entry); */
-/*     objects = g_list_next (objects); */
-/*   } */
+  if (comp->private->dispose_has_run)
+    return;
 
-/*   g_list_free (comp->objects); */
-/*   g_list_free (comp->active_objects); */
+  comp->private->dispose_has_run = TRUE;
+  /* FIXME: all of a sudden I can't remember what we have to do here... */
+}
 
-/*   G_OBJECT_CLASS (parent_class)->finalize (object); */
-/* } */
+static void
+gnl_composition_finalize (GObject *object)
+{
+  GnlComposition *comp = GNL_COMPOSITION (object);
+
+  GST_INFO("finalize");
+
+  g_static_mutex_lock (comp->private->objects_lock);
+  g_list_free (comp->private->objects_start);
+  g_list_free (comp->private->objects_stop);
+  g_hash_table_destroy (comp->private->objects_hash);
+  g_static_mutex_unlock (comp->private->objects_lock);
+
+  g_free (comp->private);
+
+  G_OBJECT_CLASS (parent_class)->finalize (object);
+}
 
 /* /\* */
 /*  * gnl_composition_find_entry_priority: */
@@ -347,23 +408,6 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 /* } */
 
 /* void */
-/* child_priority_changed (GnlObject *object,  GParamSpec *arg, gpointer udata) */
-/* { */
-/*   GnlComposition *comp = GNL_COMPOSITION (udata); */
-
-/*   comp->objects = g_list_sort (comp->objects, _entry_compare_func); */
-/* } */
-
-/* void */
-/* child_start_stop_changed (GnlObject *object, GParamSpec *arg, gpointer udata) */
-/* { */
-/*   GnlComposition *comp = GNL_COMPOSITION (udata); */
-
-/*   comp->objects = g_list_sort (comp->objects, _entry_compare_func); */
-/*   composition_update_start_stop (comp); */
-/* } */
-
-/* void */
 /* child_active_changed (GnlObject *object, GParamSpec *arg, gpointer udata) */
 /* { */
 /*   GnlComposition *comp = GNL_COMPOSITION (udata); */
@@ -418,63 +462,6 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 /* } */
 
 
-/* /\** */
-/*  * gnl_composition_add_object: */
-/*  * @comp: The #GnlComposition to add an object to */
-/*  * @object: The #GnlObject to add to the composition */
-/*  *\/ */
-
-/* void */
-/* gnl_composition_add_object (GnlComposition *comp, GnlObject *object) */
-/* { */
-/*   GnlCompositionEntry *entry; */
-
-/*   GST_INFO("Composition[%s](Sched:%p) Object[%s](Sched:%p) Parent:%s Ref:%d", */
-/* 	   gst_element_get_name(GST_ELEMENT (comp)), */
-/* 	   GST_ELEMENT_SCHED (GST_ELEMENT (comp)), */
-/* 	   gst_element_get_name(GST_ELEMENT (object)), */
-/* 	   GST_ELEMENT_SCHED (GST_ELEMENT (object)), */
-/* 	   (gst_element_get_parent(GST_ELEMENT(object)) ? */
-/* 	    gst_element_get_name(gst_element_get_parent(GST_ELEMENT(object))): */
-/* 	    "None"), */
-/* 	   G_OBJECT(object)->ref_count); */
-
-/*   g_return_if_fail (GNL_IS_COMPOSITION (comp)); */
-
-/*   if (GNL_IS_OBJECT(object)) { */
-/*     entry = g_new0(GnlCompositionEntry , 1); */
-
-/* /\*     gst_object_ref (GST_OBJECT (object)); *\/ */
-/* /\*     gst_object_sink (GST_OBJECT (object)); *\/ */
-/*     entry->object = object; */
-
-/*     object->comp_private = entry; */
-
-/*     if (gst_element_get_pad (GST_ELEMENT (object), "src") == NULL  */
-/* 	&& GNL_IS_SOURCE (object)) { */
-/*       gnl_source_get_pad_for_stream (GNL_SOURCE (object), "src"); */
-/*     } */
-  
-/*     gnl_object_set_active (object, FALSE); */
-
-/*     entry->priorityhandler = g_signal_connect(object, "notify::priority", G_CALLBACK (child_priority_changed), comp); */
-/*     entry->starthandler = g_signal_connect(object, "notify::start", G_CALLBACK (child_start_stop_changed), comp); */
-/*     entry->stophandler = g_signal_connect(object, "notify::stop", G_CALLBACK (child_start_stop_changed), comp); */
-/*     entry->activehandler = g_signal_connect(object, "notify::active", G_CALLBACK (child_active_changed), comp); */
-  
-/*     comp->objects = g_list_insert_sorted (comp->objects, entry, _entry_compare_func); */
-
-/* /\*     GST_FLAG_SET (GST_ELEMENT (object), GST_ELEMENT_LOCKED_STATE); *\/ */
-
-/*     composition_update_start_stop (comp); */
-/*   } */
-/*   GST_BIN_CLASS(parent_class)->add_element(GST_BIN(comp), GST_ELEMENT(object));  */
-/*   GST_INFO ("Added Object %s(Sched:%p) to Group (Sched:%p)", */
-/* 	    gst_element_get_name (GST_ELEMENT (object)), */
-/* 	    GST_ELEMENT_SCHED (GST_ELEMENT (object)), */
-/* 	    GST_ELEMENT_SCHED (GST_ELEMENT (comp))); */
-/* } */
-
 /* static gint */
 /* find_function (GnlCompositionEntry *entry, GnlObject *to_find)  */
 /* { */
@@ -491,41 +478,6 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 /*  * @comp: The #GnlComposition to remove an object from */
 /*  * @object: The #GnlObject to remove from the composition */
 /*  *\/ */
-
-/* void */
-/* gnl_composition_remove_object (GnlComposition *comp, GnlObject *object) */
-/* { */
-/*   GList *lentry; */
-/*   GnlCompositionEntry	*entry; */
-
-/*   GST_INFO("Composition[%s] Object[%s](Ref:%d)", */
-/* 	   gst_element_get_name(GST_ELEMENT (comp)), */
-/* 	   gst_element_get_name(GST_ELEMENT (object)), */
-/* 	   G_OBJECT(object)->ref_count); */
-
-/*   g_return_if_fail (GNL_IS_COMPOSITION (comp)); */
-
-/*   if (GNL_IS_OBJECT (object)) { */
-/*     lentry = g_list_find_custom (comp->objects, object, (GCompareFunc) find_function); */
-
-/*     if (lentry) { */
-/*       entry = (GnlCompositionEntry *) lentry->data; */
-/*       if (GNL_OBJECT (entry->object)->priority != G_MAXINT) { */
-/* 	g_signal_handler_disconnect (entry->object, entry->priorityhandler); */
-/* 	g_signal_handler_disconnect (entry->object, entry->starthandler); */
-/* 	g_signal_handler_disconnect (entry->object, entry->stophandler); */
-/*       } */
-/*       g_signal_handler_disconnect (entry->object, entry->activehandler); */
-    
-/*       comp->active_objects = g_list_remove (comp->active_objects, object); */
-/*       comp->objects = g_list_delete_link (comp->objects, lentry); */
-/*     } */
-/*   } */
-/*   GST_BIN_CLASS (parent_class)->remove_element(GST_BIN (comp), GST_ELEMENT (object)); */
-
-/*   composition_update_start_stop (comp); */
-
-/* } */
 
 /* /\* */
 /*   gnl_composition_schedule_object */
@@ -944,42 +896,6 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 /*   return res; */
 /* } */
 
-/* static gboolean */
-/* gnl_composition_covers_func (GnlObject *object, GstClockTime start,  */
-/* 		       GstClockTime stop, GnlCoverType type) */
-/* { */
-/*   GnlComposition *comp = GNL_COMPOSITION (object); */
-
-/*   GST_INFO("Object:%s , START[%lld]/STOP[%lld], TYPE:%d", */
-/* 	   gst_element_get_name(GST_ELEMENT(comp)), */
-/* 	   start, stop, type); */
-  
-/*   switch (type) { */
-/*   case GNL_COVER_ALL: */
-/*     GST_WARNING ("comp covers all, implement me"); */
-/*     break; */
-/*   case GNL_COVER_SOME: */
-/*     GST_WARNING ("comp covers some, implement me"); */
-/*     break; */
-/*   case GNL_COVER_START: */
-/*     if (gnl_composition_find_entry (comp, start, GNL_FIND_AT)) { */
-/*       GST_INFO("TRUE"); */
-/*       return TRUE; */
-/*     }; */
-/*     break; */
-/*   case GNL_COVER_STOP: */
-/*     if (gnl_composition_find_entry (comp, stop, GNL_FIND_AT)) { */
-/*       GST_INFO("TRUE"); */
-/*       return TRUE; */
-/*     }; */
-/*     break; */
-/*   default: */
-/*     break; */
-/*   } */
-  
-/*   GST_INFO("FALSE"); */
-/*   return FALSE; */
-/* } */
 
 /* static GstClockTime */
 /* gnl_composition_nearest_cover_func (GnlComposition *comp, GstClockTime time, GnlDirection direction) */
@@ -1057,65 +973,6 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 /*   return GST_CLOCK_TIME_NONE; */
 /* } */
 
-/* GstClockTime */
-/* gnl_composition_nearest_cover (GnlComposition *comp, GstClockTime start, GnlDirection direction) */
-/* { */
-/*   g_return_val_if_fail (GNL_IS_COMPOSITION (comp), FALSE); */
-
-/*   GST_INFO("Object:%s , Time[%lld], Direction:%d", */
-/* 	   gst_element_get_name(GST_ELEMENT(comp)), */
-/* 	   start, direction); */
-
-/*   if (CLASS (comp)->nearest_cover) */
-/*     return CLASS (comp)->nearest_cover (comp, start, direction); */
-
-/*   return GST_CLOCK_TIME_NONE; */
-/* } */
-
-/* static gboolean */
-/* gnl_composition_query (GstElement *element, GstQueryType type, */
-/* 		       GstFormat *format, gint64 *value) */
-/* { */
-/*   gboolean res = FALSE; */
-
-/*   GST_INFO("Object:%s , Type[%d], Format[%d]", */
-/* 	   gst_element_get_name(element), */
-/* 	   type, *format); */
-
-/*   if (*format != GST_FORMAT_TIME) */
-/*     return res; */
-
-/*   switch (type) { */
-/*   default: */
-/*     res = GST_ELEMENT_CLASS (parent_class)->query (element, type, format, value); */
-/*       break; */
-/*   } */
-/*   return res; */
-/* } */
-
-/* /\* */
-/*   update_start_stop */
-
-/*   Updates the composition's start and stop value */
-/*   Should be updated if an object has been added or it's start/stop has been modified */
-/* *\/ */
-
-/* void */
-/* composition_update_start_stop (GnlComposition *comp) */
-/* { */
-/*   GstClockTime	start, stop; */
-  
-/*   start = gnl_composition_nearest_cover (comp, 0, GNL_DIRECTION_FORWARD); */
-/*   if (start == GST_CLOCK_TIME_NONE) */
-/*     start = 0; */
-/*   stop = gnl_composition_nearest_cover (comp, G_MAXINT64, GNL_DIRECTION_BACKWARD); */
-/*   if (stop == GST_CLOCK_TIME_NONE) */
-/*     stop = G_MAXINT64; */
-/*   GST_INFO("Start_pos:%lld, Stop_pos:%lld",  */
-/* 	   start,  */
-/* 	   stop); */
-/*   gnl_object_set_start_stop(GNL_OBJECT(comp), start, stop); */
-/* } */
 
 /* static GstElementStateReturn */
 /* gnl_composition_change_state (GstElement *element) */
@@ -1175,4 +1032,199 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 /* 	   res); */
 /*   return res; */
 /* } */
+
+static gint
+objects_start_compare	(GnlObject *a, GnlObject *b)
+{
+  /* return positive value if a is after b */
+  if (a->start == b->start)
+    return a->priority - b->priority;
+  return a->start - b->start;
+}
+
+static gint
+objects_stop_compare	(GnlObject *a, GnlObject *b)
+{
+  /* return positive value if b is after a */
+  if (a->stop == b->stop)
+    return a->priority - b->priority;
+  return b->stop - a->stop;
+}
+
+static void
+update_start_stop_duration	(GnlComposition *comp)
+{
+  GnlObject	*obj;
+  GnlObject	*cobj = GNL_OBJECT (comp);
+
+  if (!(comp->private->objects_start)) {
+    if (cobj->start) {
+      cobj->start = 0;
+      g_object_notify (G_OBJECT (cobj), "start");
+    }
+    if (cobj->duration) {
+      cobj->duration = 0;
+      g_object_notify (G_OBJECT (cobj), "duration");
+    }
+    if (cobj->stop) {
+      cobj->stop = 0;
+      g_object_notify (G_OBJECT (cobj), "stop");
+    }
+    return;
+  }
+
+  obj = GNL_OBJECT (comp->private->objects_start->data);
+  if (obj->start != cobj->start) {
+    cobj->start = obj->start;
+    g_object_notify (G_OBJECT (cobj), "start");
+  }
+
+  obj = GNL_OBJECT (comp->private->objects_stop->data);
+  if (obj->stop != cobj->stop) {
+    cobj->stop = obj->stop;
+    g_object_notify (G_OBJECT (cobj), "stop");
+  }
+
+  if ((cobj->stop - cobj->start) != cobj->duration) {
+    cobj->duration = cobj->stop - cobj->start;
+    g_object_notify (G_OBJECT (cobj), "duration");
+  }
+}
+
+static void
+object_start_changed	(GnlObject *object, GParamSpec *arg, GnlComposition *comp)
+{
+  GST_DEBUG_OBJECT (object, "...");
+
+  comp->private->objects_start = g_list_sort (comp->private->objects_start, 
+					      (GCompareFunc) objects_start_compare);
+  update_start_stop_duration (comp);
+}
+
+static void
+object_stop_changed	(GnlObject *object, GParamSpec *arg, GnlComposition *comp)
+{
+  GST_DEBUG_OBJECT (object, "...");
+  
+  comp->private->objects_stop = g_list_sort (comp->private->objects_stop, 
+					     (GCompareFunc) objects_stop_compare);
+  update_start_stop_duration (comp);
+}
+
+static void
+object_priority_changed	(GnlObject *object, GParamSpec *arg, GnlComposition *comp)
+{
+  GST_DEBUG_OBJECT (object, "...");
+
+  comp->private->objects_start = g_list_sort (comp->private->objects_start, 
+					      (GCompareFunc) objects_start_compare);
+  comp->private->objects_stop = g_list_sort (comp->private->objects_stop, 
+					     (GCompareFunc) objects_stop_compare);
+  update_start_stop_duration (comp);
+}
+
+static void
+object_active_changed	(GnlObject *object, GParamSpec *arg, GnlComposition *comp)
+{
+  GST_DEBUG_OBJECT (object, "...");
+
+}
+
+static gboolean
+gnl_composition_add_object	(GstBin *bin, GstElement *element)
+{
+  gboolean	ret;
+  GnlCompositionEntry	*entry;
+  GnlComposition	*comp = GNL_COMPOSITION (bin);
+
+  GST_DEBUG_OBJECT (bin, "element %s", GST_OBJECT_NAME (element));
+  /* we only accept GnlObject */
+  g_return_val_if_fail (GNL_IS_OBJECT (element), FALSE);
+
+  g_static_mutex_lock (comp->private->objects_lock);
+  gst_object_ref (element);
+  ret = GST_BIN_CLASS (parent_class)->add_element (bin, element);
+  if (!ret)
+    goto beach;
+
+  /* wrap it and add it to the hash table */
+  entry = g_new0 (GnlCompositionEntry, 1);
+  entry->object = GNL_OBJECT (element);
+  entry->starthandler = g_signal_connect (G_OBJECT (element),
+					  "notify::start",
+					  G_CALLBACK (object_start_changed),
+					  comp);
+  entry->stophandler = g_signal_connect (G_OBJECT (element),
+					  "notify::stop",
+					  G_CALLBACK (object_stop_changed),
+					  comp);
+  entry->priorityhandler = g_signal_connect (G_OBJECT (element),
+					  "notify::priority",
+					  G_CALLBACK (object_priority_changed),
+					  comp);
+  entry->activehandler = g_signal_connect (G_OBJECT (element),
+					  "notify::active",
+					  G_CALLBACK (object_active_changed),
+					  comp);
+  
+  g_hash_table_insert (comp->private->objects_hash, element, entry);
+
+  /* add it sorted to the objects list */
+  comp->private->objects_start = g_list_insert_sorted (comp->private->objects_start,
+						       element,
+						       (GCompareFunc) objects_start_compare);
+  comp->private->objects_stop = g_list_insert_sorted (comp->private->objects_stop,
+						      element,
+						      (GCompareFunc) objects_stop_compare);
+
+  /* check if we have to modify the current pipeline setup */
+
+  /* update start/duration/stop */
+  update_start_stop_duration (comp);
+
+ beach:
+  gst_object_unref (element);
+  g_static_mutex_unlock (comp->private->objects_lock);
+  return ret;
+}
+
+
+static gboolean
+gnl_composition_remove_object	(GstBin *bin, GstElement *element)
+{
+  gboolean	ret;
+  GnlComposition	*comp = GNL_COMPOSITION (bin);
+
+  GST_DEBUG_OBJECT (bin, "element %s", GST_OBJECT_NAME (element));
+  /* we only accept GnlObject */
+  g_return_val_if_fail (GNL_IS_OBJECT (element), FALSE);
+
+  g_static_mutex_lock (comp->private->objects_lock);
+  gst_object_ref (element);
+  ret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
+  if (!ret)
+    goto beach;
+
+  if (!(g_hash_table_remove (comp->private->objects_hash, element)))
+    goto beach;
+
+  /* remove it from the objects list and resort the lists */
+  comp->private->objects_start = g_list_remove (comp->private->objects_start, element);
+  comp->private->objects_start = g_list_sort (comp->private->objects_start, 
+					      (GCompareFunc) objects_start_compare);
+  comp->private->objects_stop = g_list_remove (comp->private->objects_stop, element);
+  comp->private->objects_stop = g_list_sort (comp->private->objects_stop, 
+					     (GCompareFunc) objects_stop_compare);
+
+  /* check if we have to modify the current pipeline setup */
+
+  /* update start/duration/stop */
+  update_start_stop_duration (comp);
+
+ beach:
+  gst_object_unref (element);
+  g_static_mutex_unlock (comp->private->objects_lock);
+  return ret;
+}
+
 
