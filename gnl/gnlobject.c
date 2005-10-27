@@ -361,6 +361,7 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
   gst_event_parse_seek (event, &rate, &format, &flags,
 			&curtype, &cur,
 			&stoptype, &stop);
+
   if (format != GST_FORMAT_TIME) {
     GST_WARNING ("GNonLin time shifting only works with GST_FORMAT_TIME");
     return event;
@@ -385,11 +386,25 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
     if (nstop > G_MAXINT64)
       GST_WARNING_OBJECT (object, "return value too big...");
     gst_structure_set (struc, "stop", G_TYPE_INT64, (gint64) nstop, NULL);
+  } else {
+    GST_DEBUG_OBJECT (object, "Limiting end of seek to media_stop");
+    gnl_object_to_media_time (object, object->stop, &nstop);
+    if (nstop > G_MAXINT64)
+      GST_WARNING_OBJECT (object, "return value too big...");
+    gst_structure_set (struc,
+		       "stop_type", GST_TYPE_SEEK_TYPE, GST_SEEK_TYPE_SET,
+		       "stop", G_TYPE_INT64, (gint64) nstop,
+		       NULL);
   }
 
   /* add segment seekflags */
-  if (!(flags && GST_SEEK_FLAG_SEGMENT))
-    gst_structure_set (struc, "flags", GST_TYPE_SEEK_FLAGS, flags | GST_SEEK_FLAG_SEGMENT);
+  if (!(flags & GST_SEEK_FLAG_SEGMENT)) {
+    GST_DEBUG_OBJECT (object, "Adding GST_SEEK_FLAG_SEGMENT");
+    gst_structure_set (struc, "flags", GST_TYPE_SEEK_FLAGS, flags | GST_SEEK_FLAG_SEGMENT, NULL);
+  } else {
+    GST_DEBUG_OBJECT (object, "event already has GST_SEEK_FLAG_SEGMENT : %d",
+		      flags);
+  }
 
   return event2;
 }
@@ -566,7 +581,8 @@ ghostpad_unlink_function	(GstPad *ghostpad)
   if (priv)
     g_free (priv);
   
-  priv->unlinkfunc (ghostpad);
+  if (priv->unlinkfunc)
+    priv->unlinkfunc (ghostpad);
 }
 
 /**
@@ -589,34 +605,65 @@ GstPad *
 gnl_object_ghost_pad	(GnlObject *object, const gchar *name, GstPad *target)
 {
   GstPadDirection	dir = GST_PAD_DIRECTION (target);
-  GstPad	*ghost = NULL;
-  GnlPadPrivate	*priv;
+  GstPad	*ghost;
 
+  g_return_val_if_fail (target, FALSE);
   g_return_val_if_fail ((dir != GST_PAD_UNKNOWN), FALSE);
 
-  /* Create ghostpad for target */
-  ghost = gst_ghost_pad_new (name, target);
+  ghost = gnl_object_ghost_pad_notarget (object, name, dir);
+  if (ghost && (!(gnl_object_ghost_pad_set_target (object, ghost, target)))) {
+    GST_WARNING_OBJECT (object, "Couldn't set the target pad... removing ghostpad");
+    gst_element_remove_pad (GST_ELEMENT (object), ghost);
+    ghost = NULL;
+  }
+  
+  return ghost;
+}
+
+GstPad *
+gnl_object_ghost_pad_notarget	(GnlObject *object, const gchar *name, GstPadDirection dir)
+{
+  GstPad	*ghost;
+  GnlPadPrivate	*priv;
+
+  /* create a notarget ghostpad */
+  ghost = gst_ghost_pad_new_notarget (name, dir);
   if (!ghost)
     return NULL;
 
+  /* add it to element */
   if (!(gst_element_add_pad (GST_ELEMENT (object), ghost))) {
     GST_WARNING ("couldn't add newly created ghostpad");
     return NULL;
-  }
-  
+  }  
+
   GST_DEBUG ("grabbing existing pad functions");
 
   /* remember the existing ghostpad event/query/link/unlink functions */
   priv = g_new0(GnlPadPrivate, 1);
   priv->dir = dir;
   priv->object = object;
+  gst_pad_set_element_private (ghost, priv);
+
+  return ghost;
+}
+
+gboolean
+gnl_object_ghost_pad_set_target (GnlObject *object, GstPad *ghost, GstPad *target)
+{
+  GnlPadPrivate	*priv = gst_pad_get_element_private (ghost);
+  g_return_val_if_fail (priv, FALSE);
+  g_return_val_if_fail (GST_PAD_DIRECTION (target) == priv->dir, FALSE);
+  
+  /* set target */
+  if (!(gst_ghost_pad_set_target (GST_GHOST_PAD (ghost), target)))
+    return FALSE;
+
+  /* grab/replace event/query functions */
   priv->eventfunc = GST_PAD_EVENTFUNC (ghost);
   priv->queryfunc = GST_PAD_QUERYFUNC (ghost);
   priv->linkfunc = GST_PAD_LINKFUNC (ghost);
   priv->unlinkfunc = GST_PAD_UNLINKFUNC (ghost);
-  gst_pad_set_element_private (GST_PAD (ghost), priv);
-
-  GST_DEBUG ("setting our own functions");
 
   gst_pad_set_event_function (ghost, GST_DEBUG_FUNCPTR (ghostpad_event_function));
   gst_pad_set_query_function (ghost, GST_DEBUG_FUNCPTR (ghostpad_query_function));
@@ -629,7 +676,7 @@ gnl_object_ghost_pad	(GnlObject *object, const gchar *name, GstPad *target)
     control_internal_pad (ghost, object);
   }
 
-  return ghost;
+  return TRUE;
 }
 
 static void

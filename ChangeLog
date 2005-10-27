@@ -1,5 +1,14 @@
 2005-10-27  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlobject.c: (translate_incoming_seek),
+	(ghostpad_unlink_function), (gnl_object_ghost_pad),
+	(gnl_object_ghost_pad_notarget), (gnl_object_ghost_pad_set_target):
+	* gnl/gnlobject.h:
+	Added two functions to be able to create GnlGhostPad without a target,
+	and be able to set it later on.
+	
+2005-10-27  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (gnl_composition_class_init),
 	(hash_value_destroy), (gnl_composition_init),
 	(gnl_composition_dispose), (gnl_composition_finalize),

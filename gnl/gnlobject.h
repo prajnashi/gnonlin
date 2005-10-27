@@ -128,6 +128,14 @@ GstPad*		gnl_object_ghost_pad		(GnlObject	*object,
 						 const gchar	*name,
 						 GstPad		*target);
 
+GstPad*		gnl_object_ghost_pad_notarget	(GnlObject	*object,
+						 const gchar	*name,
+						 GstPadDirection dir);
+
+gboolean	gnl_object_ghost_pad_set_target	(GnlObject	*object,
+						 GstPad		*ghost,
+						 GstPad		*target);
+
 gboolean	gnl_object_covers		(GnlObject	*object,
 						 GstClockTime	start,
 						 GstClockTime	stop,
