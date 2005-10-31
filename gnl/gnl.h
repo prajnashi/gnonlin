@@ -1,6 +1,6 @@
 /* Gnonlin
  * Copyright (C) <2001> Wim Taymans <wim.taymans@chello.be>
- *		 <2004> Edward Hervey <bilboed@bilboed.com>
+ *		 <2004> Edward Hervey <edward@fluendo.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -30,5 +30,7 @@
 #include <gnl/gnlcomposition.h>
 #include <gnl/gnloperation.h>
 #include <gnl/gnltimeline.h>
+
+#include <gnl/gnlfilesource.h>
 
 #endif /* __GST_H__ */

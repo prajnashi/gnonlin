@@ -1,6 +1,6 @@
 /* Gnonlin
  * Copyright (C) <2001> Wim Taymans <wim.taymans@chello.be>
- *               <2004> Edward Hervey <bilboed@bilboed.com>
+ *               <2004> Edward Hervey <edward@fluendo.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -34,6 +34,7 @@ static struct _elements_entry _elements[] = {
   { "gnlcomposition", 	gnl_composition_get_type },
   { "gnloperation",	gnl_operation_get_type },
   { "gnltimeline",	gnl_timeline_get_type },
+  { "gnlfilesource",	gnl_filesource_get_type },
   { NULL, 0 }
 };
 

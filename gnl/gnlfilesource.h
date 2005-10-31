@@ -2,7 +2,7 @@
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
  *               2004 Edward Hervey <edward@fluendo.com>
  *
- * gnlcomposition.h: Header for base GnlComposition
+ * gnlfilesource.h: Header for GnlFileSource
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -21,42 +21,40 @@
  */
 
 
-#ifndef __GNL_COMPOSITION_H__
-#define __GNL_COMPOSITION_H__
+#ifndef __GNL_FILESOURCE_H__
+#define __GNL_FILESOURCE_H__
 
 #include <gst/gst.h>
 #include <gnl/gnlobject.h>
 
 G_BEGIN_DECLS
 
-#define GNL_TYPE_COMPOSITION \
-  (gnl_composition_get_type())
-#define GNL_COMPOSITION(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GNL_TYPE_COMPOSITION,GnlComposition))
-#define GNL_COMPOSITION_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GNL_TYPE_COMPOSITION,GnlCompositionClass))
-#define GNL_COMPOSITION_GET_CLASS(obj) \
-  (GNL_COMPOSITION_CLASS (G_OBJECT_GET_CLASS (obj)))
-#define GNL_IS_COMPOSITION(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_COMPOSITION))
-#define GNL_IS_COMPOSITION_CLASS(obj) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_COMPOSITION))
+#define GNL_TYPE_FILESOURCE \
+  (gnl_filesource_get_type())
+#define GNL_FILESOURCE(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GNL_TYPE_FILESOURCE,GnlFileSource))
+#define GNL_FILESOURCE_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),GNL_TYPE_FILESOURCE,GnlFileSourceClass))
+#define GNL_IS_FILESOURCE(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_FILESOURCE))
+#define GNL_IS_FILESOURCE_CLASS(obj) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_FILESOURCE))
 
-typedef struct _GnlCompositionPrivate GnlCompositionPrivate;
+typedef struct _GnlFileSourcePrivate GnlFileSourcePrivate;
 
-struct _GnlComposition {
-  GnlObject		 parent;
+struct _GnlFileSource {
+  GnlObject 		 parent;
 
-  GnlCompositionPrivate	*private;
+  GnlFileSourcePrivate	*private;
 };
 
-struct _GnlCompositionClass {
+struct _GnlFileSourceClass {
   GnlObjectClass	parent_class;
 };
 
-GType			gnl_composition_get_type	(void);
+GType			gnl_filesource_get_type		(void);
 
 G_END_DECLS
 
-#endif /* __GNL_COMPOSITION_H__ */
+#endif /* __GNL_FILESOURCE_H__ */
 

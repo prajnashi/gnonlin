@@ -1,6 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
- *               2004 Edward Hervey <bilboed@bilboed.com>
+ *               2004 Edward Hervey <edward@fluendo.com>
  *
  * gnlsource.h: Header for base GnlSource
  *

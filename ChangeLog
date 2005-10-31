@@ -1,3 +1,54 @@
+2005-10-31  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/Makefile.am:
+	* gnl/gnl.c:
+	* gnl/gnl.h:
+	* gnl/gnltypes.h:
+	* gnl/gnlfilesource.c: (gnl_filesource_base_init),
+	(gnl_filesource_class_init), (compare_src_pad),
+	(get_valid_src_pad), (decodebin_no_more_pads_cb),
+	(gnl_filesource_init), (gnl_filesource_dispose),
+	(gnl_filesource_finalize), (gnl_filesource_set_property),
+	(gnl_filesource_get_property):
+	* gnl/gnlfilesource.h:
+	Added GnlFileSource, a higher-level decodebin-based source
+
+	* gnl/gnlcomposition.c: (gnl_composition_class_init),
+	(gnl_composition_init), (gnl_composition_dispose),
+	(gnl_composition_reset), (gnl_composition_bus_watch),
+	(priority_comp), (get_stack_list), (get_clean_toplevel_stack),
+	(gnl_composition_find_object_full), (gnl_composition_find_object),
+	(get_src_pad), (gnl_composition_prepare),
+	(gnl_composition_change_state), (compare_relink_stack),
+	(update_pipeline), (object_start_changed), (object_stop_changed),
+	(object_priority_changed), (object_active_changed),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	* gnl/gnlcomposition.h:
+	Added the supa-doopa traversal-with-stack functionnality for figuring out
+	quickly what should be played at any given moment. Why didn't I come up
+	with this before ??
+	Removed deprecated pieces of code
+	
+	* gnl/gnlobject.c: (gnl_object_class_init),
+	(gnl_object_to_media_time), (gnl_media_to_object_time),
+	(gnl_object_covers), (gnl_object_prepare_func),
+	(translate_incoming_seek), (translate_outgoing_seek),
+	(control_internal_pad), (ghostpad_link_function),
+	(ghostpad_unlink_function), (gnl_object_ghost_pad),
+	(gnl_object_ghost_pad_notarget), (gnl_object_ghost_pad_set_target),
+	(update_values), (gnl_object_change_state):
+	* gnl/gnlobject.h:
+	Fixes to the GhostPad system
+	Indentation beautification
+	
+	* gnl/gnlsource.c: (gnl_source_class_init),
+	(no_more_pads_in_child), (gnl_source_remove_element):
+	* gnl/gnlsource.h:
+	Removed unused/useless code
+
+	* gnl/gnlelements.c:
+	bye bye
+
 2005-10-27  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlobject.c: (translate_incoming_seek),

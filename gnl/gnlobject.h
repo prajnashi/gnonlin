@@ -1,6 +1,6 @@
 /* GStreamer
  * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
- *               2004 Edward Hervey <bilboed@bilboed.com>
+ *               2004 Edward Hervey <edward@fluendo.com>
  *
  * gnlobject.h: Header for base GnlObject
  *
@@ -75,8 +75,10 @@ typedef enum {
   GNL_OBJECT_LAST_FLAG		= (GST_BIN_FLAG_LAST << 16)
 } GnlObjectFlags;
 
-#define GNL_OBJECT_IS_SOURCE(obj)	(GST_OBJECT_FLAG_IS_SET(obj, GNL_OBJECT_SOURCE))
-#define GNL_OBJECT_IS_OPERATION(obj)	(GST_OBJECT_FLAG_IS_SET(obj, GNL_OBJECT_OPERATION))
+#define GNL_OBJECT_IS_SOURCE(obj) \
+  (GST_OBJECT_FLAG_IS_SET(obj, GNL_OBJECT_SOURCE))
+#define GNL_OBJECT_IS_OPERATION(obj) \
+  (GST_OBJECT_FLAG_IS_SET(obj, GNL_OBJECT_OPERATION))
 
 struct _GnlObject {
   GstBin 		 parent;

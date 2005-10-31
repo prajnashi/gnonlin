@@ -30,14 +30,14 @@ typedef struct _GnlObjectClass GnlObjectClass;
 typedef struct _GnlComposition GnlComposition;
 typedef struct _GnlCompositionClass GnlCompositionClass;
 
-/* typedef struct _GnlGroup GnlGroup; */
-/* typedef struct _GnlGroupClass GnlGroupClass; */
-
 typedef struct _GnlOperation GnlOperation;
 typedef struct _GnlOperationClass GnlOperationClass;
 
 typedef struct _GnlSource GnlSource;
 typedef struct _GnlSourceClass GnlSourceClass;
+
+typedef struct _GnlFileSource GnlFileSource;
+typedef struct _GnlFileSourceClass GnlFileSourceClass;
 
 typedef struct _GnlTimeline GnlTimeline;
 typedef struct _GnlTimelineClass GnlTimelineClass;
