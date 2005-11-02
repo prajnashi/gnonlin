@@ -1,6 +1,5 @@
 /* Gnonlin
- * Copyright (C) <2001> Wim Taymans <wim.taymans@chello.be>
- *               <2004> Edward Hervey <edward@fluendo.com>
+ * Copyright (C) <2005> Edward Hervey <edward@fluendo.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -37,7 +36,7 @@ static GstElementDetails gnl_filesource_details = GST_ELEMENT_DETAILS
   "GNonLin File Source",
   "Filter/Editor",
   "High-level File Source element",
-  "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <edward@fluendo.com>"
+  "Edward Hervey <edward@fluendo.com>"
 );
 
 enum {
@@ -68,8 +67,8 @@ gnl_filesource_get_property 	(GObject *object, guint prop_id,
 				 GValue *value,
 				 GParamSpec *pspec);
 
-static GstStateChangeReturn
-gnl_filesource_change_state	(GstElement *element, GstStateChange transition);
+/* static GstStateChangeReturn */
+/* gnl_filesource_change_state	(GstElement *element, GstStateChange transition); */
 
 static void
 gnl_filesource_base_init (gpointer g_class)
@@ -104,8 +103,8 @@ gnl_filesource_class_init (GnlFileSourceClass *klass)
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_filesource_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_filesource_get_property);
 
-  gstelement_class->change_state =
-    GST_DEBUG_FUNCPTR (gnl_filesource_change_state);
+/*   gstelement_class->change_state = */
+/*     GST_DEBUG_FUNCPTR (gnl_filesource_change_state); */
 
   gst_element_class_install_std_props (GST_ELEMENT_CLASS (klass),
       "location", ARG_LOCATION, G_PARAM_READWRITE, NULL);

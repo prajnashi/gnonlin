@@ -48,7 +48,7 @@ struct _GnlCompositionPrivate {
   */
   GList			*objects_start;
   GList			*objects_stop;
-  GStaticMutex		*objects_lock;  
+  GMutex		*objects_lock;  
   
   GHashTable		*objects_hash;
   
@@ -136,10 +136,15 @@ typedef struct _GnlCompositionEntry GnlCompositionEntry;
 struct _GnlCompositionEntry
 {
   GnlObject	*object;
+  
+  /* handler ids for property notifications */
   gulong	starthandler;
   gulong	stophandler;
   gulong	priorityhandler;
   gulong	activehandler;
+
+  /* handler id for 'no-more-pads' signal */
+  gulong	nomorepadshandler;
 };
 
 static void
@@ -190,6 +195,9 @@ hash_value_destroy	(GnlCompositionEntry *entry)
   g_signal_handler_disconnect (entry->object, entry->stophandler);
   g_signal_handler_disconnect (entry->object, entry->priorityhandler);
   g_signal_handler_disconnect (entry->object, entry->activehandler);
+
+  if (entry->nomorepadshandler)
+    g_signal_handler_disconnect (entry->object, entry->nomorepadshandler);
   g_free(entry);
 }
 
@@ -200,8 +208,7 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 
 
   comp->private = g_new0 (GnlCompositionPrivate, 1);
-  comp->private->objects_lock = g_new0 (GStaticMutex, 1);
-  g_static_mutex_init (comp->private->objects_lock);
+  comp->private->objects_lock = g_mutex_new();
   comp->private->objects_start = NULL;
   comp->private->objects_stop = NULL;
 
@@ -221,8 +228,8 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
 				   "src",
 				   GST_PAD_SRC);
 
-  gst_element_add_pad (GST_ELEMENT (comp),
-		       comp->private->ghostpad);
+/*   gst_element_add_pad (GST_ELEMENT (comp), */
+/* 		       comp->private->ghostpad); */
   
   gnl_composition_reset (comp);
 }
@@ -254,11 +261,11 @@ gnl_composition_finalize (GObject *object)
 
   GST_INFO("finalize");
 
-  g_static_mutex_lock (comp->private->objects_lock);
+  g_mutex_lock (comp->private->objects_lock);
   g_list_free (comp->private->objects_start);
   g_list_free (comp->private->objects_stop);
   g_hash_table_destroy (comp->private->objects_hash);
-  g_static_mutex_unlock (comp->private->objects_lock);
+  g_mutex_unlock (comp->private->objects_lock);
 
   g_free (comp->private);
 
@@ -414,7 +421,7 @@ gnl_composition_find_object_full (GnlComposition *comp,
   GnlObject *object = NULL;
   GList	*stack = NULL;
 
-  g_static_mutex_lock (comp->private->objects_lock);
+  g_mutex_lock (comp->private->objects_lock);
 
   stack = get_stack_list (comp, timestamp, priority, activeonly);
   if (stack) {
@@ -422,7 +429,7 @@ gnl_composition_find_object_full (GnlComposition *comp,
     g_list_free (stack);
   }
 
-  g_static_mutex_unlock (comp->private->objects_lock);
+  g_mutex_unlock (comp->private->objects_lock);
   return object;
 }
 
@@ -670,7 +677,7 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime)
 
   GST_DEBUG_OBJECT (comp, "currenttime:%lld", currenttime);
 
-  g_static_mutex_lock (comp->private->objects_lock);
+  g_mutex_lock (comp->private->objects_lock);
 
   update_start_stop_duration (comp);
 
@@ -720,7 +727,7 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime)
     comp->private->segment_stop = new_stop;
   }
 
-  g_static_mutex_unlock (comp->private->objects_lock);
+  g_mutex_unlock (comp->private->objects_lock);
   return ret;
 }
 
@@ -787,7 +794,7 @@ gnl_composition_add_object	(GstBin *bin, GstElement *element)
   /* we only accept GnlObject */
   g_return_val_if_fail (GNL_IS_OBJECT (element), FALSE);
 
-  g_static_mutex_lock (comp->private->objects_lock);
+  g_mutex_lock (comp->private->objects_lock);
   gst_object_ref (element);
   ret = GST_BIN_CLASS (parent_class)->add_element (bin, element);
   if (!ret)
@@ -826,13 +833,13 @@ gnl_composition_add_object	(GstBin *bin, GstElement *element)
      (GCompareFunc) objects_stop_compare);
   
   /* update pipeline */
-  g_static_mutex_unlock (comp->private->objects_lock);
+  g_mutex_unlock (comp->private->objects_lock);
   update_pipeline (comp, GST_CLOCK_TIME_NONE);
-  g_static_mutex_lock (comp->private->objects_lock);
+  g_mutex_lock (comp->private->objects_lock);
 
  beach:
   gst_object_unref (element);
-  g_static_mutex_unlock (comp->private->objects_lock);
+  g_mutex_unlock (comp->private->objects_lock);
   return ret;
 }
 
@@ -847,7 +854,7 @@ gnl_composition_remove_object	(GstBin *bin, GstElement *element)
   /* we only accept GnlObject */
   g_return_val_if_fail (GNL_IS_OBJECT (element), FALSE);
 
-  g_static_mutex_lock (comp->private->objects_lock);
+  g_mutex_lock (comp->private->objects_lock);
   gst_object_ref (element);
   ret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
   if (!ret)
@@ -869,13 +876,13 @@ gnl_composition_remove_object	(GstBin *bin, GstElement *element)
     (comp->private->objects_stop, 
      (GCompareFunc) objects_stop_compare);
 
-  g_static_mutex_unlock (comp->private->objects_lock);
+  g_mutex_unlock (comp->private->objects_lock);
   update_pipeline (comp, GST_CLOCK_TIME_NONE);
-  g_static_mutex_lock (comp->private->objects_lock);
+  g_mutex_lock (comp->private->objects_lock);
 
  beach:
   gst_object_unref (element);
-  g_static_mutex_unlock (comp->private->objects_lock);
+  g_mutex_unlock (comp->private->objects_lock);
   return ret;
 }
 

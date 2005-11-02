@@ -55,6 +55,6 @@ plugin_init (GstPlugin *plugin)
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
 		   GST_VERSION_MINOR,
-		   "GNonLin",
+		   "gnonlin",
 		   "Standard elements for non-linear multimedia editing",
 		   plugin_init, VERSION, "LGPL", GST_PACKAGE, GST_ORIGIN);

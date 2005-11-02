@@ -1,3 +1,18 @@
+2005-11-02  Edward Hervey  <edward@fluendo.com>
+
+	* configure.ac:
+	up to 0.9.4.1
+	* gnl/gnl.c:
+	gnonlin and not GNonLin for plugin name
+	* gnl/gnlcomposition.c: (hash_value_destroy),
+	(gnl_composition_init), (gnl_composition_finalize),
+	(gnl_composition_find_object_full), (update_pipeline),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	Use a GMutex instead of a GStaticMutex
+	First step to using dynamic pads : don't add ghostpad at startup
+	* gnl/gnlfilesource.c: (gnl_filesource_class_init):
+	beautification
+
 2005-10-31  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/Makefile.am:
