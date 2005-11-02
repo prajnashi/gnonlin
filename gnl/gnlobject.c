@@ -481,7 +481,7 @@ internalpad_event_function	(GstPad *internal, GstEvent *event)
   GnlPadPrivate	*priv = gst_pad_get_element_private (internal);
   GnlObject	*object = priv->object;
 
-  GST_DEBUG_OBJECT (internal, "...");
+  GST_DEBUG_OBJECT (internal, "event:%s", GST_EVENT_TYPE_NAME (event));
 
   switch (priv->dir) {
   case GST_PAD_SRC:
@@ -506,7 +506,7 @@ internalpad_query_function	(GstPad *internal, GstQuery *query)
   GnlPadPrivate	*priv = gst_pad_get_element_private (internal);
 /*   GnlObject	*object = GNL_OBJECT (GST_PAD_PARENT (internal)); */
 
-  GST_DEBUG_OBJECT (internal, "...");
+  GST_DEBUG_OBJECT (internal, "querytype:%d", GST_QUERY_TYPE (query));
 
   switch (priv->dir) {
   case GST_PAD_SRC:
@@ -525,7 +525,7 @@ ghostpad_event_function		(GstPad *ghostpad, GstEvent *event)
   GnlPadPrivate	*priv = gst_pad_get_element_private (ghostpad);
   GnlObject	*object = priv->object;
 
-  GST_DEBUG_OBJECT (ghostpad, "...");
+  GST_DEBUG_OBJECT (ghostpad, "event:%s", GST_EVENT_TYPE_NAME (event));
 
   switch (priv->dir) {
   case GST_PAD_SRC:
@@ -552,7 +552,7 @@ ghostpad_query_function		(GstPad *ghostpad, GstQuery *query)
   GnlPadPrivate	*priv = gst_pad_get_element_private (ghostpad);
   gboolean	pret;
 
-  GST_DEBUG_OBJECT (ghostpad, "...");
+  GST_DEBUG_OBJECT (ghostpad, "querytype:%d", GST_QUERY_TYPE (query));
 
   pret = priv->queryfunc (ghostpad, query);
   if (pret) {
@@ -589,7 +589,7 @@ ghostpad_link_function		(GstPad *ghostpad, GstPad *peer)
   GnlPadPrivate	*priv = gst_pad_get_element_private (ghostpad);
   GstPadLinkReturn	ret;
   
-  GST_DEBUG_OBJECT (ghostpad, "...");
+  GST_DEBUG_OBJECT (ghostpad, "peer: %s:%s", GST_DEBUG_PAD_NAME (peer));
 
   ret = priv->linkfunc (ghostpad, peer);
 

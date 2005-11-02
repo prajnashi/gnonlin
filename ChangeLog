@@ -1,5 +1,25 @@
 2005-11-02  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (gnl_composition_init),
+	(gnl_composition_finalize), (gnl_composition_reset),
+	(gnl_composition_ghost_pad_set_target),
+	(gnl_composition_find_object_full), (send_initial_seek),
+	(gnl_composition_change_state), (no_more_pads_object_cb),
+	(compare_relink_stack), (update_pipeline),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	* gnl/gnlfilesource.c: (gnl_filesource_class_init),
+	(ghost_seek_pad), (pad_blocked_cb), (decodebin_no_more_pads_cb),
+	(gnl_filesource_init), (gnl_filesource_send_event):
+	* gnl/gnlobject.c: (internalpad_event_function),
+	(internalpad_query_function), (ghostpad_event_function),
+	(ghostpad_query_function), (ghostpad_link_function):
+	* gnl/gnlsource.c: (no_more_pads_in_child),
+	(gnl_source_add_element):
+	Second part of using dynamic pads. Solves deadlocks.
+	Most of the work is down in sources.
+	
+2005-11-02  Edward Hervey  <edward@fluendo.com>
+
 	* configure.ac:
 	up to 0.9.4.1
 	* gnl/gnl.c:

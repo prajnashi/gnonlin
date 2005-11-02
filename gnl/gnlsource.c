@@ -144,7 +144,7 @@ compare_src_pad (GstPad *pad, GstCaps *caps)
   get_valid_src_pad
 
   Returns True if there's a src pad compatible with the GnlObject caps in the
-  given element. Fills in pad if so.
+  given element. Fills in pad if so. The returned pad has an incremented refcount
 */
 
 static gboolean
@@ -176,6 +176,7 @@ no_more_pads_in_child (GstElement *element, GnlSource *source)
     source->private->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (source),
 						      GST_PAD_NAME (pad),
 						      pad);
+    gst_object_unref (pad);
   };
 
   GST_DEBUG ("pad %s:%s ghost-ed", GST_DEBUG_PAD_NAME (pad));
@@ -212,6 +213,7 @@ gnl_source_add_element	(GstBin *bin, GstElement *element)
       source->private->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (source),
 							GST_PAD_NAME (pad),
 							pad);
+      gst_object_unref (pad);
       if (!(source->private->ghostpad))
 	return FALSE;
     } else {

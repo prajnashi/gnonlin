@@ -49,6 +49,9 @@ struct _GnlFileSourcePrivate {
   GstElement	*filesource;
   GstElement	*decodebin;
   GstPad	*ghostpad;
+  GstEvent	*seek;
+
+  gulong	buswatchid;
 };
 
 static void
@@ -66,6 +69,12 @@ static void
 gnl_filesource_get_property 	(GObject *object, guint prop_id,
 				 GValue *value,
 				 GParamSpec *pspec);
+
+static gboolean
+gnl_filesource_send_event	(GstElement *element, GstEvent *event);
+
+static void
+pad_blocked_cb	(GstPad *pad, gboolean blocked, GnlFileSource *fs);
 
 /* static GstStateChangeReturn */
 /* gnl_filesource_change_state	(GstElement *element, GstStateChange transition); */
@@ -102,6 +111,9 @@ gnl_filesource_class_init (GnlFileSourceClass *klass)
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_filesource_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_filesource_get_property);
+
+  gstelement_class->send_event =
+    GST_DEBUG_FUNCPTR (gnl_filesource_send_event);
 
 /*   gstelement_class->change_state = */
 /*     GST_DEBUG_FUNCPTR (gnl_filesource_change_state); */
@@ -150,31 +162,115 @@ get_valid_src_pad (GnlFileSource *source, GstElement *element, GstPad **pad)
   return FALSE;
 }
 
+static gboolean
+ghost_seek_pad	(GnlFileSource *fs)
+{
+  GstPad	*pad;
+  GstPad	*target;
+
+  if (!(get_valid_src_pad (fs, fs->private->decodebin, &pad)))
+    return FALSE;
+
+  GST_DEBUG_OBJECT (fs, "ghosting %s:%s", GST_DEBUG_PAD_NAME (pad));
+ 
+  fs->private->ghostpad = gnl_object_ghost_pad
+    (GNL_OBJECT (fs), GST_PAD_NAME (pad), pad);
+
+  GST_DEBUG_OBJECT (fs, "emitting no more pads");
+  gst_element_no_more_pads (GST_ELEMENT (fs));
+
+  if (fs->private->seek) {
+    GST_DEBUG_OBJECT (fs, "sending queued seek event");
+    gst_pad_send_event (pad, fs->private->seek);
+    GST_DEBUG_OBJECT (fs, "queued seek sent");
+    fs->private->seek = NULL;
+  }
+
+  target = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
+  GST_DEBUG_OBJECT (fs, "about to unblock %s:%s",
+		    GST_DEBUG_PAD_NAME (target));
+
+  gst_pad_set_blocked_async (target, FALSE,
+			     pad_blocked_cb, fs);
+
+  gst_object_unref (pad);
+  gst_object_unref (target);
+  
+  return FALSE;
+}
+
+/* static gboolean */
+/* pad_ready_cb	(GstBus *bus, GstMessage *message, GnlFileSource *fs) */
+/* { */
+/*   GstPad	*pad; */
+
+/*   GST_DEBUG_OBJECT (fs, "bus callback "); */
+
+/*   if ( (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ELEMENT) && (GST_MESSAGE_SRC(message) == GST_OBJECT (fs))) { */
+/*     /\* our pad is ready *\/ */
+/*     GST_DEBUG_OBJECT (fs, "yep"); */
+/*     if (get_valid_src_pad (fs, fs->private->decodebin, &pad)) { */
+/*       fs->private->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (fs), */
+/* 						    GST_PAD_NAME (pad), */
+/* 						    pad); */
+/*       gst_element_no_more_pads (GST_ELEMENT (fs)); */
+
+/*       if (fs->private->seek) { */
+/* 	GST_DEBUG_OBJECT (fs, "sending queued seek event"); */
+/* 	gst_pad_send_event (pad, fs->private->seek); */
+/* 	fs->private->seek = NULL; */
+/*       } */
+      
+/*       gst_pad_set_blocked (pad, FALSE); */
+/*       gst_object_unref (pad); */
+/*     } */
+/*   } */
+/*   return TRUE; */
+/* } */
+
+static void
+pad_blocked_cb	(GstPad *pad, gboolean blocked, GnlFileSource *fs)
+{
+  GST_DEBUG_OBJECT (fs, "blocked:%d pad:%s:%s",
+		    blocked, GST_DEBUG_PAD_NAME (pad));
+
+  if (blocked)
+    g_idle_add ((GSourceFunc) ghost_seek_pad, fs);
+/*   gst_element_post_message (GST_ELEMENT (fs->private->decodebin), gst_message_new_element  */
+/* 			    (GST_OBJECT (fs), */
+/* 			     gst_structure_from_string("pad-ready", NULL))); */
+/*   GST_DEBUG_OBJECT (fs, "posted message"); */
+}
+
 static void
 decodebin_no_more_pads_cb	(GstElement *element, GnlFileSource *fs)
 {
   GstPad	*pad;
+  GstPad	*target;
 
   /* check if we can get a valid src pad to ghost */
   GST_DEBUG_OBJECT (element, "let's find a suitable pad");
 
   if (get_valid_src_pad (fs, element, &pad)) {
-    fs->private->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (fs),
-						  GST_PAD_NAME (pad),
-						  pad);
-  };
-
-  GST_DEBUG ("pad %s:%s ghost-ed", GST_DEBUG_PAD_NAME (pad));
-  
-  if (!(fs->private->ghostpad))
+    target = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
+    if (!(gst_pad_set_blocked_async (target, TRUE,
+				     (GstPadBlockCallback) pad_blocked_cb,
+				     fs)))
+      GST_WARNING_OBJECT (fs, "returned FALSE !");
+    else
+      GST_DEBUG_OBJECT (fs, "cb is set on blocking pad");
+    gst_object_unref (pad);
+    gst_object_unref (target);
+  } else {
     GST_WARNING_OBJECT (fs, "Couldn't get a valid source pad");
-  else
-    gst_element_no_more_pads (GST_ELEMENT (fs));
+  };
 }
 
 static void
 gnl_filesource_init (GnlFileSource *filesource, GnlFileSourceClass *klass)
 {
+/*   GstBus	*bus; */
+
   GST_OBJECT_FLAG_SET (filesource, GNL_OBJECT_SOURCE);
   filesource->private = g_new0(GnlFileSourcePrivate, 1);
 
@@ -193,6 +289,19 @@ gnl_filesource_init (GnlFileSource *filesource, GnlFileSourceClass *klass)
 			  filesource->private->decodebin)))
     g_warning ("Could not link the file source element to decodebin");
   
+  GST_DEBUG_OBJECT (filesource, "About to add signal watch");
+
+/*   bus = GST_BIN(filesource)->child_bus; */
+/*   filesource->private->buswatchid = gst_bus_add_watch */
+/*     (bus, (GstBusFunc) pad_ready_cb, filesource); */
+
+/*   GST_DEBUG_OBJECT (bus, "got bus"); */
+/*   gst_bus_add_signal_watch (bus); */
+/*   filesource->private->buswatchid = g_signal_connect (G_OBJECT (bus), */
+/* 						      "message", */
+/* 						      G_CALLBACK (pad_ready_cb),  */
+/* 						      filesource); */
+  GST_DEBUG_OBJECT (filesource, "done");
   g_signal_connect (G_OBJECT (filesource->private->decodebin),
 		    "no-more-pads", G_CALLBACK (decodebin_no_more_pads_cb),
 		    (gpointer) filesource);
@@ -222,6 +331,29 @@ gnl_filesource_finalize (GObject *object)
   g_free (filesource->private);
   
   G_OBJECT_CLASS (parent_class)->finalize (object);
+}
+
+static gboolean
+gnl_filesource_send_event	(GstElement *element, GstEvent *event)
+{
+  GnlFileSource	*fs = GNL_FILESOURCE (element);
+  gboolean	res = TRUE;
+
+  switch (GST_EVENT_TYPE (event)) {
+  case GST_EVENT_SEEK:
+    if (fs->private->ghostpad)
+      res = gst_pad_send_event (fs->private->ghostpad, event);
+    else {
+      if (fs->private->seek)
+	gst_event_unref (fs->private->seek);
+      fs->private->seek = event;
+    }
+    break;
+  default:
+    break;
+  }
+
+  return res;
 }
 
 static void
