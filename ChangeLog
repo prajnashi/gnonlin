@@ -1,3 +1,26 @@
+2005-11-03  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_put_sync_handler),
+	(gnl_composition_init), (gnl_composition_dispose),
+	(gnl_composition_sync_handler),
+	(gnl_composition_ghost_pad_set_target), (get_stack_list),
+	(update_start_stop_duration), (compare_relink_stack):
+	Override bin sync-bus, first step to rebuilding pipeline after
+	segment-done
+	
+	* gnl/gnlfilesource.c: (ghost_seek_pad), (pad_blocked_cb),
+	(decodebin_new_pad_cb), (gnl_filesource_init):
+	Use 'new-pad' signal from decodebin instead of 'no-more-pads'
+
+	* gnl/gnlobject.c: (gnl_object_put_sync_handler),
+	(gnl_object_init), (translate_incoming_seek),
+	(translate_outgoing_newsegment), (translate_message_segment_start),
+	(translate_message_segment_done), (gnl_object_sync_handler),
+	(update_values):
+	* gnl/gnlobject.h:
+	Added sync bus override, with functions to time-shift segment-start
+	and segment-done messages
+
 2005-11-02  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_init),

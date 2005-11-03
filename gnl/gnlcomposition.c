@@ -51,9 +51,6 @@ struct _GnlCompositionPrivate {
   GHashTable		*objects_hash;
   GMutex		*objects_lock;  
   
-  /* composition bus watch id */
-  guint			watchid;
-  
   /* source ghostpad */
   GstPad		*ghostpad;
 
@@ -72,6 +69,13 @@ struct _GnlCompositionPrivate {
   */
   GstClockTime		segment_start;
   GstClockTime		segment_stop;
+
+  /*
+    OUR sync_handler on the child_bus 
+    We are called before gnl_object_sync_handler
+  */
+  GstBusSyncHandler	 sync_handler;
+  gpointer		 sync_handler_data;
 };
 
 static void
@@ -81,6 +85,9 @@ gnl_composition_finalize 	(GObject *object);
 static void
 gnl_composition_reset		(GnlComposition *comp);
 
+static GstBusSyncReply
+gnl_composition_sync_handler	(GstBus *bus, GstMessage *message,
+				 GnlComposition *comp);
 static gboolean
 gnl_composition_add_object	(GstBin *bin, GstElement *element);
 
@@ -90,10 +97,6 @@ gnl_composition_remove_object	(GstBin *bin, GstElement *element);
 static GstStateChangeReturn
 gnl_composition_change_state	(GstElement *element, 
 				 GstStateChange transition);
-
-static gboolean
-gnl_composition_bus_watch	(GstBus *bus, GstMessage *message,
-				 GnlComposition *comp);
 
 static GnlObject *
 gnl_composition_find_object	(GnlComposition *comp, GstClockTime start,
@@ -187,6 +190,25 @@ gnl_composition_class_init (GnlCompositionClass *klass)
 }
 
 static void
+gnl_composition_put_sync_handler (GnlComposition *comp,
+				  GstBusSyncHandler handler,
+				  gpointer data)
+{
+  GstBus	*bus;
+
+  bus = GST_BIN (comp)->child_bus;
+  GST_LOCK (bus);
+
+  comp->private->sync_handler = bus->sync_handler;
+  comp->private->sync_handler_data = bus->sync_handler_data;
+  
+  bus->sync_handler = handler;
+  bus->sync_handler_data = data;
+
+  GST_UNLOCK (bus);
+}
+
+static void
 hash_value_destroy	(GnlCompositionEntry *entry)
 {
   g_signal_handler_disconnect (entry->object, entry->starthandler);
@@ -215,11 +237,9 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
      g_direct_equal,
      NULL,
      (GDestroyNotify) hash_value_destroy);
-  
-  comp->private->watchid = gst_bus_add_watch
-    (GST_BIN (comp)->child_bus,
-     (GstBusFunc) gnl_composition_bus_watch,
-     comp);
+
+  gnl_composition_put_sync_handler 
+    (comp, (GstBusSyncHandler) gnl_composition_sync_handler, comp);
   
   gnl_composition_reset (comp);
 }
@@ -233,9 +253,6 @@ gnl_composition_dispose (GObject *object)
     return;
 
   comp->private->dispose_has_run = TRUE;
-
-  if (comp->private->watchid)
-    g_source_remove (comp->private->watchid);
 
   if (comp->private->ghostpad)
     gst_element_remove_pad (GST_ELEMENT (object),
@@ -287,13 +304,46 @@ gnl_composition_reset	(GnlComposition *comp)
 /* 				   NULL); */
 }
 
-static gboolean
-gnl_composition_bus_watch	(GstBus *bus, GstMessage *message,
+static GstBusSyncReply
+gnl_composition_sync_handler	(GstBus *bus, GstMessage *message,
 				 GnlComposition *comp)
 {
-  GST_DEBUG_OBJECT (comp, "saw message : %s",
-		    gst_message_type_get_name (GST_MESSAGE_TYPE (message)));
-  return TRUE;
+  GstBusSyncReply	reply = GST_BUS_DROP;
+  gboolean		dropit = FALSE;
+
+  GST_DEBUG_OBJECT (comp, "bus:%s message:%s",
+		    GST_OBJECT_NAME (bus),
+		    gst_message_type_get_name(GST_MESSAGE_TYPE (message)));  
+
+  switch (GST_MESSAGE_TYPE (message)) {
+  case GST_MESSAGE_SEGMENT_DONE: {
+    gint64	pos;
+    GstFormat	format;
+    /* reorganize pipeline */
+    
+    gst_message_parse_segment_done (message, &format, &pos);
+    if (format != GST_FORMAT_TIME) {
+      GST_WARNING_OBJECT (comp, "Got a SEGMENT_DONE_MESSAGE with a format different from GST_FORMAT_TIME");
+      break;
+    }
+    update_pipeline (comp, (GstClockTime) pos);
+    if (!(comp->private->current)) {
+      GST_DEBUG_OBJECT (comp, "Nothing else to play");
+    }
+    break;
+  }
+  default:
+    break;
+  }
+
+  if (dropit)
+    gst_message_unref (message);
+  else
+    if (comp->private->sync_handler)
+      reply = comp->private->sync_handler 
+	(bus, message, comp->private->sync_handler_data);
+  
+  return reply;  
 }
 
 static gint
@@ -324,7 +374,8 @@ gnl_composition_ghost_pad_set_target	(GnlComposition *comp,
     if (!(gst_element_add_pad (GST_ELEMENT (comp),
 			       comp->private->ghostpad)))
       GST_WARNING ("couldn't add the ghostpad");
-    gst_element_no_more_pads (GST_ELEMENT (comp));
+    else
+      gst_element_no_more_pads (GST_ELEMENT (comp));
   }
 }
 
@@ -361,6 +412,9 @@ get_stack_list	(GnlComposition *comp, GstClockTime timestamp,
 
   for ( ; tmp ; tmp = g_list_next (tmp)) {
     GnlObject	*object = GNL_OBJECT (tmp->data);
+
+    GST_LOG_OBJECT (object, "start: %lld , stop:%lld , duration:%lld, priority:%d",
+		    object->start, object->stop, object->duration, object->priority);
 
     if (object->start <= timestamp) {
       if (object->stop < timestamp) {
@@ -589,6 +643,7 @@ update_start_stop_duration	(GnlComposition *comp)
   GnlObject	*obj;
   GnlObject	*cobj = GNL_OBJECT (comp);
 
+  GST_DEBUG_OBJECT (comp, "...");
   if (!(comp->private->objects_start)) {
     if (cobj->start) {
       cobj->start = 0;
@@ -680,14 +735,15 @@ no_more_pads_object_cb	(GstElement *element, GnlComposition *comp)
 static GList *
 compare_relink_stack	(GnlComposition *comp, GList *stack)
 {
-  GList	*curo, *curn;
   GList	*deactivate = NULL;
   GnlObject	*oldobj = NULL;
   GnlObject	*newobj = NULL;
   GnlObject	*pold = NULL; 
   GnlObject	*pnew = NULL;
+  GList	*curo = comp->private->current;
+  GList	*curn = stack;
 
-  for (curo = comp->private->current, curn = stack; curo && curn; ) 
+  for (; curo && curn; ) 
     {
       oldobj = GNL_OBJECT (curo);
       newobj = GNL_OBJECT (curn);

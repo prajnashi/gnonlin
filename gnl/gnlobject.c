@@ -84,6 +84,10 @@ gnl_object_prepare_func		(GnlObject *object);
 static GstStateChangeReturn
 gnl_object_prepare		(GnlObject *object);
 
+static GstBusSyncReply
+gnl_object_sync_handler		(GstBus *bus, GstMessage *message, 
+				 GnlObject *object);
+
 static void
 gnl_object_base_init (gpointer g_class)
 {
@@ -178,6 +182,25 @@ gnl_object_class_init (GnlObjectClass *klass)
 }
 
 static void
+gnl_object_put_sync_handler	(GnlObject *object,
+				 GstBusSyncHandler handler,
+				 gpointer data)
+{
+  GstBus	*bus;
+
+  bus = GST_BIN (object)->child_bus;
+  GST_LOCK (bus);
+
+  object->sync_handler = bus->sync_handler;
+  object->sync_handler_data = bus->sync_handler_data;
+  
+  bus->sync_handler = handler;
+  bus->sync_handler_data = data;
+
+  GST_UNLOCK (bus);
+}
+
+static void
 gnl_object_init (GnlObject *object, GnlObjectClass *klass)
 {
   object->start = 0;
@@ -191,6 +214,10 @@ gnl_object_init (GnlObject *object, GnlObjectClass *klass)
   object->priority = 0;
   object->active = TRUE;
   object->caps = gst_caps_new_any();
+
+  gnl_object_put_sync_handler (object,
+			       (GstBusSyncHandler) gnl_object_sync_handler,
+			       object);
 }
 
 /**
@@ -393,6 +420,8 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
 
   /* convert rate */
   nrate = rate * object->rate;
+  GST_DEBUG ("nrate:%f , rate:%f, object->rate:%f",
+	     nrate, rate, object->rate);
   gst_structure_set (struc, "rate", G_TYPE_DOUBLE, nrate, NULL);
 
   /* convert cur */
@@ -469,7 +498,7 @@ translate_outgoing_newsegment (GnlObject *object, GstEvent *event)
   if (nstream > G_MAXINT64)
     GST_WARNING_OBJECT (object, "Return value too big...");
 
-  event2 = gst_event_new_newsegment (update, rate / object->rate, format,
+  event2 = gst_event_new_newsegment (update, rate, format,
 				     start, stop, (gint64) nstream);
 
   return event2;
@@ -729,6 +758,86 @@ gnl_object_ghost_pad_set_target (GnlObject *object, GstPad *ghost,
   return TRUE;
 }
 
+static GstMessage *
+translate_message_segment_start	(GnlObject *object, GstMessage *message)
+{
+  GstFormat	format;
+  gint64	position;
+  guint64	pos2;
+  GstMessage	*message2;
+
+  gst_message_parse_segment_start (message, &format, &position);
+  if (format != GST_FORMAT_TIME)
+    return message;
+  GST_LOG_OBJECT (object, "format:%d, position:%lld",
+		  format, position);
+  gnl_media_to_object_time (object, position, &pos2);
+  if (pos2 > G_MAXINT64) {
+    g_warning ("getting values too big...");
+    return message;
+  }
+  message2 = gst_message_new_segment_start (GST_MESSAGE_SRC (message),
+					    format,
+					    (gint64) pos2);
+  gst_message_unref (message);
+  return message2;
+}
+
+static GstMessage *
+translate_message_segment_done	(GnlObject *object, GstMessage *message)
+{
+  GstFormat	format;
+  gint64	position;
+  guint64	pos2;
+  GstMessage	*message2;
+
+  gst_message_parse_segment_done (message, &format, &position);
+  if (format != GST_FORMAT_TIME)
+    return message;
+  GST_LOG_OBJECT (object, "format:%d, position:%lld",
+		  format, position);
+
+  gnl_media_to_object_time (object, position, &pos2);
+  if (pos2 > G_MAXINT64) {
+    g_warning ("getting values too big...");
+    return message;
+  }
+  message2 = gst_message_new_segment_done (GST_MESSAGE_SRC (message),
+					   format,
+					   (gint64) pos2);
+  gst_message_unref (message);
+  return message2;
+
+}
+
+static GstBusSyncReply
+gnl_object_sync_handler	(GstBus *bus, GstMessage *message, GnlObject *object)
+{
+  GstBusSyncReply	reply = GST_BUS_DROP;
+
+  GST_DEBUG_OBJECT (object, "bus:%s message:%s",
+		    GST_OBJECT_NAME (bus),
+		    gst_message_type_get_name(GST_MESSAGE_TYPE (message)));
+
+  switch (GST_MESSAGE_TYPE (message)) {
+  case GST_MESSAGE_SEGMENT_START:
+    /* translate outgoing segment_start */
+    message = translate_message_segment_start (object, message);
+    break;
+  case GST_MESSAGE_SEGMENT_DONE:
+    /* translate outgoing segment_done */
+    message = translate_message_segment_done (object, message);
+    break;
+  default:
+    break;
+  }
+
+  if (object->sync_handler)
+    reply = object->sync_handler (bus, message, object->sync_handler_data);
+
+  return reply;
+}
+
 static void
 gnl_object_set_caps (GnlObject *object, const GstCaps *caps)
 {
@@ -766,8 +875,8 @@ update_values (GnlObject *object)
   if ((object->media_duration != GST_CLOCK_TIME_NONE)
       && (object->duration)
       && (object->media_duration)
-      && ((object->media_duration / object->duration) != object->rate)) {
-    object->rate = object->media_duration / object->duration;
+      && (((gdouble) object->media_duration / (gdouble) object->duration) != object->rate)) {
+    object->rate = (gdouble) object->media_duration / (gdouble) object->duration;
     GST_LOG_OBJECT (object, "Updated rate : %f [mduration:%lld, duration:%lld]",
 		    object->rate, object->media_duration, object->duration);
     g_object_notify (G_OBJECT (object), "rate");

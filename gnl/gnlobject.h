@@ -108,9 +108,9 @@ struct _GnlObject {
   /* Filtering caps */
   GstCaps		 *caps;
   
-  /* FIXME : DO WE STILL NEED THESE ? */
-/*   GstClockTime  	 current_time; */
-/*   gpointer		 comp_private; */
+  /* <private> */
+  GstBusSyncHandler	 sync_handler;
+  gpointer		 sync_handler_data;
 };
 
 struct _GnlObjectClass {
