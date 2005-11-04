@@ -35,6 +35,8 @@ struct _GnlPadPrivate {
   GstPadQueryFunction	queryfunc;
   GstPadLinkFunction	linkfunc;
   GstPadUnlinkFunction	unlinkfunc;
+
+  gboolean		flush_hack;
 };
 
 GST_BOILERPLATE (GnlObject, gnl_object, GstBin, GST_TYPE_BIN);
@@ -210,14 +212,20 @@ gnl_object_init (GnlObject *object, GnlObjectClass *klass)
   object->media_start = GST_CLOCK_TIME_NONE;
   object->media_duration = 0;
   object->media_stop = GST_CLOCK_TIME_NONE;
+
   object->rate = 1.0;
   object->priority = 0;
   object->active = TRUE;
+
   object->caps = gst_caps_new_any();
 
   gnl_object_put_sync_handler (object,
 			       (GstBusSyncHandler) gnl_object_sync_handler,
 			       object);
+
+  object->segment_rate = 1.0;
+  object->segment_start = -1;
+  object->segment_stop = -1;
 }
 
 /**
@@ -516,6 +524,14 @@ internalpad_event_function	(GstPad *internal, GstEvent *event)
   case GST_PAD_SRC:
     if (GST_EVENT_TYPE (event) == GST_EVENT_NEWSEGMENT) {
       event = translate_outgoing_newsegment (object, event);
+    } else if (priv->flush_hack) {
+      /* FIXME : REMOVE THIS AFTER FLUSH HACK SOLVED */
+      if ((GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_START)
+	  || (GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_STOP)) {
+	GST_DEBUG_OBJECT (object, "dropping flush event because of flush hack");
+	gst_event_unref (event);
+	return TRUE;
+      }
     }
     break;
   case GST_PAD_SINK:
@@ -548,6 +564,32 @@ internalpad_query_function	(GstPad *internal, GstQuery *query)
   return priv->queryfunc (internal, query);
 }
 
+
+/* Add flush flag to seek event */
+static GstEvent *
+flush_hack_check	(GstEvent *event)
+{
+  gdouble	rate;
+  GstFormat	format;
+  GstSeekFlags	flags;
+  GstSeekType	cur_type, stop_type;
+  gint64	cur, stop;
+
+  gst_event_parse_seek (event, &rate, &format, &flags,
+			&cur_type, &cur, &stop_type, &stop);
+
+  if ((flags & GST_SEEK_FLAG_FLUSH)) {
+    GST_DEBUG ("Already has FLUSH flag");
+    return event;
+  } else {
+    GST_DEBUG ("Creating new event with flush flag");
+    gst_event_unref (event);
+    return gst_event_new_seek (rate, format,
+			       flags | GST_SEEK_FLAG_FLUSH,
+			       cur_type, cur, stop_type, stop);
+  }
+}
+
 static gboolean
 ghostpad_event_function		(GstPad *ghostpad, GstEvent *event)
 {
@@ -559,15 +601,11 @@ ghostpad_event_function		(GstPad *ghostpad, GstEvent *event)
   switch (priv->dir) {
   case GST_PAD_SRC:
     if (GST_EVENT_TYPE (event) == GST_EVENT_SEEK) {
+      /* FIXME: REMOVE THIS AFTER FLUSH HACK SOLVED */
+      event = flush_hack_check (event);
       event = translate_incoming_seek (object, event);
     }
     break;
-  case GST_PAD_SINK:
-    /* Unless I'm mistaken, we don't need to modify incoming NEWSEGMENT */
-    /*     if (GST_EVENT_TYPE (event) == GST_EVENT_NEWSEGMENT) { */
-    /*       translate_incoming_newsegment (object, event); */
-    /*     } */
-    /*     break; */
   default:
     break;
   }
@@ -594,6 +632,7 @@ static void
 control_internal_pad (GstPad *ghostpad, GnlObject *object)
 {
   GnlPadPrivate	*priv = g_new0(GnlPadPrivate, 1);
+  GnlPadPrivate *privghost = gst_pad_get_element_private (ghostpad);
   GstPad	*internal = gst_pad_get_peer (gst_ghost_pad_get_target 
 					      (GST_GHOST_PAD (ghostpad)));
 
@@ -603,6 +642,7 @@ control_internal_pad (GstPad *ghostpad, GnlObject *object)
   priv->dir = GST_PAD_DIRECTION (ghostpad);
   priv->eventfunc = GST_PAD_EVENTFUNC (internal);
   priv->queryfunc = GST_PAD_QUERYFUNC (internal);
+  priv->flush_hack = privghost->flush_hack;
   gst_pad_set_element_private (internal, priv);
   
   /* add query/event function overrides on internal pad */
@@ -664,9 +704,11 @@ ghostpad_unlink_function	(GstPad *ghostpad)
  */
 
 GstPad *
-gnl_object_ghost_pad	(GnlObject *object, const gchar *name, GstPad *target)
+gnl_object_ghost_pad_full	(GnlObject *object, const gchar *name, GstPad *target,
+				 gboolean flush_hack)
 {
   GstPadDirection	dir = GST_PAD_DIRECTION (target);
+  GnlPadPrivate		*priv;
   GstPad	*ghost;
 
   g_return_val_if_fail (target, FALSE);
@@ -677,9 +719,14 @@ gnl_object_ghost_pad	(GnlObject *object, const gchar *name, GstPad *target)
     GST_WARNING_OBJECT (object, 
 			"Couldn't set the target pad... removing ghostpad");
     gst_element_remove_pad (GST_ELEMENT (object), ghost);
-    ghost = NULL;
+    gst_object_unref (ghost);
+    return NULL;
   }
   
+  /* FIXME : REMOVE THIS ONCE THE FLUSH HACK HAS GONE !! */
+  priv = gst_pad_get_element_private (ghost);
+  priv->flush_hack = flush_hack;
+
   /* add it to element */
   if (!(gst_element_add_pad (GST_ELEMENT (object), ghost))) {
     GST_WARNING ("couldn't add newly created ghostpad");
@@ -687,6 +734,12 @@ gnl_object_ghost_pad	(GnlObject *object, const gchar *name, GstPad *target)
   }  
 
   return ghost;
+}
+
+GstPad *
+gnl_object_ghost_pad (GnlObject *object, const gchar *name, GstPad *target)
+{
+  return gnl_object_ghost_pad_full (object, name, target, FALSE);
 }
 
 /**

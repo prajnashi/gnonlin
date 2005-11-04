@@ -109,10 +109,12 @@ gnl_composition_find_object_full	(GnlComposition *comp,
 					 gboolean active);
 
 static void
-send_initial_seek	(GnlComposition *comp, gint64 start, gint64 stop);
+send_initial_seek	(GnlComposition *comp, gint64 start, gint64 stop,
+			 gboolean initial);
 
 static gboolean
-update_pipeline		(GnlComposition *comp, GstClockTime currenttime);
+update_pipeline		(GnlComposition *comp, GstClockTime currenttime,
+			 gboolean initial);
 
 #define COMP_REAL_START(comp) \
   ((GST_CLOCK_TIME_IS_VALID (comp->private->seek_start)) ? \
@@ -323,10 +325,10 @@ gnl_composition_sync_handler	(GstBus *bus, GstMessage *message,
     
     gst_message_parse_segment_done (message, &format, &pos);
     if (format != GST_FORMAT_TIME) {
+      /* this can happen when filesrc emits a segment-done in BYTES */
       GST_WARNING_OBJECT (comp, "Got a SEGMENT_DONE_MESSAGE with a format different from GST_FORMAT_TIME");
-      break;
     }
-    update_pipeline (comp, (GstClockTime) pos);
+    update_pipeline (comp, (GstClockTime) comp->private->segment_stop, FALSE);
     if (!(comp->private->current)) {
       GST_DEBUG_OBJECT (comp, "Nothing else to play");
     }
@@ -416,20 +418,26 @@ get_stack_list	(GnlComposition *comp, GstClockTime timestamp,
     GST_LOG_OBJECT (object, "start: %lld , stop:%lld , duration:%lld, priority:%d",
 		    object->start, object->stop, object->duration, object->priority);
 
-    if (object->start <= timestamp) {
-      if (object->stop < timestamp) {
-	GST_LOG_OBJECT (comp, "too far, stopping iteration");
-	break;
-      } else if ( (object->priority >= priority) 
-		  && ((!activeonly) || (object->active)) ) {
-	GST_LOG_OBJECT (comp, "adding %s sorted to the stack", 
-			GST_OBJECT_NAME (object));
-	stack = g_list_insert_sorted (stack, object, 
-				      (GCompareFunc) priority_comp);
+    if (object->start <= timestamp)
+      {
+	if (object->stop <= timestamp) 
+	  {
+	    if (stack) {
+	      GST_LOG_OBJECT (comp, "too far, stopping iteration");
+	      break;
+	    }
+	  }
+	else 
+	  if ( (object->priority >= priority) 
+	       && ((!activeonly) || (object->active)) ) {
+	    GST_LOG_OBJECT (comp, "adding %s: sorted to the stack", 
+			    GST_OBJECT_NAME (object));
+	    stack = g_list_insert_sorted (stack, object, 
+					  (GCompareFunc) priority_comp);
+	  }
       }
-    }
   }
-
+  
   return stack;
 }
 
@@ -557,12 +565,15 @@ get_src_pad (GstElement *element)
 }
 
 static void
-send_initial_seek (GnlComposition *comp, gint64 start, gint64 stop)
+send_initial_seek (GnlComposition *comp, gint64 start, gint64 stop, gboolean initial)
 {
+  GST_DEBUG_OBJECT (comp, "start:%lld, stop:%lld, initial:%d",
+		    start, stop, initial);
+
   if (!(comp->private->current))
     return;
   gst_element_seek (GST_ELEMENT (comp->private->current->data),
-		    1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH,
+		    1.0, GST_FORMAT_TIME, initial ? GST_SEEK_FLAG_FLUSH : GST_SEEK_FLAG_NONE,
 		    GST_SEEK_TYPE_SET, start,
 		    GST_SEEK_TYPE_SET, stop);
 }
@@ -606,7 +617,7 @@ gnl_composition_change_state (GstElement *element, GstStateChange transition)
 
     /* set ghostpad target */
     update_pipeline (comp,
-		     COMP_REAL_START(comp));
+		     COMP_REAL_START(comp), TRUE);
     
     break;
   case GST_STATE_CHANGE_PAUSED_TO_READY:
@@ -745,8 +756,8 @@ compare_relink_stack	(GnlComposition *comp, GList *stack)
 
   for (; curo && curn; ) 
     {
-      oldobj = GNL_OBJECT (curo);
-      newobj = GNL_OBJECT (curn);
+      oldobj = GNL_OBJECT (curo->data);
+      newobj = GNL_OBJECT (curn->data);
       
       GST_DEBUG ("Comparing old:%s new:%s",
 		 GST_ELEMENT_NAME (oldobj),
@@ -897,6 +908,7 @@ compare_relink_stack	(GnlComposition *comp, GList *stack)
  * update_pipeline:
  * @comp: The #GnlComposition
  * @currenttime: The #GstClockTime to update at, can be GST_CLOCK_TIME_NONE.
+ * @initial: TRUE if this is the first setup
  *
  * Updates the internal pipeline and properties. If @currenttime is 
  * GST_CLOCK_TIME_NONE, it will not modify the current pipeline
@@ -905,7 +917,7 @@ compare_relink_stack	(GnlComposition *comp, GList *stack)
  */
 
 static gboolean
-update_pipeline	(GnlComposition *comp, GstClockTime currenttime)
+update_pipeline	(GnlComposition *comp, GstClockTime currenttime, gboolean initial)
 {
   gboolean	ret = FALSE;
 
@@ -917,6 +929,7 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime)
 
   /* only modify the pipeline if we're in state != PLAYING */
   if ( (GST_CLOCK_TIME_IS_VALID (currenttime)) ) {
+    GstState	state = (GST_STATE_NEXT (comp) == GST_STATE_VOID_PENDING) ? GST_STATE (comp) : GST_STATE_NEXT (comp);
     GList	*stack = NULL;
     GList	*deactivate;
     GstClockTime	new_stop;
@@ -940,26 +953,30 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime)
       }
     }
 
-    GST_DEBUG_OBJECT (comp, "activating objects in new stack");
+    GST_DEBUG_OBJECT (comp, "activating objects in new stack to %s",
+		      gst_element_state_get_name (state));
     /* activate new stack */
     comp->private->current = stack;
     while (stack) {
-      GST_OBJECT_FLAG_UNSET (stack->data, GST_ELEMENT_LOCKED_STATE);
+      gst_element_set_locked_state (GST_ELEMENT (stack->data), FALSE);
+      gst_element_set_state (GST_ELEMENT (stack->data), state);
       stack = g_list_next (stack);
     }
 
     GST_DEBUG_OBJECT (comp, "De-activating objects no longer used");
     /* state-lock elements no more used */
     while (deactivate) {
-      GST_OBJECT_FLAG_SET (deactivate->data, GST_ELEMENT_LOCKED_STATE);
+      gst_element_set_locked_state (GST_ELEMENT (deactivate->data), TRUE);
       deactivate = g_list_next (deactivate);
     }
+
+    GST_DEBUG_OBJECT (comp, "Finished de-activating objects no longer used");
 
     /* set new segment_start/stop */
     comp->private->segment_start = currenttime;
     comp->private->segment_stop = new_stop;
     
-    send_initial_seek (comp, currenttime, new_stop);
+    send_initial_seek (comp, currenttime, new_stop, initial);
   }
 
   COMP_OBJECTS_UNLOCK (comp);
@@ -977,7 +994,7 @@ object_start_changed	(GnlObject *object, GParamSpec *arg,
     (comp->private->objects_start, 
      (GCompareFunc) objects_start_compare);
 
-  update_pipeline (comp, GST_CLOCK_TIME_NONE);
+  update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
 }
 
 static void
@@ -990,7 +1007,7 @@ object_stop_changed	(GnlObject *object, GParamSpec *arg,
     (comp->private->objects_stop, 
      (GCompareFunc) objects_stop_compare);
   
-  update_pipeline (comp, GST_CLOCK_TIME_NONE);
+  update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
 }
 
 static void
@@ -1007,7 +1024,7 @@ object_priority_changed	(GnlObject *object, GParamSpec *arg,
     (comp->private->objects_stop, 
      (GCompareFunc) objects_stop_compare);
   
-  update_pipeline (comp, GST_CLOCK_TIME_NONE);
+  update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
 }
 
 static void
@@ -1016,7 +1033,7 @@ object_active_changed	(GnlObject *object, GParamSpec *arg,
 {
   GST_DEBUG_OBJECT (object, "...");
 
-  update_pipeline (comp, GST_CLOCK_TIME_NONE);
+  update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
 }
 
 static gboolean
@@ -1033,6 +1050,9 @@ gnl_composition_add_object	(GstBin *bin, GstElement *element)
   COMP_OBJECTS_LOCK (comp);
 
   gst_object_ref (element);
+
+  gst_element_set_locked_state (element, TRUE);
+
   ret = GST_BIN_CLASS (parent_class)->add_element (bin, element);
   if (!ret)
     goto beach;
@@ -1071,7 +1091,7 @@ gnl_composition_add_object	(GstBin *bin, GstElement *element)
   
   /* update pipeline */
   COMP_OBJECTS_UNLOCK (comp);
-  update_pipeline (comp, GST_CLOCK_TIME_NONE);
+  update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
   COMP_OBJECTS_LOCK (comp);
 
  beach:
@@ -1094,6 +1114,9 @@ gnl_composition_remove_object	(GstBin *bin, GstElement *element)
   COMP_OBJECTS_LOCK (comp);
 
   gst_object_ref (element);
+
+  gst_element_set_locked_state (element, FALSE);
+
   ret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
   if (!ret)
     goto beach;
@@ -1115,7 +1138,7 @@ gnl_composition_remove_object	(GstBin *bin, GstElement *element)
      (GCompareFunc) objects_stop_compare);
 
   COMP_OBJECTS_UNLOCK (comp);
-  update_pipeline (comp, GST_CLOCK_TIME_NONE);
+  update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
   COMP_OBJECTS_LOCK (comp);
 
  beach:

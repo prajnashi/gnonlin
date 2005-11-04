@@ -176,8 +176,8 @@ ghost_seek_pad	(GnlFileSource *fs)
 
   GST_DEBUG_OBJECT (fs, "ghosting %s:%s", GST_DEBUG_PAD_NAME (pad));
  
-  fs->private->ghostpad = gnl_object_ghost_pad
-    (GNL_OBJECT (fs), GST_PAD_NAME (pad), pad);
+  fs->private->ghostpad = gnl_object_ghost_pad_full
+    (GNL_OBJECT (fs), GST_PAD_NAME (pad), pad, TRUE);
 
   GST_DEBUG_OBJECT (fs, "emitting no more pads");
   gst_element_no_more_pads (GST_ELEMENT (fs));

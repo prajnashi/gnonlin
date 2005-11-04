@@ -1,3 +1,23 @@
+2005-11-04  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_sync_handler),
+	(get_stack_list), (send_initial_seek),
+	(gnl_composition_change_state), (compare_relink_stack),
+	(update_pipeline), (object_start_changed), (object_stop_changed),
+	(object_priority_changed), (object_active_changed),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	Fixed problem in stack traversal
+	Better State-Lock handling of elements
+	
+	* gnl/gnlfilesource.c: (ghost_seek_pad):
+	* gnl/gnlobject.c: (gnl_object_init), (internalpad_event_function),
+	(flush_hack_check), (ghostpad_event_function),
+	(control_internal_pad), (gnl_object_ghost_pad_full),
+	(gnl_object_ghost_pad):
+	* gnl/gnlobject.h:
+	Added fields for segment seeking at the base GnlObject class level
+	Added hack for a flushing seek issue, we get deadlocks otherwise
+
 2005-11-03  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_put_sync_handler),

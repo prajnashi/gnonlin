@@ -107,6 +107,12 @@ struct _GnlObject {
 
   /* Filtering caps */
   GstCaps		 *caps;
+
+  /* current segment seek <RO> */
+  gdouble		segment_rate;
+  GstSeekFlags		segment_flags;
+  gint64		segment_start;
+  gint64		segment_stop;
   
   /* <private> */
   GstBusSyncHandler	 sync_handler;
@@ -129,6 +135,12 @@ GType		gnl_object_get_type		(void);
 GstPad*		gnl_object_ghost_pad		(GnlObject	*object,
 						 const gchar	*name,
 						 GstPad		*target);
+
+GstPad*		gnl_object_ghost_pad_full	(GnlObject	*object,
+						 const gchar	*name,
+						 GstPad		*target,
+						 gboolean	flush_hack);
+
 
 GstPad*		gnl_object_ghost_pad_notarget	(GnlObject	*object,
 						 const gchar	*name,
