@@ -437,6 +437,8 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
       && (gnl_object_to_media_time (object, cur, &ncur))) {
     if (ncur > G_MAXINT64)
       GST_WARNING_OBJECT (object, "return value too big...");
+    GST_LOG_OBJECT (object, "Setting cur to %"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (ncur));
     gst_structure_set (struc, "cur", G_TYPE_INT64, (gint64) ncur, NULL);
   }
 
@@ -445,6 +447,8 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
       && (gnl_object_to_media_time (object, stop, &nstop))) {
     if (nstop > G_MAXINT64)
       GST_WARNING_OBJECT (object, "return value too big...");
+    GST_LOG_OBJECT (object, "Setting stop to %"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (nstop));
     gst_structure_set (struc, "stop", 
 		       G_TYPE_INT64, (gint64) nstop, NULL);
   } else {
@@ -452,6 +456,8 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
     gnl_object_to_media_time (object, object->stop, &nstop);
     if (nstop > G_MAXINT64)
       GST_WARNING_OBJECT (object, "return value too big...");
+    GST_LOG_OBJECT (object, "Setting stop to %"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (nstop));
     gst_structure_set (struc,
 		       "stop_type", GST_TYPE_SEEK_TYPE,
 		       GST_SEEK_TYPE_SET,
@@ -460,15 +466,15 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
   }
 
   /* add segment seekflags */
-  if (!(flags & GST_SEEK_FLAG_SEGMENT)) {
-    GST_DEBUG_OBJECT (object, "Adding GST_SEEK_FLAG_SEGMENT");
-    gst_structure_set (struc, "flags", GST_TYPE_SEEK_FLAGS, 
-		       flags | GST_SEEK_FLAG_SEGMENT, NULL);
-  } else {
-    GST_DEBUG_OBJECT (object,
-		      "event already has GST_SEEK_FLAG_SEGMENT : %d",
-		      flags);
-  }
+/*   if (!(flags & GST_SEEK_FLAG_SEGMENT)) { */
+/*     GST_DEBUG_OBJECT (object, "Adding GST_SEEK_FLAG_SEGMENT"); */
+/*     gst_structure_set (struc, "flags", GST_TYPE_SEEK_FLAGS,  */
+/* 		       flags | GST_SEEK_FLAG_SEGMENT, NULL); */
+/*   } else { */
+/*     GST_DEBUG_OBJECT (object, */
+/* 		      "event already has GST_SEEK_FLAG_SEGMENT : %d", */
+/* 		      flags); */
+/*   } */
 
   return event2;
 }

@@ -1,3 +1,11 @@
+2005-11-18  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlfilesource.c: (gnl_filesource_class_init),
+	(pad_blocked_cb), (gnl_filesource_prepare):
+	Better behaviour as standalone element
+	* gnl/gnlobject.c: (translate_incoming_seek):
+	Added debug
+
 2005-11-04  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_sync_handler),

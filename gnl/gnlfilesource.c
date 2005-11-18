@@ -25,6 +25,12 @@
 #include "gnl.h"
 #include "gnlmarshal.h"
 
+static GstStaticPadTemplate gnl_filesource_src_template =
+GST_STATIC_PAD_TEMPLATE ("src%d",
+    GST_PAD_SRC,
+    GST_PAD_SOMETIMES,
+    GST_STATIC_CAPS_ANY);
+
 GST_DEBUG_CATEGORY_STATIC (gnlfilesource);
 #define GST_CAT_DEFAULT gnlfilesource
 
@@ -73,6 +79,9 @@ gnl_filesource_get_property 	(GObject *object, guint prop_id,
 static gboolean
 gnl_filesource_send_event	(GstElement *element, GstEvent *event);
 
+static gboolean
+gnl_filesource_prepare		(GnlObject *object);
+
 static void
 pad_blocked_cb	(GstPad *pad, gboolean blocked, GnlFileSource *fs);
 
@@ -104,7 +113,7 @@ gnl_filesource_class_init (GnlFileSourceClass *klass)
 
   GST_DEBUG_CATEGORY_INIT (gnlfilesource, "gnlfilesource", 0, "GNonLin File Source Element");
 
-/*   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_filesource_prepare); */
+  gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_filesource_prepare);
 
   gobject_class->dispose      = GST_DEBUG_FUNCPTR (gnl_filesource_dispose);
   gobject_class->finalize     = GST_DEBUG_FUNCPTR (gnl_filesource_finalize);
@@ -117,6 +126,9 @@ gnl_filesource_class_init (GnlFileSourceClass *klass)
 
 /*   gstelement_class->change_state = */
 /*     GST_DEBUG_FUNCPTR (gnl_filesource_change_state); */
+
+  gst_element_class_add_pad_template (gstelement_class,
+    gst_static_pad_template_get (&gnl_filesource_src_template));
 
   gst_element_class_install_std_props (GST_ELEMENT_CLASS (klass),
       "location", ARG_LOCATION, G_PARAM_READWRITE, NULL);
@@ -238,7 +250,8 @@ pad_blocked_cb	(GstPad *pad, gboolean blocked, GnlFileSource *fs)
 		    blocked, GST_DEBUG_PAD_NAME (pad));
 
   if (blocked)
-    g_idle_add ((GSourceFunc) ghost_seek_pad, fs);
+    ghost_seek_pad(fs);
+/*     g_idle_add ((GSourceFunc) ghost_seek_pad, fs); */
 }
 
 
@@ -326,6 +339,21 @@ gnl_filesource_finalize (GObject *object)
   g_free (filesource->private);
   
   G_OBJECT_CLASS (parent_class)->finalize (object);
+}
+
+static gboolean
+gnl_filesource_prepare		(GnlObject *object)
+{
+  /* send initial seek event on the pad */
+  GST_DEBUG_OBJECT (object,
+		    "About to send seek event %"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (object->start),
+		    GST_TIME_ARGS (object->stop));
+  return gnl_filesource_send_event (GST_ELEMENT (object),
+				    gst_event_new_seek (1.0, GST_FORMAT_TIME,
+							GST_SEEK_FLAG_FLUSH,
+							GST_SEEK_TYPE_SET, object->start,
+							GST_SEEK_TYPE_SET, object->stop));
 }
 
 static gboolean
