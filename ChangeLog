@@ -1,3 +1,13 @@
+2005-11-26  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_put_sync_handler),
+	(gnl_composition_ghost_pad_set_target):
+	* gnl/gnlobject.c: (gnl_object_put_sync_handler),
+	(translate_outgoing_new_segment), (internalpad_event_function),
+	(gnl_object_ghost_pad_full), (gnl_object_ghost_pad_no_target):
+	* gnl/gnlobject.h:
+	Update for latest API changes
+
 2005-11-18  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlfilesource.c: (gnl_filesource_class_init),

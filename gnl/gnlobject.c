@@ -191,15 +191,12 @@ gnl_object_put_sync_handler	(GnlObject *object,
   GstBus	*bus;
 
   bus = GST_BIN (object)->child_bus;
-  GST_LOCK (bus);
 
   object->sync_handler = bus->sync_handler;
   object->sync_handler_data = bus->sync_handler_data;
   
   bus->sync_handler = handler;
   bus->sync_handler_data = data;
-
-  GST_UNLOCK (bus);
 }
 
 static void
@@ -489,7 +486,7 @@ translate_outgoing_seek (GnlObject *object, GstEvent *event)
 }
 
 static GstEvent *
-translate_outgoing_newsegment (GnlObject *object, GstEvent *event)
+translate_outgoing_new_segment (GnlObject *object, GstEvent *event)
 {
   GstEvent	*event2;
   gboolean	update;
@@ -501,8 +498,8 @@ translate_outgoing_newsegment (GnlObject *object, GstEvent *event)
   /* only modify the streamtime */
   GST_DEBUG_OBJECT (object, "Modifying stream time for container time domain");
 
-  gst_event_parse_newsegment (event, &update, &rate, &format,
-			      &start, &stop, &stream);
+  gst_event_parse_new_segment (event, &update, &rate, &format,
+			       &start, &stop, &stream);
 
   if (format != GST_FORMAT_TIME)
     return event;
@@ -512,7 +509,7 @@ translate_outgoing_newsegment (GnlObject *object, GstEvent *event)
   if (nstream > G_MAXINT64)
     GST_WARNING_OBJECT (object, "Return value too big...");
 
-  event2 = gst_event_new_newsegment (update, rate, format,
+  event2 = gst_event_new_new_segment (update, rate, format,
 				     start, stop, (gint64) nstream);
 
   return event2;
@@ -529,7 +526,7 @@ internalpad_event_function	(GstPad *internal, GstEvent *event)
   switch (priv->dir) {
   case GST_PAD_SRC:
     if (GST_EVENT_TYPE (event) == GST_EVENT_NEWSEGMENT) {
-      event = translate_outgoing_newsegment (object, event);
+      event = translate_outgoing_new_segment (object, event);
     } else if (priv->flush_hack) {
       /* FIXME : REMOVE THIS AFTER FLUSH HACK SOLVED */
       if ((GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_START)
@@ -720,7 +717,7 @@ gnl_object_ghost_pad_full	(GnlObject *object, const gchar *name, GstPad *target,
   g_return_val_if_fail (target, FALSE);
   g_return_val_if_fail ((dir != GST_PAD_UNKNOWN), FALSE);
 
-  ghost = gnl_object_ghost_pad_notarget (object, name, dir);
+  ghost = gnl_object_ghost_pad_no_target (object, name, dir);
   if (ghost && (!(gnl_object_ghost_pad_set_target (object, ghost, target)))) {
     GST_WARNING_OBJECT (object, 
 			"Couldn't set the target pad... removing ghostpad");
@@ -749,19 +746,19 @@ gnl_object_ghost_pad (GnlObject *object, const gchar *name, GstPad *target)
 }
 
 /**
- * gnl_object_ghost_pad_notarget:
+ * gnl_object_ghost_pad_no_target:
  * /!\ Doesn't add the pad to the GnlObject....
 */
 
 GstPad *
-gnl_object_ghost_pad_notarget	(GnlObject *object, const gchar *name, 
+gnl_object_ghost_pad_no_target	(GnlObject *object, const gchar *name, 
 				 GstPadDirection dir)
 {
   GstPad	*ghost;
   GnlPadPrivate	*priv;
 
-  /* create a notarget ghostpad */
-  ghost = gst_ghost_pad_new_notarget (name, dir);
+  /* create a no_target ghostpad */
+  ghost = gst_ghost_pad_new_no_target (name, dir);
   if (!ghost)
     return NULL;
 

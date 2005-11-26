@@ -142,7 +142,7 @@ GstPad*		gnl_object_ghost_pad_full	(GnlObject	*object,
 						 gboolean	flush_hack);
 
 
-GstPad*		gnl_object_ghost_pad_notarget	(GnlObject	*object,
+GstPad*		gnl_object_ghost_pad_no_target	(GnlObject	*object,
 						 const gchar	*name,
 						 GstPadDirection dir);
 

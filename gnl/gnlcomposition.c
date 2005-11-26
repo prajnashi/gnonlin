@@ -199,15 +199,12 @@ gnl_composition_put_sync_handler (GnlComposition *comp,
   GstBus	*bus;
 
   bus = GST_BIN (comp)->child_bus;
-  GST_LOCK (bus);
 
   comp->private->sync_handler = bus->sync_handler;
   comp->private->sync_handler_data = bus->sync_handler_data;
   
   bus->sync_handler = handler;
   bus->sync_handler_data = data;
-
-  GST_UNLOCK (bus);
 }
 
 static void
@@ -365,9 +362,9 @@ gnl_composition_ghost_pad_set_target	(GnlComposition *comp,
 		    hadghost);
 
   if (!(hadghost))
-    comp->private->ghostpad = gnl_object_ghost_pad_notarget (GNL_OBJECT (comp),
-							     "src",
-							     GST_PAD_SRC);
+    comp->private->ghostpad = gnl_object_ghost_pad_no_target (GNL_OBJECT (comp),
+							      "src",
+							      GST_PAD_SRC);
   gnl_object_ghost_pad_set_target (GNL_OBJECT (comp),
 				   comp->private->ghostpad,
 				   target);
