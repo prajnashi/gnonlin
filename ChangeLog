@@ -1,3 +1,17 @@
+2005-12-01  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_sync_handler),
+	(objects_start_compare), (objects_stop_compare),
+	(update_start_stop_duration), (update_pipeline),
+	(object_start_changed), (object_stop_changed),
+	(gnl_composition_add_object):
+	Wow, that was some stupid error :)
+	* gnl/gnlobject.c: (translate_incoming_seek),
+	(internalpad_event_function), (flush_hack_check),
+	(ghostpad_event_function), (control_internal_pad),
+	(gnl_object_ghost_pad_full), (gnl_object_ghost_pad_no_target):
+	Better flush handling.
+
 2005-11-26  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_put_sync_handler),

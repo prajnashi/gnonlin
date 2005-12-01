@@ -325,6 +325,7 @@ gnl_composition_sync_handler	(GstBus *bus, GstMessage *message,
       /* this can happen when filesrc emits a segment-done in BYTES */
       GST_WARNING_OBJECT (comp, "Got a SEGMENT_DONE_MESSAGE with a format different from GST_FORMAT_TIME");
     }
+    GST_DEBUG_OBJECT (comp, "Save a SEGMENT_DONE message, updating pipeline");
     update_pipeline (comp, (GstClockTime) comp->private->segment_stop, FALSE);
     if (!(comp->private->current)) {
       GST_DEBUG_OBJECT (comp, "Nothing else to play");
@@ -633,7 +634,7 @@ objects_start_compare	(GnlObject *a, GnlObject *b)
   /* return positive value if a is after b */
   if (a->start == b->start)
     return a->priority - b->priority;
-  return a->start - b->start;
+  return b->start - a->start;
 }
 
 static gint
@@ -642,7 +643,7 @@ objects_stop_compare	(GnlObject *a, GnlObject *b)
   /* return positive value if b is after a */
   if (a->stop == b->stop)
     return a->priority - b->priority;
-  return b->stop - a->stop;
+  return a->stop - b->stop;
 }
 
 static void
@@ -653,6 +654,7 @@ update_start_stop_duration	(GnlComposition *comp)
 
   GST_DEBUG_OBJECT (comp, "...");
   if (!(comp->private->objects_start)) {
+    GST_LOG ("no objects, resetting everything to 0");
     if (cobj->start) {
       cobj->start = 0;
       g_object_notify (G_OBJECT (cobj), "start");
@@ -670,12 +672,18 @@ update_start_stop_duration	(GnlComposition *comp)
 
   obj = GNL_OBJECT (comp->private->objects_start->data);
   if (obj->start != cobj->start) {
+    GST_LOG_OBJECT (obj, "setting start from %s to %" GST_TIME_FORMAT,
+		    GST_OBJECT_NAME (obj),
+		    GST_TIME_ARGS (obj->start));
     cobj->start = obj->start;
     g_object_notify (G_OBJECT (cobj), "start");
   }
 
   obj = GNL_OBJECT (comp->private->objects_stop->data);
   if (obj->stop != cobj->stop) {
+    GST_LOG_OBJECT (obj, "setting stop from %s to %" GST_TIME_FORMAT,
+		    GST_OBJECT_NAME (obj),
+		    GST_TIME_ARGS (obj->stop));
     cobj->stop = obj->stop;
     g_object_notify (G_OBJECT (cobj), "stop");
   }
@@ -684,6 +692,14 @@ update_start_stop_duration	(GnlComposition *comp)
     cobj->duration = cobj->stop - cobj->start;
     g_object_notify (G_OBJECT (cobj), "duration");
   }
+
+  GST_LOG_OBJECT (comp, 
+		  "start:%"GST_TIME_FORMAT
+		  " stop:%"GST_TIME_FORMAT
+		  " duration:%"GST_TIME_FORMAT,
+		  GST_TIME_ARGS (cobj->start),
+		  GST_TIME_ARGS (cobj->stop),
+		  GST_TIME_ARGS (cobj->duration));
 }
 
 static void
@@ -942,11 +958,14 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime, gboolean initia
     /* if toplevel element has changed, redirect ghostpad to it */
     if ((stack) && ((!(comp->private->current)) || (comp->private->current->data != stack->data))) {
       GstPad	*pad;
-
+      
+      GST_DEBUG_OBJECT (comp, "Top stack object has changed, switching pad");
       pad = get_src_pad (GST_ELEMENT (stack->data));
       if (pad) {
 	gnl_composition_ghost_pad_set_target (comp, pad);
 	gst_object_unref (pad);
+      } else {
+	/* The pad might be created dynamically */
       }
     }
 
@@ -991,6 +1010,10 @@ object_start_changed	(GnlObject *object, GParamSpec *arg,
     (comp->private->objects_start, 
      (GCompareFunc) objects_start_compare);
 
+  comp->private->objects_stop = g_list_sort 
+    (comp->private->objects_stop, 
+     (GCompareFunc) objects_stop_compare);
+  
   update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
 }
 
@@ -1004,6 +1027,10 @@ object_stop_changed	(GnlObject *object, GParamSpec *arg,
     (comp->private->objects_stop, 
      (GCompareFunc) objects_stop_compare);
   
+  comp->private->objects_start = g_list_sort 
+    (comp->private->objects_start, 
+     (GCompareFunc) objects_start_compare);
+
   update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
 }
 
@@ -1081,11 +1108,19 @@ gnl_composition_add_object	(GstBin *bin, GstElement *element)
      element,
      (GCompareFunc) objects_start_compare);
   
+  if (comp->private->objects_start)
+    GST_LOG_OBJECT (comp, "Head of objects_start is now %s",
+		    GST_OBJECT_NAME (comp->private->objects_start->data));
+
   comp->private->objects_stop = g_list_insert_sorted
     (comp->private->objects_stop,
      element,
      (GCompareFunc) objects_stop_compare);
   
+  if (comp->private->objects_stop)
+    GST_LOG_OBJECT (comp, "Head of objects_stop is now %s",
+		    GST_OBJECT_NAME (comp->private->objects_stop->data));
+
   /* update pipeline */
   COMP_OBJECTS_UNLOCK (comp);
   update_pipeline (comp, GST_CLOCK_TIME_NONE, FALSE);
