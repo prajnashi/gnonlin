@@ -12,7 +12,7 @@ AM_MAINTAINER_MODE
 
 dnl when going to/from release please set the nano (fourth number) right !
 dnl releases only do Wall, cvs and prerelease does Werror too
-AS_VERSION(gnonlin, GNONLIN_VERSION, 0, 9, 4, 1,
+AS_VERSION(gnonlin, GNONLIN_VERSION, 0, 10, 0, 1,
     GNL_CVS="no", GNL_CVS="yes")
 
 AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
@@ -20,7 +20,7 @@ AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
 dnl our libraries and install dirs use major.minor as a version
 GST_MAJORMINOR=$GNONLIN_VERSION_MAJOR.$GNONLIN_VERSION_MINOR
 dnl we override it here if we need to for the release candidate of new series
-GST_MAJORMINOR=0.9
+GST_MAJORMINOR=0.10
 AC_SUBST(GST_MAJORMINOR)
 
 dnl CURRENT, REVISION, AGE
