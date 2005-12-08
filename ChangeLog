@@ -1,3 +1,8 @@
+2005-12-08  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlfilesource.c: (pad_blocked_cb):
+	Do this hack from another thread.
+
 2005-12-02  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:

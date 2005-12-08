@@ -250,8 +250,8 @@ pad_blocked_cb	(GstPad *pad, gboolean blocked, GnlFileSource *fs)
 		    blocked, GST_DEBUG_PAD_NAME (pad));
 
   if (blocked)
-    ghost_seek_pad(fs);
-/*     g_idle_add ((GSourceFunc) ghost_seek_pad, fs); */
+    g_idle_add ((GSourceFunc) ghost_seek_pad, fs);
+/*     ghost_seek_pad(fs); */
 }
 
 
