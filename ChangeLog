@@ -1,3 +1,26 @@
+2005-12-10  Edward Hervey  <edward@fluendo.com>
+
+	reviewed by: <delete if not using a buddy>
+
+	* gnl/gnlcomposition.c: (gnl_composition_init),
+	(gnl_composition_reset), (gnl_composition_sync_handler),
+	(have_to_update_pipeline), (get_new_seek_event),
+	(handle_seek_event), (gnl_composition_event_handler),
+	(gnl_composition_ghost_pad_set_target), (objects_start_compare),
+	(objects_stop_compare), (no_more_pads_object_cb),
+	(compare_relink_stack), (update_pipeline),
+	(gnl_composition_add_object):
+	Implement better event handling and fix memory leaks.
+	* gnl/gnlfilesource.c: (gnl_filesource_prepare):
+	* gnl/gnlobject.c: (gnl_object_to_media_time),
+	(gnl_media_to_object_time), (translate_incoming_seek),
+	(translate_outgoing_seek), (translate_outgoing_new_segment),
+	(internalpad_event_function), (internalpad_query_function),
+	(internalpad_unlink_function), (ghostpad_event_function),
+	(control_internal_pad), (ghostpad_unlink_function),
+	(gnl_object_ghost_pad_set_target):
+	Implement better event handling
+
 2005-12-08  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlfilesource.c: (pad_blocked_cb):

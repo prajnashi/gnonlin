@@ -30,6 +30,7 @@ typedef struct _GnlPadPrivate GnlPadPrivate;
 
 struct _GnlPadPrivate {
   GnlObject		*object;
+  GnlPadPrivate		*ghostpriv;
   GstPadDirection	dir;
   GstPadEventFunction	eventfunc;
   GstPadQueryFunction	queryfunc;
@@ -247,14 +248,28 @@ gnl_object_to_media_time (GnlObject *object, GstClockTime otime,
   GST_DEBUG_OBJECT (object, "ObjectTime : %" GST_TIME_FORMAT,
 		    GST_TIME_ARGS(otime));
 
+  GST_DEBUG_OBJECT (object,
+		    "Start/Stop:[%"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT"] "
+		    "Media [%"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT"]",
+		    GST_TIME_ARGS (object->start),
+		    GST_TIME_ARGS (object->stop),
+		    GST_TIME_ARGS (object->media_start),
+		    GST_TIME_ARGS (object->media_stop));
+		    
   /* limit check */
   if ((otime < object->start) || (otime >= object->stop)) {
     GST_DEBUG_OBJECT (object, 
 		      "ObjectTime is outside object start/stop times");
-    if (otime < object->start)
+    if (otime < object->start) {
       *mtime = (object->media_start == GST_CLOCK_TIME_NONE) ? object->start : object->media_start;
-    else
-      *mtime = (object->media_stop == GST_CLOCK_TIME_NONE) ? object->stop : object->media_stop;
+    } else {
+      if (GST_CLOCK_TIME_IS_VALID (object->media_stop))
+	*mtime = object->media_stop;
+      else if (GST_CLOCK_TIME_IS_VALID (object->media_start))
+	*mtime = object->media_start + object->duration;
+      else
+	*mtime = object->stop;
+    }
     return FALSE;
   }
 
@@ -292,6 +307,15 @@ gnl_media_to_object_time (GnlObject *object, GstClockTime mtime,
   GST_DEBUG_OBJECT (object, "MediaTime : %" GST_TIME_FORMAT,
 		    GST_TIME_ARGS(mtime));
  
+  GST_DEBUG_OBJECT (object,
+		    "Start/Stop:[%"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT"] "
+		    "Media [%"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT"]",
+		    GST_TIME_ARGS (object->start),
+		    GST_TIME_ARGS (object->stop),
+		    GST_TIME_ARGS (object->media_start),
+		    GST_TIME_ARGS (object->media_stop));
+		    
+
   /* limit check */
   if (object->media_start == GST_CLOCK_TIME_NONE)
     return gnl_object_to_media_time (object, mtime, otime);
@@ -406,29 +430,26 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
   guint64	ncur;
   gint64	stop;
   guint64	nstop;
-  GstStructure	*struc;
 
-  /* FILL IN */
-  GST_DEBUG_OBJECT (object, 
-		    "shifting cur/stop/rate of seek event to object time domain");
   gst_event_parse_seek (event, &rate, &format, &flags,
 			&curtype, &cur,
 			&stoptype, &stop);
+
+  GST_DEBUG_OBJECT (object,
+		   "GOT SEEK rate:%f, format:%d, flags:%d, curtype:%d, stoptype:%d, %"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT,
+		   rate, format, flags, curtype, stoptype,
+		   GST_TIME_ARGS (cur),
+		   GST_TIME_ARGS (stop));
 
   if (format != GST_FORMAT_TIME) {
     GST_WARNING ("GNonLin time shifting only works with GST_FORMAT_TIME");
     return event;
   }
 
-  event2 = GST_EVENT (gst_mini_object_make_writable 
-		      (GST_MINI_OBJECT (event)));
-  struc = (GstStructure *) gst_event_get_structure(event2);
-
   /* convert rate */
   nrate = rate * object->rate;
   GST_DEBUG ("nrate:%f , rate:%f, object->rate:%f",
 	     nrate, rate, object->rate);
-  gst_structure_set (struc, "rate", G_TYPE_DOUBLE, nrate, NULL);
 
   /* convert cur */
   if ((curtype == GST_SEEK_TYPE_SET) 
@@ -437,7 +458,9 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
       GST_WARNING_OBJECT (object, "return value too big...");
     GST_LOG_OBJECT (object, "Setting cur to %"GST_TIME_FORMAT,
 		    GST_TIME_ARGS (ncur));
-    gst_structure_set (struc, "cur", G_TYPE_INT64, (gint64) ncur, NULL);
+  } else {
+    GST_DEBUG_OBJECT (object, "Limiting seek start to media_start");
+    ncur = object->media_start;
   }
 
   /* convert stop, we also need to limit it to object->stop */
@@ -447,8 +470,6 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
       GST_WARNING_OBJECT (object, "return value too big...");
     GST_LOG_OBJECT (object, "Setting stop to %"GST_TIME_FORMAT,
 		    GST_TIME_ARGS (nstop));
-    gst_structure_set (struc, "stop", 
-		       G_TYPE_INT64, (gint64) nstop, NULL);
   } else {
     GST_DEBUG_OBJECT (object, "Limiting end of seek to media_stop");
     gnl_object_to_media_time (object, object->stop, &nstop);
@@ -456,23 +477,27 @@ translate_incoming_seek (GnlObject *object, GstEvent *event)
       GST_WARNING_OBJECT (object, "return value too big...");
     GST_LOG_OBJECT (object, "Setting stop to %"GST_TIME_FORMAT,
 		    GST_TIME_ARGS (nstop));
-    gst_structure_set (struc,
-		       "stop_type", GST_TYPE_SEEK_TYPE,
-		       GST_SEEK_TYPE_SET,
-		       "stop", G_TYPE_INT64, (gint64) nstop,
-		       NULL);
   }
 
   /* add segment seekflags */
   if (!(flags & GST_SEEK_FLAG_SEGMENT)) {
     GST_DEBUG_OBJECT (object, "Adding GST_SEEK_FLAG_SEGMENT");
-    gst_structure_set (struc, "flags", GST_TYPE_SEEK_FLAGS,
-		       flags | GST_SEEK_FLAG_SEGMENT, NULL);
+    flags |= GST_SEEK_FLAG_SEGMENT;
   } else {
     GST_DEBUG_OBJECT (object,
 		      "event already has GST_SEEK_FLAG_SEGMENT : %d",
 		      flags);
   }
+
+  GST_DEBUG_OBJECT (object,
+		    "SENDING SEEK rate:%f, format:TIME, flags:%d, curtype:SET, stoptype:SET, %"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT,
+		    nrate, flags, 
+		    GST_TIME_ARGS (ncur),
+		    GST_TIME_ARGS (nstop));
+
+  event2 = gst_event_new_seek (nrate, GST_FORMAT_TIME, flags,
+			       GST_SEEK_TYPE_SET, (gint64) ncur,
+			       GST_SEEK_TYPE_SET, (gint64) nstop);
 
   return event2;
 }
@@ -481,7 +506,7 @@ static GstEvent *
 translate_outgoing_seek (GnlObject *object, GstEvent *event)
 {
   GST_DEBUG_OBJECT (object, 
-		    "shifting cur/stop/rate of seek event to container time domain");
+		    "TODO shifting cur/stop/rate of seek event to container time domain");
 
   return event;
 }
@@ -497,19 +522,29 @@ translate_outgoing_new_segment (GnlObject *object, GstEvent *event)
   guint64	nstream;
 
   /* only modify the streamtime */
-  GST_DEBUG_OBJECT (object, "Modifying stream time for container time domain");
-
   gst_event_parse_new_segment (event, &update, &rate, &format,
 			       &start, &stop, &stream);
 
-  if (format != GST_FORMAT_TIME)
+  GST_DEBUG_OBJECT (object, "Got NEWSEGMENT %"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT" // %"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (start),
+		    GST_TIME_ARGS (stop),
+		    GST_TIME_ARGS (stream));
+
+  if (format != GST_FORMAT_TIME) {
+    GST_WARNING_OBJECT (object,
+			"Can't translate newsegments with format != GST_FORMAT_TIME");
     return event;
+  }
   
   gnl_media_to_object_time (object, stream, &nstream);
 
   if (nstream > G_MAXINT64)
     GST_WARNING_OBJECT (object, "Return value too big...");
 
+  GST_DEBUG_OBJECT (object, "Sending NEWSEGMENT %"GST_TIME_FORMAT" -- %"GST_TIME_FORMAT" // %"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (start),
+		    GST_TIME_ARGS (stop),
+		    GST_TIME_ARGS (nstream));
   event2 = gst_event_new_new_segment (update, rate, format,
 				     start, stop, (gint64) nstream);
 
@@ -524,19 +559,30 @@ internalpad_event_function	(GstPad *internal, GstEvent *event)
 
   GST_DEBUG_OBJECT (internal, "event:%s", GST_EVENT_TYPE_NAME (event));
 
+  if (!(priv->eventfunc)) {
+    GST_WARNING_OBJECT (internal,
+			"priv->eventfunc == NULL !! What is going on ?");
+    return FALSE;
+  }
+
   switch (priv->dir) {
   case GST_PAD_SRC:
     if (GST_EVENT_TYPE (event) == GST_EVENT_NEWSEGMENT) {
       event = translate_outgoing_new_segment (object, event);
-    } else if (priv->flush_hack && !priv->need_flush) {
+    } else if (priv->ghostpriv->flush_hack && !priv->ghostpriv->need_flush) {
       /* FIXME : REMOVE THIS AFTER FLUSH HACK SOLVED */
+      GST_DEBUG_OBJECT (internal, "Flush hack in effect");
       if ((GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_START)
 	  || (GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_STOP)) {
 	GST_DEBUG_OBJECT (object, "dropping flush event because of flush hack");
 	gst_event_unref (event);
 	return TRUE;
       }
+    } else {
+      GST_DEBUG_OBJECT (internal, "didn't drop flush ghost->flush_hack:%d ->need_flush:%d",
+			priv->ghostpriv->flush_hack, priv->ghostpriv->need_flush);
     }
+    
     break;
   case GST_PAD_SINK:
     if (GST_EVENT_TYPE (event) == GST_EVENT_SEEK) {
@@ -546,6 +592,7 @@ internalpad_event_function	(GstPad *internal, GstEvent *event)
   default:
     break;
   }
+  GST_DEBUG_OBJECT (internal, "Calling priv->eventfunc %p", priv->eventfunc);
   return priv->eventfunc (internal, event);
 }
 
@@ -556,6 +603,12 @@ internalpad_query_function	(GstPad *internal, GstQuery *query)
 /*   GnlObject	*object = GNL_OBJECT (GST_PAD_PARENT (internal)); */
 
   GST_DEBUG_OBJECT (internal, "querytype:%d", GST_QUERY_TYPE (query));
+
+  if (!(priv->queryfunc)) {
+    GST_WARNING_OBJECT (internal,
+			"priv->queryfunc == NULL !! What is going on ?");
+    return FALSE;
+  }
 
   switch (priv->dir) {
   case GST_PAD_SRC:
@@ -568,6 +621,19 @@ internalpad_query_function	(GstPad *internal, GstQuery *query)
   return priv->queryfunc (internal, query);
 }
 
+static void
+internalpad_unlink_function	(GstPad *internal)
+{
+  GnlPadPrivate	*priv = gst_pad_get_element_private (internal);
+
+  GST_DEBUG_OBJECT (internal, "unlinking"); 
+
+  if (priv->unlinkfunc)
+    priv->unlinkfunc (internal);
+  else
+    GST_WARNING_OBJECT (internal,
+			"priv->unlinkfunc == NULL !! What's going on ?");
+}
 
 /* Add flush flag to seek event */
 static GstEvent *
@@ -604,6 +670,12 @@ ghostpad_event_function		(GstPad *ghostpad, GstEvent *event)
 
   GST_DEBUG_OBJECT (ghostpad, "event:%s", GST_EVENT_TYPE_NAME (event));
 
+  if (!(priv->eventfunc)) {
+    GST_WARNING_OBJECT (ghostpad,
+			"priv->eventfunc == NULL !! What's going on ?");
+    return FALSE;
+  }
+
   switch (priv->dir) {
   case GST_PAD_SRC:
     if (GST_EVENT_TYPE (event) == GST_EVENT_SEEK) {
@@ -617,6 +689,7 @@ ghostpad_event_function		(GstPad *ghostpad, GstEvent *event)
     break;
   }
 
+  GST_DEBUG_OBJECT (ghostpad, "Calling priv->eventfunc %p", priv->eventfunc);
   return priv->eventfunc (ghostpad, event);
 }
 
@@ -646,9 +719,13 @@ control_internal_pad (GstPad *ghostpad, GnlObject *object)
   GST_LOG_OBJECT (ghostpad, "overriding ghostpad's internal pad function");
 
   priv->object = object;
+  priv->ghostpriv = privghost;
   priv->dir = GST_PAD_DIRECTION (ghostpad);
+  GST_DEBUG_OBJECT (internal, "Setting priv->eventfunc to %p",
+		    GST_PAD_EVENTFUNC (internal));
   priv->eventfunc = GST_PAD_EVENTFUNC (internal);
   priv->queryfunc = GST_PAD_QUERYFUNC (internal);
+  priv->unlinkfunc = GST_PAD_UNLINKFUNC (internal);
   priv->flush_hack = privghost->flush_hack;
   priv->need_flush = privghost->need_flush;
   gst_pad_set_element_private (internal, priv);
@@ -658,6 +735,10 @@ control_internal_pad (GstPad *ghostpad, GnlObject *object)
 			      GST_DEBUG_FUNCPTR (internalpad_event_function));
   gst_pad_set_query_function (internal, 
 			      GST_DEBUG_FUNCPTR (internalpad_query_function));
+  if (priv->unlinkfunc)
+    gst_pad_set_unlink_function (internal,
+				 GST_DEBUG_FUNCPTR (internalpad_unlink_function));
+  gst_object_unref (internal);
 }
 
 static GstPadLinkReturn
@@ -681,18 +762,23 @@ ghostpad_link_function		(GstPad *ghostpad, GstPad *peer)
 static void
 ghostpad_unlink_function	(GstPad *ghostpad)
 {
-  GstPad	*internal = gst_pad_get_peer (gst_ghost_pad_get_target 
-					      (GST_GHOST_PAD (ghostpad)));
-  GnlPadPrivate	*priv = gst_pad_get_element_private (internal);
+/*   GstPad	*internal = gst_pad_get_peer (gst_ghost_pad_get_target  */
+/* 					      (GST_GHOST_PAD (ghostpad))); */
+  GnlPadPrivate	*priv = gst_pad_get_element_private (ghostpad);
 
-  GST_DEBUG_OBJECT (ghostpad, "...");
+/*   GST_DEBUG_OBJECT (ghostpad, "internal is %s:%s", */
+/* 		    GST_DEBUG_PAD_NAME (internal)); */
+/*   gst_object_unref (internal); */
 
-  /* remove query/event function overrides on internal pad */
-  if (priv)
-    g_free (priv);
-  
+  GST_DEBUG_OBJECT (ghostpad, "Before calling parent unlink function");
   if (priv->unlinkfunc)
     priv->unlinkfunc (ghostpad);
+  GST_DEBUG_OBJECT (ghostpad, "After calling parent unlink function");
+  /* remove query/event function overrides on internal pad */
+/*   GST_DEBUG_OBJECT (ghostpad, "freeing priv"); */
+/*   if (priv) */
+/*     g_free (priv); */
+  
 }
 
 /**
@@ -799,19 +885,21 @@ gnl_object_ghost_pad_set_target (GnlObject *object, GstPad *ghost,
     return FALSE;
 
   /* grab/replace event/query functions */
-  priv->eventfunc = GST_PAD_EVENTFUNC (ghost);
-  priv->queryfunc = GST_PAD_QUERYFUNC (ghost);
   priv->linkfunc = GST_PAD_LINKFUNC (ghost);
   priv->unlinkfunc = GST_PAD_UNLINKFUNC (ghost);
-
-  gst_pad_set_event_function (ghost, 
-			      GST_DEBUG_FUNCPTR (ghostpad_event_function));
-  gst_pad_set_query_function (ghost, 
-			      GST_DEBUG_FUNCPTR (ghostpad_query_function));
+  GST_DEBUG_OBJECT (ghost, "Setting priv->eventfunc to %p",
+		    GST_PAD_EVENTFUNC (ghost));
+  priv->eventfunc = GST_PAD_EVENTFUNC (ghost);
+  priv->queryfunc = GST_PAD_QUERYFUNC (ghost);
+  
   gst_pad_set_link_function (ghost, 
 			     GST_DEBUG_FUNCPTR (ghostpad_link_function));
   gst_pad_set_unlink_function (ghost, 
 			       GST_DEBUG_FUNCPTR (ghostpad_unlink_function));
+  gst_pad_set_event_function (ghost, 
+			      GST_DEBUG_FUNCPTR (ghostpad_event_function));
+  gst_pad_set_query_function (ghost, 
+			      GST_DEBUG_FUNCPTR (ghostpad_query_function));
 
   /* maybe the ghostpad is already linked */
   if (GST_PAD_IS_LINKED (ghost)) {
