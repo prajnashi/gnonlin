@@ -1,6 +1,9 @@
-2005-12-10  Edward Hervey  <edward@fluendo.com>
+2005-12-12  Edward Hervey  <edward@fluendo.com>
 
-	reviewed by: <delete if not using a buddy>
+	* gnl/gnlcomposition.c: (compare_relink_stack):
+	Whoops, don't unref too much.
+
+2005-12-10  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_init),
 	(gnl_composition_reset), (gnl_composition_sync_handler),

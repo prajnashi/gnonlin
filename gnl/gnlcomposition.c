@@ -898,7 +898,6 @@ compare_relink_stack	(GnlComposition *comp, GList *stack)
 		  gst_element_link (GST_ELEMENT (pnew), GST_ELEMENT (newobj));
 		  gst_object_unref (srcpad);
 		}
-	      gst_object_unref (srcpad);
 	    }
 	  else
 	    {
@@ -918,8 +917,8 @@ compare_relink_stack	(GnlComposition *comp, GList *stack)
 		   G_CALLBACK (no_more_pads_object_cb),
 		   comp);
 
-	      }
-	      gst_object_unref (srcpad);
+	      } else
+		gst_object_unref (srcpad);
 	    }
 	}
       
