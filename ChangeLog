@@ -1,3 +1,21 @@
+2005-12-14  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (objects_start_compare),
+	(objects_stop_compare):
+	Returning the difference of 2 unsigned int, expecting the result
+	to be negative is... somewhat idiotic :)
+
+	* gnl/gnlcomposition.c: (gnl_composition_class_init),
+	(gnl_composition_add_object):
+	* gnl/gnlfilesource.c: (gnl_filesource_class_init):
+	* gnl/gnlobject.c: (gnl_object_class_init),
+	(gnl_object_covers_func), (translate_message_segment_start),
+	(translate_message_segment_done), (update_values):
+	* gnl/gnloperation.c: (gnl_operation_class_init):
+	* gnl/gnlsource.c: (gnl_source_class_init):
+	GNonLin debugging category is now BOLD BLUE.
+	Updated debugging statements with GST_TIME_FORMAT.
+
 2005-12-12  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (compare_relink_stack):

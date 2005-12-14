@@ -111,7 +111,9 @@ gnl_filesource_class_init (GnlFileSourceClass *klass)
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
 
-  GST_DEBUG_CATEGORY_INIT (gnlfilesource, "gnlfilesource", 0, "GNonLin File Source Element");
+  GST_DEBUG_CATEGORY_INIT (gnlfilesource, "gnlfilesource",
+			   GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD,
+			   "GNonLin File Source Element");
 
   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_filesource_prepare);
 

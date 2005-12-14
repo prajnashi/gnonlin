@@ -157,7 +157,9 @@ gnl_composition_class_init (GnlCompositionClass *klass)
   gstbin_class     = (GstBinClass*)klass;
   gnlobject_class  = (GnlObjectClass*)klass;
 
-  GST_DEBUG_CATEGORY_INIT (gnlcomposition, "gnlcomposition", 0, "GNonLin Composition");
+  GST_DEBUG_CATEGORY_INIT (gnlcomposition, "gnlcomposition",
+			   GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD,
+			   "GNonLin Composition");
 
   gobject_class->dispose	= GST_DEBUG_FUNCPTR (gnl_composition_dispose);
   gobject_class->finalize 	= GST_DEBUG_FUNCPTR (gnl_composition_finalize);
@@ -701,7 +703,11 @@ objects_start_compare	(GnlObject *a, GnlObject *b)
 {
   if (a->start == b->start)
     return a->priority - b->priority;
-  return b->start - a->start;
+  if (a->start < b->start)
+    return -1;
+  if (a->start > b->start)
+    return 1;
+  return 0;
 }
 
 static gint
@@ -709,7 +715,11 @@ objects_stop_compare	(GnlObject *a, GnlObject *b)
 {
   if (a->stop == b->stop)
     return a->priority - b->priority;
-  return a->stop - b->stop;
+  if (b->stop < a->stop)
+    return -1;
+  if (b->start > a->stop)
+    return 1;
+  return 0;
 }
 
 static void
@@ -1151,6 +1161,10 @@ gnl_composition_add_object	(GstBin *bin, GstElement *element)
 
   COMP_OBJECTS_LOCK (comp);
 
+  GST_DEBUG_OBJECT (element, "%"GST_TIME_FORMAT"--%"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (GNL_OBJECT (element)->start),
+		    GST_TIME_ARGS (GNL_OBJECT (element)->stop));
+
   gst_object_ref (element);
 
   gst_element_set_locked_state (element, TRUE);
@@ -1189,8 +1203,10 @@ gnl_composition_add_object	(GstBin *bin, GstElement *element)
      (GCompareFunc) objects_start_compare);
 
   if (comp->private->objects_start)
-    GST_LOG_OBJECT (comp, "Head of objects_start is now %s",
-		    GST_OBJECT_NAME (comp->private->objects_start->data));
+    GST_LOG_OBJECT (comp, "Head of objects_start is now %s [%"GST_TIME_FORMAT"--%"GST_TIME_FORMAT"]",
+		    GST_OBJECT_NAME (comp->private->objects_start->data),
+		    GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_start->data)->start),
+		    GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_start->data)->stop));
 
   comp->private->objects_stop = g_list_append
     (comp->private->objects_stop,
@@ -1200,8 +1216,10 @@ gnl_composition_add_object	(GstBin *bin, GstElement *element)
      (GCompareFunc) objects_stop_compare);
   
   if (comp->private->objects_stop)
-    GST_LOG_OBJECT (comp, "Head of objects_stop is now %s",
-		    GST_OBJECT_NAME (comp->private->objects_stop->data));
+    GST_LOG_OBJECT (comp, "Head of objects_stop is now %s [%"GST_TIME_FORMAT"--%"GST_TIME_FORMAT"]",
+		    GST_OBJECT_NAME (comp->private->objects_stop->data),
+		    GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_stop->data)->start),
+		    GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_stop->data)->stop));
 
   /* update pipeline */
   COMP_OBJECTS_UNLOCK (comp);

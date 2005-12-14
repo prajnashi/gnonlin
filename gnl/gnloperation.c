@@ -96,7 +96,9 @@ gnl_operation_class_init (GnlOperationClass *klass)
   gstelement_class =	(GstElementClass*)klass;
   gnlobject_class =     (GnlObjectClass*)klass;
 
-  GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation", 0, "GNonLin Operation element");
+  GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation",
+			   GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD,
+			   "GNonLin Operation element");
 
 /*   gobject_class->set_property	= GST_DEBUG_FUNCPTR (gnl_operation_set_property); */
 /*   gobject_class->get_property	= GST_DEBUG_FUNCPTR (gnl_operation_get_property); */

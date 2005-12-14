@@ -78,7 +78,9 @@ gnl_source_class_init (GnlSourceClass *klass)
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
 
-  GST_DEBUG_CATEGORY_INIT (gnlsource, "gnlsource", 0, "GNonLin Source Element");
+  GST_DEBUG_CATEGORY_INIT (gnlsource, "gnlsource",
+			   GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD,
+			   "GNonLin Source Element");
 
   gstbin_class->add_element = GST_DEBUG_FUNCPTR (gnl_source_add_element);
   gstbin_class->remove_element = GST_DEBUG_FUNCPTR (gnl_source_remove_element);

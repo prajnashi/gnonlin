@@ -109,7 +109,8 @@ gnl_object_class_init (GnlObjectClass *klass)
   gstelement_class = 	(GstElementClass*)klass;
   gnlobject_class = 	(GnlObjectClass*)klass;
 
-  GST_DEBUG_CATEGORY_INIT (gnlobject, "gnlobject", 0,
+  GST_DEBUG_CATEGORY_INIT (gnlobject, "gnlobject", 
+			   GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD,
 			   "GNonLin Object base class");
 
   gobject_class->set_property = 
@@ -347,8 +348,10 @@ gnl_object_covers_func		(GnlObject *object,
 {
   gboolean	ret = FALSE;
 
-  GST_DEBUG_OBJECT (object, "start:%lld, stop:%lld, type:%d",
-		    start, stop, type);
+  GST_DEBUG_OBJECT (object, "start:%"GST_TIME_FORMAT", stop:%"GST_TIME_FORMAT", type:%d",
+		    GST_TIME_ARGS (start),
+		    GST_TIME_ARGS (stop),
+		    type);
   
  /* FIXME: BOGUS, REMOVE */
   gnl_media_to_object_time (object, 0, NULL);
@@ -921,8 +924,8 @@ translate_message_segment_start	(GnlObject *object, GstMessage *message)
   gst_message_parse_segment_start (message, &format, &position);
   if (format != GST_FORMAT_TIME)
     return message;
-  GST_LOG_OBJECT (object, "format:%d, position:%lld",
-		  format, position);
+  GST_LOG_OBJECT (object, "format:%d, position:%"GST_TIME_FORMAT,
+		  format, GST_TIME_ARGS (position));
   gnl_media_to_object_time (object, position, &pos2);
   if (pos2 > G_MAXINT64) {
     g_warning ("getting values too big...");
@@ -946,8 +949,8 @@ translate_message_segment_done	(GnlObject *object, GstMessage *message)
   gst_message_parse_segment_done (message, &format, &position);
   if (format != GST_FORMAT_TIME)
     return message;
-  GST_LOG_OBJECT (object, "format:%d, position:%lld",
-		  format, position);
+  GST_LOG_OBJECT (object, "format:%d, position:%"GST_TIME_FORMAT,
+		  format, GST_TIME_ARGS (position));
 
   gnl_media_to_object_time (object, position, &pos2);
   if (pos2 > G_MAXINT64) {
@@ -1006,8 +1009,10 @@ update_values (GnlObject *object)
   if ((object->start + object->duration) != object->stop) {
     object->stop = object->start + object->duration;
     GST_LOG_OBJECT (object, 
-		    "Updating stop value : %lld [start:%lld, duration:%lld]",
-		    object->stop, object->start, object->duration);
+		    "Updating stop value : %"GST_TIME_FORMAT" [start:%"GST_TIME_FORMAT", duration:%"GST_TIME_FORMAT"]",
+		    GST_TIME_ARGS (object->stop),
+		    GST_TIME_ARGS (object->start),
+		    GST_TIME_ARGS (object->duration));
     g_object_notify (G_OBJECT (object), "stop");
   }
   
@@ -1017,9 +1022,11 @@ update_values (GnlObject *object)
     {
       object->media_stop = object->media_start + object->media_duration;
       GST_LOG_OBJECT (object, 
-		      "Updated media_stop value : %lld [mstart:%lld, mduration:%lld]",
-		      object->media_stop, object->media_start, 
-		      object->media_duration);
+		      "Updated media_stop value : %"GST_TIME_FORMAT
+		      " [mstart:%"GST_TIME_FORMAT", mduration:%"GST_TIME_FORMAT"]",
+		      GST_TIME_ARGS (object->media_stop),
+		      GST_TIME_ARGS (object->media_start), 
+		      GST_TIME_ARGS (object->media_duration));
       g_object_notify (G_OBJECT (object), "media_stop");
     }
   
@@ -1029,8 +1036,12 @@ update_values (GnlObject *object)
       && (object->media_duration)
       && (((gdouble) object->media_duration / (gdouble) object->duration) != object->rate)) {
     object->rate = (gdouble) object->media_duration / (gdouble) object->duration;
-    GST_LOG_OBJECT (object, "Updated rate : %f [mduration:%lld, duration:%lld]",
-		    object->rate, object->media_duration, object->duration);
+    GST_LOG_OBJECT (object,
+		    "Updated rate : %f [mduration:%"GST_TIME_FORMAT
+		    ", duration:%"GST_TIME_FORMAT"]",
+		    object->rate, 
+		    GST_TIME_ARGS (object->media_duration),
+		    GST_TIME_ARGS (object->duration));
     g_object_notify (G_OBJECT (object), "rate");
   }
 }
