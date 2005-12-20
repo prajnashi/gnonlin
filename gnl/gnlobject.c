@@ -930,10 +930,15 @@ translate_message_segment_done	(GnlObject *object, GstMessage *message)
   GstMessage	*message2;
 
   gst_message_parse_segment_done (message, &format, &position);
-  if (format != GST_FORMAT_TIME)
-    return message;
   GST_LOG_OBJECT (object, "format:%d, position:%"GST_TIME_FORMAT,
 		  format, GST_TIME_ARGS (position));
+  if (format != GST_FORMAT_TIME) {
+    GST_WARNING_OBJECT (object, "Got MESSAGE_DONE with format differet from TIME. Bumping to object->stop");
+    message2 = gst_message_new_segment_done (GST_MESSAGE_SRC (message),
+					     GST_FORMAT_TIME,
+					     (gint64) object->media_stop);
+    goto beach;
+  }
 
   gnl_media_to_object_time (object, position, &pos2);
   if (pos2 > G_MAXINT64) {
@@ -943,6 +948,7 @@ translate_message_segment_done	(GnlObject *object, GstMessage *message)
   message2 = gst_message_new_segment_done (GST_MESSAGE_SRC (message),
 					   format,
 					   (gint64) pos2);
+ beach:
   gst_message_unref (message);
   return message2;
 

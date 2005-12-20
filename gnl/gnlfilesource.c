@@ -216,35 +216,6 @@ ghost_seek_pad	(GnlFileSource *fs)
   return FALSE;
 }
 
-/* static gboolean */
-/* pad_ready_cb	(GstBus *bus, GstMessage *message, GnlFileSource *fs) */
-/* { */
-/*   GstPad	*pad; */
-
-/*   GST_DEBUG_OBJECT (fs, "bus callback "); */
-
-/*   if ( (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ELEMENT) && (GST_MESSAGE_SRC(message) == GST_OBJECT (fs))) { */
-/*     /\* our pad is ready *\/ */
-/*     GST_DEBUG_OBJECT (fs, "yep"); */
-/*     if (get_valid_src_pad (fs, fs->private->decodebin, &pad)) { */
-/*       fs->private->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (fs), */
-/* 						    GST_PAD_NAME (pad), */
-/* 						    pad); */
-/*       gst_element_no_more_pads (GST_ELEMENT (fs)); */
-
-/*       if (fs->private->seek) { */
-/* 	GST_DEBUG_OBJECT (fs, "sending queued seek event"); */
-/* 	gst_pad_send_event (pad, fs->private->seek); */
-/* 	fs->private->seek = NULL; */
-/*       } */
-      
-/*       gst_pad_set_blocked (pad, FALSE); */
-/*       gst_object_unref (pad); */
-/*     } */
-/*   } */
-/*   return TRUE; */
-/* } */
-
 static void
 pad_blocked_cb	(GstPad *pad, gboolean blocked, GnlFileSource *fs)
 {

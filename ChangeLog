@@ -1,5 +1,14 @@
 2005-12-20  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlfilesource.c:
+	Cleanup
+	* gnl/gnlobject.c: (translate_message_segment_done):
+	Handle cases where the GST_SEGMENT_DONE has a format different from
+	GST_FORMAT_TIME. In those situations, bump the segment-done value to
+	object->media_start.
+
+2005-12-20  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (gnl_composition_class_init),
 	(gnl_composition_init), (gnl_composition_handle_message),
 	(objects_stop_compare):
