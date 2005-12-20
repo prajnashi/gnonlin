@@ -113,10 +113,6 @@ struct _GnlObject {
   GstSeekFlags		segment_flags;
   gint64		segment_start;
   gint64		segment_stop;
-  
-  /* <private> */
-  GstBusSyncHandler	 sync_handler;
-  gpointer		 sync_handler_data;
 };
 
 struct _GnlObjectClass {

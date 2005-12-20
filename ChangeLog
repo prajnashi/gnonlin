@@ -1,3 +1,15 @@
+2005-12-20  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_class_init),
+	(gnl_composition_init), (gnl_composition_handle_message),
+	(objects_stop_compare):
+	Update to use GstBin::handle_message virtual method.
+	Fix **stupid** bug in stop_compare GCompareFunc.
+	* gnl/gnlobject.c: (gnl_object_class_init), (gnl_object_init),
+	(gnl_object_handle_message):
+	* gnl/gnlobject.h:
+	Update to use GstBin::handle_message virtual method
+
 2005-12-14  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (objects_start_compare),

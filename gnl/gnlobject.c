@@ -88,9 +88,8 @@ gnl_object_prepare_func		(GnlObject *object);
 static GstStateChangeReturn
 gnl_object_prepare		(GnlObject *object);
 
-static GstBusSyncReply
-gnl_object_sync_handler		(GstBus *bus, GstMessage *message, 
-				 GnlObject *object);
+static void
+gnl_object_handle_message	(GstBin *bin, GstMessage *message);
 
 static void
 gnl_object_base_init (gpointer g_class)
@@ -103,10 +102,12 @@ gnl_object_class_init (GnlObjectClass *klass)
 {
   GObjectClass 		*gobject_class;
   GstElementClass 	*gstelement_class;
+  GstBinClass		*gstbin_class;
   GnlObjectClass 	*gnlobject_class;
 
   gobject_class = 	(GObjectClass*)klass;
   gstelement_class = 	(GstElementClass*)klass;
+  gstbin_class =	(GstBinClass*)klass;
   gnlobject_class = 	(GnlObjectClass*)klass;
 
   GST_DEBUG_CATEGORY_INIT (gnlobject, "gnlobject", 
@@ -123,6 +124,8 @@ gnl_object_class_init (GnlObjectClass *klass)
   gstelement_class->change_state = 
     GST_DEBUG_FUNCPTR (gnl_object_change_state);
 
+  gstbin_class->handle_message =
+    GST_DEBUG_FUNCPTR (gnl_object_handle_message);
 
   gnlobject_class->covers = 
     GST_DEBUG_FUNCPTR (gnl_object_covers_func);
@@ -187,22 +190,6 @@ gnl_object_class_init (GnlObjectClass *klass)
 }
 
 static void
-gnl_object_put_sync_handler	(GnlObject *object,
-				 GstBusSyncHandler handler,
-				 gpointer data)
-{
-  GstBus	*bus;
-
-  bus = GST_BIN (object)->child_bus;
-
-  object->sync_handler = bus->sync_handler;
-  object->sync_handler_data = bus->sync_handler_data;
-  
-  bus->sync_handler = handler;
-  bus->sync_handler_data = data;
-}
-
-static void
 gnl_object_init (GnlObject *object, GnlObjectClass *klass)
 {
   object->start = 0;
@@ -218,10 +205,6 @@ gnl_object_init (GnlObject *object, GnlObjectClass *klass)
   object->active = TRUE;
 
   object->caps = gst_caps_new_any();
-
-  gnl_object_put_sync_handler (object,
-			       (GstBusSyncHandler) gnl_object_sync_handler,
-			       object);
 
   object->segment_rate = 1.0;
   object->segment_start = -1;
@@ -965,13 +948,12 @@ translate_message_segment_done	(GnlObject *object, GstMessage *message)
 
 }
 
-static GstBusSyncReply
-gnl_object_sync_handler	(GstBus *bus, GstMessage *message, GnlObject *object)
+static void
+gnl_object_handle_message	(GstBin *bin, GstMessage *message)
 {
-  GstBusSyncReply	reply = GST_BUS_DROP;
+  GnlObject	*object = GNL_OBJECT (bin);
 
-  GST_DEBUG_OBJECT (object, "bus:%s message:%s",
-		    GST_OBJECT_NAME (bus),
+  GST_DEBUG_OBJECT (object, "message:%s",
 		    gst_message_type_get_name(GST_MESSAGE_TYPE (message)));
 
   switch (GST_MESSAGE_TYPE (message)) {
@@ -987,10 +969,7 @@ gnl_object_sync_handler	(GstBus *bus, GstMessage *message, GnlObject *object)
     break;
   }
 
-  if (object->sync_handler)
-    reply = object->sync_handler (bus, message, object->sync_handler_data);
-
-  return reply;
+  GST_BIN_CLASS (parent_class)->handle_message (bin, message);
 }
 
 static void

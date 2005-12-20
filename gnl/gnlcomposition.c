@@ -71,9 +71,6 @@ struct _GnlCompositionPrivate {
     OUR sync_handler on the child_bus 
     We are called before gnl_object_sync_handler
   */
-  GstBusSyncHandler	 sync_handler;
-  gpointer		 sync_handler_data;
-
   GstPadEventFunction	gnl_event_pad_func;
 };
 
@@ -84,11 +81,11 @@ gnl_composition_finalize 	(GObject *object);
 static void
 gnl_composition_reset		(GnlComposition *comp);
 
-static GstBusSyncReply
-gnl_composition_sync_handler	(GstBus *bus, GstMessage *message,
-				 GnlComposition *comp);
 static gboolean
 gnl_composition_add_object	(GstBin *bin, GstElement *element);
+
+static void
+gnl_composition_handle_message	(GstBin *bin, GstMessage *message);
 
 static gboolean
 gnl_composition_remove_object	(GstBin *bin, GstElement *element);
@@ -171,28 +168,14 @@ gnl_composition_class_init (GnlCompositionClass *klass)
     GST_DEBUG_FUNCPTR (gnl_composition_add_object);
   gstbin_class->remove_element   = 
     GST_DEBUG_FUNCPTR (gnl_composition_remove_object);
+  gstbin_class->handle_message	=
+    GST_DEBUG_FUNCPTR (gnl_composition_handle_message);
 
   gnlobject_class->prepare       = 
     GST_DEBUG_FUNCPTR (gnl_composition_prepare);
 /*   gnlobject_class->covers	 = gnl_composition_covers_func; */
 
 /*   klass->nearest_cover	 	 = gnl_composition_nearest_cover_func; */
-}
-
-static void
-gnl_composition_put_sync_handler (GnlComposition *comp,
-				  GstBusSyncHandler handler,
-				  gpointer data)
-{
-  GstBus	*bus;
-
-  bus = GST_BIN (comp)->child_bus;
-
-  comp->private->sync_handler = bus->sync_handler;
-  comp->private->sync_handler_data = bus->sync_handler_data;
-  
-  bus->sync_handler = handler;
-  bus->sync_handler_data = data;
 }
 
 static void
@@ -227,9 +210,6 @@ gnl_composition_init (GnlComposition *comp, GnlCompositionClass *klass)
      NULL,
      (GDestroyNotify) hash_value_destroy);
 
-  gnl_composition_put_sync_handler 
-    (comp, (GstBusSyncHandler) gnl_composition_sync_handler, comp);
-  
   gnl_composition_reset (comp);
 }
 
@@ -293,15 +273,13 @@ gnl_composition_reset	(GnlComposition *comp)
 /* 				   NULL); */
 }
 
-static GstBusSyncReply
-gnl_composition_sync_handler	(GstBus *bus, GstMessage *message,
-				 GnlComposition *comp)
+static void
+gnl_composition_handle_message	(GstBin *bin, GstMessage *message)
 {
-  GstBusSyncReply	reply = GST_BUS_DROP;
+  GnlComposition	*comp = GNL_COMPOSITION (bin);
   gboolean		dropit = FALSE;
 
-  GST_DEBUG_OBJECT (comp, "bus:%s message:%s",
-		    GST_OBJECT_NAME (bus),
+  GST_DEBUG_OBJECT (comp, "message:%s",
 		    gst_message_type_get_name(GST_MESSAGE_TYPE (message)));  
 
   switch (GST_MESSAGE_TYPE (message)) {
@@ -315,18 +293,30 @@ gnl_composition_sync_handler	(GstBus *bus, GstMessage *message,
       /* this can happen when filesrc emits a segment-done in BYTES */
       GST_WARNING_OBJECT (comp, "Got a SEGMENT_DONE_MESSAGE with a format different from GST_FORMAT_TIME");
     }
-    GST_DEBUG_OBJECT (comp, "Save a SEGMENT_DONE message, updating pipeline");
-    update_pipeline (comp, (GstClockTime) comp->private->segment_stop, FALSE);
-    
-    if (!(comp->private->current)) {
-      GST_DEBUG_OBJECT (comp, "Nothing else to play");
-      if (gst_pad_is_linked (comp->private->ghostpad)) {
-	GstPad	*peerpad = gst_pad_get_peer (comp->private->ghostpad);
-	gst_pad_event_default (peerpad,
-			       gst_event_new_eos());
-	gst_object_unref (peerpad);
+    GST_DEBUG_OBJECT (comp, 
+		      "Saw a SEGMENT_DONE message [%"GST_TIME_FORMAT
+		      "] (comp->private->segment[%"GST_TIME_FORMAT"--%"
+		      GST_TIME_FORMAT"])",
+		      GST_TIME_ARGS (pos),
+		      GST_TIME_ARGS (comp->private->segment_start),
+		      GST_TIME_ARGS (comp->private->segment_stop));
+    if ((pos < comp->private->segment_stop) && (pos >= comp->private->segment_start)) {
+      GST_DEBUG_OBJECT (comp, "position within current segment, updating pipeline");
+      update_pipeline (comp, (GstClockTime) comp->private->segment_stop, FALSE);
+      if (!(comp->private->current)) {
+	GST_DEBUG_OBJECT (comp, "Nothing else to play");
+	if (gst_pad_is_linked (comp->private->ghostpad)) {
+	  GstPad	*peerpad = gst_pad_get_peer (comp->private->ghostpad);
+	  gst_pad_event_default (peerpad,
+				 gst_event_new_eos());
+	  gst_object_unref (peerpad);
+	}
       }
+    } else {
+      GST_DEBUG_OBJECT (comp, "position outside current segment, discarding message");
+      dropit = TRUE;
     }
+    
     break;
   }
   default:
@@ -336,11 +326,7 @@ gnl_composition_sync_handler	(GstBus *bus, GstMessage *message,
   if (dropit)
     gst_message_unref (message);
   else
-    if (comp->private->sync_handler)
-      reply = comp->private->sync_handler 
-	(bus, message, comp->private->sync_handler_data);
-  
-  return reply;  
+    GST_BIN_CLASS (parent_class)->handle_message (bin, message);
 }
 
 static gint
@@ -717,7 +703,7 @@ objects_stop_compare	(GnlObject *a, GnlObject *b)
     return a->priority - b->priority;
   if (b->stop < a->stop)
     return -1;
-  if (b->start > a->stop)
+  if (b->stop > a->stop)
     return 1;
   return 0;
 }
