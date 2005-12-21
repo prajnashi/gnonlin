@@ -23,14 +23,14 @@
 
 #include <gst/gst.h>
 
-#include <gnl/gnltypes.h>
+#include "gnltypes.h"
 
-#include <gnl/gnlobject.h>
-#include <gnl/gnlsource.h>
-#include <gnl/gnlcomposition.h>
-#include <gnl/gnloperation.h>
-#include <gnl/gnltimeline.h>
+#include "gnlobject.h"
+#include "gnlsource.h"
+#include "gnlcomposition.h"
+#include "gnloperation.h"
+#include "gnltimeline.h"
 
-#include <gnl/gnlfilesource.h>
+#include "gnlfilesource.h"
 
 #endif /* __GST_H__ */

@@ -25,7 +25,7 @@
 #define __GNL_FILESOURCE_H__
 
 #include <gst/gst.h>
-#include <gnl/gnlobject.h>
+#include "gnlobject.h"
 
 G_BEGIN_DECLS
 

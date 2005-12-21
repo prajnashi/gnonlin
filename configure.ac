@@ -1,4 +1,4 @@
-dnl autoconf configuration file for gst-plugins 
+dnl autoconf configuration file for gnonlin
 AC_INIT
 AC_CANONICAL_TARGET
 
@@ -28,9 +28,8 @@ dnl - library source changed -> increment REVISION
 dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
 dnl - interfaces added -> increment AGE
 dnl - interfaces removed -> AGE = 0
-dnl for 0.8.3 release, gst_play_get_all_by_interface was added, so update
 AS_LIBTOOL(GNONLIN, 0, 0, 0)
-AS_LIBTOOL_TAGS([CXX])
+AS_LIBTOOL_TAGS
 AM_PROG_LIBTOOL
 
 AC_CONFIG_SRCDIR([gnl/gnl.c])
@@ -48,13 +47,9 @@ AS="${CC}"
 AS_PROG_OBJC
 
 dnl the gettext stuff needed
-AM_GNU_GETTEXT_VERSION(0.11.5)
+AM_GNU_GETTEXT_VERSION([0.11.5])
 AM_GNU_GETTEXT([external])
-                                                                            
-GETTEXT_PACKAGE=gnonlin-$GST_MAJORMINOR
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], "$GETTEXT_PACKAGE",
-                  [gettext package name])
+GST_GETTEXT([gnonlin-$GST_MAJORMINOR])
 
 dnl define LOCALEDIR in config.h
 AS_AC_EXPAND(LOCALEDIR, $datadir/locale)
@@ -279,7 +274,6 @@ docs/Makefile
 common/Makefile
 common/m4/Makefile
 m4/Makefile
-po/Makefile.in
 test/Makefile
 gnl/Makefile
 gnl/gnlversion.h

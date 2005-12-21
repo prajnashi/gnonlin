@@ -22,7 +22,7 @@
 #include "config.h"
 #endif
 
-#include <gnl/gnl.h>
+#include "gnl.h"
 
 struct _elements_entry {
   gchar *name;

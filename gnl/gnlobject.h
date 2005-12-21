@@ -26,7 +26,7 @@
 
 #include <gst/gst.h>
 
-#include <gnl/gnltypes.h>
+#include "gnltypes.h"
 
 G_BEGIN_DECLS
 

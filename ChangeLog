@@ -1,3 +1,19 @@
+2005-12-21  Edward Hervey  <edward@fluendo.com>
+
+	* configure.ac:
+	Ignore po/ for the time being
+	* gnl/Makefile.am:
+	Add gnltypes.h to the list of headers
+	Simplify the whole process
+	* gnl/gnl.c:
+	* gnl/gnl.h:
+	* gnl/gnlcomposition.h:
+	* gnl/gnlfilesource.h:
+	* gnl/gnlobject.h:
+	* gnl/gnloperation.h:
+	* gnl/gnlsource.h:
+	Use local include headers (<gnl/*.h> ==> "*.h")
+
 2005-12-20  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlfilesource.c:

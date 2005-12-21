@@ -18,9 +18,6 @@ libgnl_la_SOURCES =		\
 libgnl_la_CFLAGS = $(GST_CFLAGS)
 libgnl_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 
-
-libgnlincludedir = $(includedir)/gnl
-
 gnl_headers =			\
 	gnl.h			\
 	gnlobject.h		\
@@ -28,6 +25,7 @@ gnl_headers =			\
 	gnltypes.h		\
 	gnloperation.h		\
 	gnlsource.h		\
+	gnltypes.h		\
 	gnlfilesource.h		\
 	gnltimeline.h
 
@@ -40,11 +38,7 @@ BUILT_SOURCES =			\
 CLEANFILES = $(built_header_make) $(built_source_make)
 DISTCLEANFILE = $(CLEANFILES) $(built_header_configure)
 
-nodist_libgnlinclude_HEADERS = $(built_header_make) $(built_header_configure)
-
-nodist_libgnl_la_SOURCES = $(built_source_make)
-
-noinst_HEADERS = $(gnl_headers)
+noinst_HEADERS = $(gnl_headers) $(built_header_make) $(built_header_configure)
 
 gnlmarshal.h: gnlmarshal.list
 	glib-genmarshal --header --prefix=gnl_marshal $^ > gnlmarshal.h.tmp
