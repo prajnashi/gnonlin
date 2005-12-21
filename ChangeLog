@@ -1,5 +1,10 @@
 2005-12-21  Edward Hervey  <edward@fluendo.com>
 
+	* configure.ac:
+	Back to devel cycle
+
+2005-12-21  Edward Hervey  <edward@fluendo.com>
+
 	Releasing 0.10.0.2 beta release
 	
 	* RELEASE:
