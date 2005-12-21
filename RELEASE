@@ -1,0 +1,52 @@
+
+GNonLin : Release notes for GNonLin 0.10.0.2 "Cheese goes down better with bread"
+
+
+This is the first release of the GNonLin non-linear elements for GStreamer 0.10.
+
+** BETA VERSION **
+
+This is a pre-release version. It currently does not include the GnlOperation
+elements for using effects in compositions.
+
+This module contains the following elements:
+
+  gnlsource : An element for using source elements/bins in a GnlComposition
+  gnlfilesource : A higher-level element for using a uri in a GnlComposition
+  gnlcomposition : A container element that handles GNonLin objects
+
+Features of this release
+
+  * Works with GStreamer 0.10.x
+  * GnlFileSource high-level element
+  * Seek capability through compositions
+
+Examples
+
+The examples contained in the examples/ directory have still not been updated
+to the latest API. You should not rely on them.
+
+Download
+
+You can find source releases of GNonLin on sourceforge:
+http://sourceforge.net/project/showfiles.php?group_id=32268
+
+GNonlin Homepage
+
+More details can be found on the project's website:
+http://gnonlin.sourceforge.net/
+
+Support and Bugs
+
+We use Sourceforge Bug Tracking system for bug reports and feature requests:
+http://sourceforge.net/tracker/?group_id=32268
+
+Developers
+
+CVS is hosted on sourceforge cvs:
+http://sourceforge.net/cvs/?group_id=32268
+All code is in CVS and can be checked out from there.
+
+Maintainer
+
+  * Edward Hervey

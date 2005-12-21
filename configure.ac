@@ -12,7 +12,7 @@ AM_MAINTAINER_MODE
 
 dnl when going to/from release please set the nano (fourth number) right !
 dnl releases only do Wall, cvs and prerelease does Werror too
-AS_VERSION(gnonlin, GNONLIN_VERSION, 0, 10, 0, 1,
+AS_VERSION(gnonlin, GNONLIN_VERSION, 0, 10, 0, 2,
     GNL_CVS="no", GNL_CVS="yes")
 
 AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
