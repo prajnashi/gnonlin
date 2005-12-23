@@ -5,7 +5,8 @@ SUBDIRS = \
 	docs \
 	m4 \
 	common \
-	test
+	test \
+	pkgconfig
 # po should be enabled when I figure out why it's not building
 #	po
 

@@ -1,3 +1,11 @@
+2005-12-23  Edward Hervey  <edward@fluendo.com>
+
+	* Makefile.am:
+	* configure.ac:
+	* pkgconfig/Makefile.am:
+	* pkgconfig/gnonlin.pc.in:
+	Add gnonlin.pc for programs depending on gnonlin.
+
 2005-12-21  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
