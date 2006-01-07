@@ -1,3 +1,23 @@
+2006-01-07  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_handle_message):
+	I got mix up with >= vs > and <= vs <
+	* gnl/gnlobject.c: (translate_message_segment_done):
+	Handle the case where media_stop is GST_CLOCK_TIME_NONE
+
+2006-01-06  Edward Hervey  <edward@fluendo.com>
+
+	Releasing 0.10.0.4 beta release
+	
+	* configure.ac:
+	Remove useless checks
+	* gnl/Makefile.am:
+	* gnl/gnl.c:
+	* gnl/gnl.h:
+	* gnl/gnltimeline.c:
+	* gnl/gnltimeline.h:
+	Remove gnltimeline.[ch]
+
 2005-12-23  Edward Hervey  <edward@fluendo.com>
 
 	* Makefile.am:

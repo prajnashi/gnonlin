@@ -300,7 +300,7 @@ gnl_composition_handle_message	(GstBin *bin, GstMessage *message)
 		      GST_TIME_ARGS (pos),
 		      GST_TIME_ARGS (comp->private->segment_start),
 		      GST_TIME_ARGS (comp->private->segment_stop));
-    if ((pos < comp->private->segment_stop) && (pos >= comp->private->segment_start)) {
+    if ((pos <= comp->private->segment_stop) && (pos > comp->private->segment_start)) {
       GST_DEBUG_OBJECT (comp, "position within current segment, updating pipeline");
       update_pipeline (comp, (GstClockTime) comp->private->segment_stop, FALSE);
       if (!(comp->private->current)) {
