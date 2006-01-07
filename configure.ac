@@ -12,7 +12,7 @@ AM_MAINTAINER_MODE
 
 dnl when going to/from release please set the nano (fourth number) right !
 dnl releases only do Wall, cvs and prerelease does Werror too
-AS_VERSION(gnonlin, GNONLIN_VERSION, 0, 10, 0, 3,
+AS_VERSION(gnonlin, GNONLIN_VERSION, 0, 10, 0, 4,
     GNL_CVS="no", GNL_CVS="yes")
 
 AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
@@ -106,31 +106,6 @@ GST_DOCBOOK_CHECK()
 dnl check architecture
 GST_ARCH()
 
-dnl check for gconftool-2
-
-dnl this macro defines an am conditional, so it needs to be run always
-dnl AM_GCONF_SOURCE_2
-
-dnl translit(dnm, m, l) AM_CONDITIONAL(USE_GCONFTOOL, true)
-dnl GST_CHECK_FEATURE(GCONFTOOL, [GConf schemas], , [
-dnl   AC_PATH_PROG(GCONFTOOL, gconftool-2, no)
-dnl   if test x$GCONFTOOL = xno; then
-dnl     AC_MSG_WARN(Not installing GConf schemas)
-dnl     HAVE_GCONFTOOL="no"
-dnl   else
-dnl     HAVE_GCONFTOOL="yes"
-dnl   fi
-dnl   AC_SUBST(HAVE_GCONFTOOL)
-dnl ])
-
-dnl dnl check for GConf libraries
-dnl translit(dnm, m, l) AM_CONDITIONAL(USE_GCONF, true)
-dnl GST_CHECK_FEATURE(GCONF, [GConf libraries], , [
-dnl   PKG_CHECK_MODULES(GCONF, gconf-2.0, HAVE_GCONF="yes", HAVE_GCONF="no")
-dnl   AC_SUBST(GCONF_CFLAGS)
-dnl   AC_SUBST(GCONF_LIBS)
-dnl ])
-
 dnl check for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
 GST_REQ=0.9.0.1
@@ -158,18 +133,6 @@ fi
 AC_SUBST(GST_BASE_LIBS)
 AC_SUBST(GST_BASE_CFLAGS)
 
-dnl check for gstreamer-plugins-base; uinstalled is selected preferentially
-PKG_CHECK_MODULES(GST_PLUGINS_BASE,
-  gstreamer-plugins-base-$GST_MAJORMINOR >= $GST_REQ,
-  HAVE_GST_PLUGINS_BASE="yes", HAVE_GST_PLUGINS_BASE="no")
-
-if test "x$HAVE_GST_PLUGINS_BASE" = "xno"; then
-  AC_MSG_ERROR(no GStreamer Base Plugins development files found)
-fi
-
-AC_SUBST(GST_PLUGINS_BASE_LIBS)
-AC_SUBST(GST_PLUGINS_BASE_CFLAGS)
-
 PKG_CHECK_MODULES(GST_CHECK, gstreamer-check-$GST_MAJORMINOR >= $GST_REQ,
   HAVE_GST_CHECK="yes", HAVE_GST_CHECK="no")
 
@@ -186,14 +149,6 @@ dnl =================================================
 
 # we set the defaults always to make sure we have non-empty variables
 # for the Makefile
-
-PKG_CHECK_MODULES(LIBOIL, liboil-0.3 >= 0.3.0, HAVE_LIBOIL=yes, HAVE_LIBOIL=no)
-AC_SUBST(LIBOIL_CFLAGS)
-AC_SUBST(LIBOIL_LIBS)
-if test "x${HAVE_LIBOIL}" = xyes ; then
-  #AC_DEFINE_UNQUOTED(HAVE_LIBOIL, 1, [Define if liboil is being used])
-  true
-fi
 
 dnl ===========================================================================
 dnl ============================= gst plug-ins ================================

@@ -29,7 +29,6 @@
 #include "gnlsource.h"
 #include "gnlcomposition.h"
 #include "gnloperation.h"
-#include "gnltimeline.h"
 
 #include "gnlfilesource.h"
 

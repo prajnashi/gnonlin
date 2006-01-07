@@ -13,8 +13,7 @@ libgnl_la_SOURCES =		\
 	gnlmarshal.c		\
 	gnloperation.c		\
 	gnlsource.c		\
-	gnlfilesource.c		\
-	gnltimeline.c
+	gnlfilesource.c
 libgnl_la_CFLAGS = $(GST_CFLAGS)
 libgnl_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 
@@ -26,8 +25,7 @@ gnl_headers =			\
 	gnloperation.h		\
 	gnlsource.h		\
 	gnltypes.h		\
-	gnlfilesource.h		\
-	gnltimeline.h
+	gnlfilesource.h
 
 #files built on make all/check/instal
 BUILT_SOURCES =			\
