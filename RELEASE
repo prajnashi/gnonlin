@@ -1,8 +1,8 @@
 
-GNonLin : Release notes for GNonLin 0.10.0.2 "Cheese goes down better with bread"
+GNonLin : Release notes for GNonLin 0.10.0.5 "Doner con patatas"
 
 
-This is the first release of the GNonLin non-linear elements for GStreamer 0.10.
+This is the third release of the GNonLin non-linear elements for GStreamer 0.10.
 
 ** BETA VERSION **
 
@@ -20,6 +20,7 @@ Features of this release
   * Works with GStreamer 0.10.x
   * GnlFileSource high-level element
   * Seek capability through compositions
+  * Fixes for more weird decoders/demuxers
 
 Examples
 
