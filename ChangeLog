@@ -1,3 +1,10 @@
+2006-01-27  Edward Hervey  <edward@fluendo.com>
+
+	* configure.ac: 
+	Added requirement for explicit --prefix setting, so that GNonLin
+	doesn't get installed in a path that isn't checked by the GStreamer
+	registry.
+
 2006-01-18  Edward Hervey  <edward@fluendo.com>
 
 	0.10.0.5 release "Doner con patatas"

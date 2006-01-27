@@ -218,6 +218,22 @@ esac],
 AC_MSG_NOTICE(Using $GST_ORIGIN as package origin)
 AC_DEFINE_UNQUOTED(GST_ORIGIN, "$GST_ORIGIN", [package origin])
 
+if test "x$prefix" = xNONE; then
+   AC_MSG_ERROR([No explicit prefix given.
+
+GNonLin requires you to explicitly enter in a prefix when configuring. This is
+because the default prefix, /usr/local, might not be the default GStreamer
+plugins path. What you probably want to do is to run
+
+  $0 --prefix=/usr
+
+so that GStreamer can find the plugins.
+
+If you choose to install to a prefix that is not GStreamer's plugins path,
+you will need to modify GST_PLUGIN_PATH every time you run a GStreamer
+application which requires the GNonLin plugin. (Which is a pain.)])
+fi
+
 dnl #########################
 dnl # Make the output files #
 dnl #########################
