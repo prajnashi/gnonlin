@@ -1,3 +1,16 @@
+2006-02-20  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_handle_message),
+	(get_new_seek_event), (get_stack_list), (get_clean_toplevel_stack),
+	(update_pipeline):
+	Fix proper pipeline update when going from one segment to another (as
+	opposed to seek changes).
+	More efficient _update_pipeline()
+	Lots of debug cleanups.
+	* gnl/gnlobject.c: (translate_incoming_position_query),
+	(ghostpad_query_function), (translate_message_segment_done):
+	Implement position query time-shifting.
+
 2006-01-27  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac: 

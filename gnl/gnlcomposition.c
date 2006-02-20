@@ -295,14 +295,24 @@ gnl_composition_handle_message	(GstBin *bin, GstMessage *message)
     }
     GST_DEBUG_OBJECT (comp, 
 		      "Saw a SEGMENT_DONE message [%"GST_TIME_FORMAT
-		      "] (comp->private->segment[%"GST_TIME_FORMAT"--%"
+		      "] from %s (comp->private->segment[%"GST_TIME_FORMAT"--%"
 		      GST_TIME_FORMAT"])",
 		      GST_TIME_ARGS (pos),
+		      GST_OBJECT_NAME (GST_MESSAGE_SRC (message)),
 		      GST_TIME_ARGS (comp->private->segment_start),
 		      GST_TIME_ARGS (comp->private->segment_stop));
+    /*
+      TODO, MAYBE:
+      We should maybe check if the owner of the message is actually an object we're using
+    */
     if ((pos <= comp->private->segment_stop) && (pos > comp->private->segment_start)) {
+      /* If we are switching from one object to another (rather than brutal seek), we
+       want to do a flush-less update */
+      gboolean initial = (pos == comp->private->segment_stop) ? TRUE : FALSE;
+
       GST_DEBUG_OBJECT (comp, "position within current segment, updating pipeline");
-      update_pipeline (comp, (GstClockTime) comp->private->segment_stop, FALSE);
+      update_pipeline (comp, (GstClockTime) comp->private->segment_stop, initial);
+
       if (!(comp->private->current)) {
 	GST_DEBUG_OBJECT (comp, "Nothing else to play");
 	if (gst_pad_is_linked (comp->private->ghostpad)) {
@@ -365,6 +375,7 @@ static GstEvent*
 get_new_seek_event (GnlComposition *comp, gboolean initial)
 {
   GstSeekFlags	flags;
+  gint64	start,stop;
 
   GST_DEBUG_OBJECT (comp, "initial:%d", initial);
   /* remove the seek flag */
@@ -373,16 +384,20 @@ get_new_seek_event (GnlComposition *comp, gboolean initial)
   else
     flags = GST_SEEK_FLAG_SEGMENT;
 
-  GST_DEBUG_OBJECT (comp, "Using flags:%d");
+  start = MAX (comp->private->segment->start, comp->private->segment_start);
+  stop = GST_CLOCK_TIME_IS_VALID (comp->private->segment->stop)
+    ? MIN (comp->private->segment->stop, comp->private->segment_stop) 
+    : comp->private->segment_stop;
+     
+  GST_DEBUG_OBJECT (comp, "Created new seek event. Flags:%d, start:%"GST_TIME_FORMAT", stop:%"GST_TIME_FORMAT,
+		    flags, GST_TIME_ARGS (start), GST_TIME_ARGS (stop));
   return gst_event_new_seek (comp->private->segment->rate,
 			     comp->private->segment->format,
 			     flags,
 			     GST_SEEK_TYPE_SET,
-			     MAX (comp->private->segment->start, comp->private->segment_start),
+			     start,
 			     GST_SEEK_TYPE_SET,
-			     GST_CLOCK_TIME_IS_VALID (comp->private->segment->stop)
-			     ? MIN (comp->private->segment->stop, comp->private->segment_stop)
-			     : comp->private->segment_stop);
+			     stop);
 }
 
 static void
@@ -513,8 +528,8 @@ get_stack_list	(GnlComposition *comp, GstClockTime timestamp,
   GList	*tmp = comp->private->objects_start;
   GList	*stack = NULL;
 
-  GST_DEBUG_OBJECT (comp, "timestamp:%lld, priority:%d, activeonly:%d",
-		    timestamp, priority, activeonly);
+  GST_DEBUG_OBJECT (comp, "timestamp:%"GST_TIME_FORMAT", priority:%d, activeonly:%d",
+		    GST_TIME_ARGS (timestamp), priority, activeonly);
 
   /*
     Iterate the list with a stack:
@@ -528,8 +543,10 @@ get_stack_list	(GnlComposition *comp, GstClockTime timestamp,
   for ( ; tmp ; tmp = g_list_next (tmp)) {
     GnlObject	*object = GNL_OBJECT (tmp->data);
 
-    GST_LOG_OBJECT (object, "start: %lld , stop:%lld , duration:%lld, priority:%d",
-		    object->start, object->stop, object->duration, object->priority);
+    GST_LOG_OBJECT (object, "start: %"GST_TIME_FORMAT" , stop:%"GST_TIME_FORMAT
+		    " , duration:%"GST_TIME_FORMAT", priority:%d",
+		    GST_TIME_ARGS (object->start), GST_TIME_ARGS (object->stop),
+		    GST_TIME_ARGS (object->duration), object->priority);
 
     if (object->start <= timestamp)
       {
@@ -572,7 +589,8 @@ get_clean_toplevel_stack (GnlComposition *comp, GstClockTime timestamp,
   gint	size = 1;
   GstClockTime	stop = G_MAXUINT64;
 
-  GST_DEBUG_OBJECT (comp, "timestamp:%lld", timestamp);
+  GST_DEBUG_OBJECT (comp, "timestamp:%"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (timestamp));
 
   stack = get_stack_list (comp, timestamp, 0, TRUE);
   for (tmp = stack; tmp && size; tmp = g_list_next(tmp), size--) {
@@ -996,7 +1014,8 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime, gboolean initia
 {
   gboolean	ret = FALSE;
 
-  GST_DEBUG_OBJECT (comp, "currenttime:%lld", currenttime);
+  GST_DEBUG_OBJECT (comp, "currenttime:%"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (currenttime));
 
   COMP_OBJECTS_LOCK (comp);
 
@@ -1010,7 +1029,8 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime, gboolean initia
     GstPad	*pad = NULL;
     GstClockTime	new_stop;
 
-    GST_DEBUG_OBJECT (comp, "now really updating the pipeline");
+    GST_DEBUG_OBJECT (comp, "now really updating the pipeline, current-state:%s",
+		      gst_element_state_get_name (state));
 
     /* rebuild the stack and relink new elements */
     stack = get_clean_toplevel_stack (comp, currenttime, &new_stop);    
@@ -1024,14 +1044,18 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime, gboolean initia
     
     COMP_OBJECTS_UNLOCK (comp);
 
-    GST_DEBUG_OBJECT (comp, "De-activating objects no longer used");
-    /* state-lock elements no more used */
-    while (deactivate) {
-      gst_element_set_locked_state (GST_ELEMENT (deactivate->data), TRUE);
-      deactivate = g_list_next (deactivate);
-    }
+    if (deactivate) {
+      GST_DEBUG_OBJECT (comp, "De-activating objects no longer used");
 
-    GST_DEBUG_OBJECT (comp, "Finished de-activating objects no longer used");
+      /* state-lock elements no more used */
+      while (deactivate) {
+	gst_element_set_state (GST_ELEMENT (deactivate->data), GST_STATE_PAUSED);
+	gst_element_set_locked_state (GST_ELEMENT (deactivate->data), TRUE);
+	deactivate = g_list_next (deactivate);
+      } 
+
+      GST_DEBUG_OBJECT (comp, "Finished de-activating objects no longer used");
+    }
 
     /* if toplevel element has changed, redirect ghostpad to it */
     if ((stack) && ((!(comp->private->current)) || (comp->private->current->data != stack->data))) {
@@ -1043,6 +1067,8 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime, gboolean initia
       } else {
 	/* The pad might be created dynamically */
       }
+    } else {
+      GST_DEBUG_OBJECT (comp, "Top stack object is still the same, keeping existing pad");
     }
 
     GST_DEBUG_OBJECT (comp, "activating objects in new stack to %s",

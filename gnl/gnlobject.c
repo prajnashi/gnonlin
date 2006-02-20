@@ -582,6 +582,39 @@ internalpad_event_function	(GstPad *internal, GstEvent *event)
   return priv->eventfunc (internal, event);
 }
 
+/*
+  translate_outgoing_position_query
+
+  Should only be called:
+  _ if the query is a GST_QUERY_POSITION
+  _ after the query was sent upstream
+  _ if the upstream query returned TRUE
+*/
+
+static gboolean
+translate_incoming_position_query (GnlObject *object, GstQuery *query)
+{
+  GstFormat	format;
+  gint64	cur, cur2;
+
+  gst_query_parse_position (query, &format, &cur);
+  if (format != GST_FORMAT_TIME) {
+    GST_WARNING_OBJECT (object, "position query is in a format different from time, returning without modifying values");
+    goto beach;
+  }
+  
+  if (!(gnl_media_to_object_time (object, (guint64) cur, (guint64*) &cur2))) {
+    GST_WARNING_OBJECT (object, "Couldn't get object time for %"GST_TIME_FORMAT,
+			GST_TIME_ARGS (cur));
+    goto beach;
+  }
+
+  gst_query_set_position (query, GST_FORMAT_TIME, cur2);
+
+ beach:
+  return TRUE;
+}
+
 static gboolean
 internalpad_query_function	(GstPad *internal, GstQuery *query)
 {
@@ -683,14 +716,26 @@ static gboolean
 ghostpad_query_function		(GstPad *ghostpad, GstQuery *query)
 {
   GnlPadPrivate	*priv = gst_pad_get_element_private (ghostpad);
+  GnlObject	*object = GNL_OBJECT (GST_PAD_PARENT (ghostpad));
   gboolean	pret;
 
   GST_DEBUG_OBJECT (ghostpad, "querytype:%d", GST_QUERY_TYPE (query));
 
   pret = priv->queryfunc (ghostpad, query);
-  if (pret) {
-    /* translate result */
-  }
+
+  if (pret)
+    {
+      /* translate result */
+      switch (GST_QUERY_TYPE (query))
+	{
+	case GST_QUERY_POSITION:
+	  pret = translate_incoming_position_query (object, query);
+	  break;
+	default:
+	  break;
+	}
+    }
+
   return pret;
 }
 
@@ -936,16 +981,15 @@ translate_message_segment_done	(GnlObject *object, GstMessage *message)
     GST_WARNING_OBJECT (object, "Got SEGMENT_DONE with format different from TIME");
     if (GST_CLOCK_TIME_IS_VALID (object->media_stop)) {
       GST_WARNING_OBJECT (object, "Bumping to object->media_stop");
-      message2 = gst_message_new_segment_done (GST_MESSAGE_SRC (message),
-					       GST_FORMAT_TIME,
-					       (gint64) object->media_stop);
+      position = (gint64) object->media_stop;
+      format = GST_FORMAT_TIME;
     } else {
       GST_WARNING_OBJECT (object, "Bumping to object->stop");
       message2 = gst_message_new_segment_done (GST_MESSAGE_SRC (message),
 					       GST_FORMAT_TIME,
 					       (gint64) object->stop);
-    }
       goto beach;
+    }
   }
 
   gnl_media_to_object_time (object, position, &pos2);
