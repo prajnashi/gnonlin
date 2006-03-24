@@ -52,7 +52,6 @@ G_BEGIN_DECLS
  *
  * Type of coverage for the given start/stop values
 */
-
 typedef enum
 {
   GNL_COVER_ALL,
@@ -67,7 +66,6 @@ typedef enum
  * @GNL_OBJECT_IS_OPERATION:
  * @GNL_OBJECT_LAST_FLAG:
 */
-
 typedef enum {
   GNL_OBJECT_SOURCE		= (GST_BIN_FLAG_LAST << 0),
   GNL_OBJECT_OPERATION		= (GST_BIN_FLAG_LAST << 1),
@@ -150,17 +148,6 @@ gboolean	gnl_object_covers		(GnlObject	*object,
 						 GstClockTime	start,
 						 GstClockTime	stop,
 						 GnlCoverType	type);
-
-/* 
-   We don't need the following as public functions since all time-shifting is
-   done in GnlObject
- */
-
-/* gboolean		gnl_object_to_media_time	(GnlObject *object, GstClockTime objecttime, */
-/* 							 GstClockTime *mediatime); */
-/* gboolean		gnl_media_to_object_time	(GnlObject *object, GstClockTime mediatime, */
-/* 							 GstClockTime *objecttime); */
-
 
 G_END_DECLS
 

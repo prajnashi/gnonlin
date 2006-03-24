@@ -1,3 +1,32 @@
+2006-03-24  Wim Taymans  <wim@fluendo.com>
+
+	* gnl/gnlobject.c: (gnl_object_class_init), (gnl_object_init),
+	(gnl_object_to_media_time), (gnl_media_to_object_time),
+	(gnl_object_covers_func), (gnl_object_covers),
+	(gnl_object_prepare_func), (gnl_object_prepare),
+	(gnl_object_release_pad), (translate_incoming_seek),
+	(translate_outgoing_seek), (translate_outgoing_new_segment),
+	(internalpad_event_function), (translate_incoming_position_query),
+	(internalpad_query_function), (internalpad_unlink_function),
+	(flush_hack_check), (ghostpad_event_function),
+	(ghostpad_query_function), (control_internal_pad),
+	(ghostpad_link_function), (ghostpad_unlink_function),
+	(gnl_object_ghost_pad_full), (gnl_object_ghost_pad),
+	(gnl_object_ghost_pad_no_target),
+	(gnl_object_ghost_pad_set_target),
+	(translate_message_segment_start),
+	(translate_message_segment_done), (gnl_object_handle_message),
+	(gnl_object_set_caps), (update_values), (gnl_object_set_property),
+	(gnl_object_get_property), (gnl_object_change_state):
+	* gnl/gnlobject.h:
+	Re-indent, move uncommon code out of the main flow.
+
+	* gnl/gnlsource.c: (gnl_source_init), (gnl_source_dispose),
+	(gnl_source_finalize), (no_more_pads_in_child),
+	(gnl_source_add_element), (gnl_source_remove_element):
+	* gnl/gnlsource.h:
+	cleanups.
+
 2006-02-20  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_handle_message),

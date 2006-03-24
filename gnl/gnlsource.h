@@ -48,7 +48,7 @@ struct _GnlSource {
   /* controlled source element, acces with gst_bin_[add|remove]_element */
   GstElement 		*element;
 
-  GnlSourcePrivate	*private;
+  GnlSourcePrivate	*priv;
 };
 
 struct _GnlSourceClass {

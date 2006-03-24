@@ -98,7 +98,7 @@ gnl_source_init (GnlSource *source, GnlSourceClass *klass)
 {
   GST_OBJECT_FLAG_SET (source, GNL_OBJECT_SOURCE);
   source->element = NULL;
-  source->private = g_new0(GnlSourcePrivate, 1);
+  source->priv = g_new0(GnlSourcePrivate, 1);
 }
 
 static void
@@ -106,11 +106,11 @@ gnl_source_dispose (GObject *object)
 {
   GnlSource *source = GNL_SOURCE (object);
 
-  if (source->private->dispose_has_run)
+  if (source->priv->dispose_has_run)
     return;
 
   GST_INFO_OBJECT (object, "dispose");
-  source->private->dispose_has_run = TRUE;
+  source->priv->dispose_has_run = TRUE;
   
   G_OBJECT_CLASS (parent_class)->dispose (object);
   GST_INFO_OBJECT (object, "dispose END");
@@ -122,7 +122,7 @@ gnl_source_finalize (GObject *object)
   GnlSource *source = GNL_SOURCE (object);
 
   GST_INFO_OBJECT (object, "finalize");
-  g_free (source->private);
+  g_free (source->priv);
   
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
@@ -175,7 +175,7 @@ no_more_pads_in_child (GstElement *element, GnlSource *source)
   GST_DEBUG_OBJECT (element, "let's find a suitable pad");
 
   if (get_valid_src_pad (source, element, &pad)) {
-    source->private->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (source),
+    source->priv->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (source),
 						      GST_PAD_NAME (pad),
 						      pad);
     gst_object_unref (pad);
@@ -183,7 +183,7 @@ no_more_pads_in_child (GstElement *element, GnlSource *source)
 
   GST_DEBUG ("pad %s:%s ghost-ed", GST_DEBUG_PAD_NAME (pad));
   
-  if (!(source->private->ghostpad))
+  if (!(source->priv->ghostpad))
     GST_WARNING_OBJECT (source, "Couldn't get a valid source pad");
   
 }
@@ -212,11 +212,11 @@ gnl_source_add_element	(GstBin *bin, GstElement *element)
     if (get_valid_src_pad (source, element, &pad)) {
       GST_DEBUG_OBJECT (bin, "We have a valid src pad: %s:%s",
 			GST_DEBUG_PAD_NAME (pad));
-      source->private->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (source),
+      source->priv->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (source),
 							GST_PAD_NAME (pad),
 							pad);
       gst_object_unref (pad);
-      if (!(source->private->ghostpad))
+      if (!(source->priv->ghostpad))
 	return FALSE;
     } else {
       GST_DEBUG_OBJECT (bin, "no src pads available yet, connecting callback");
@@ -245,9 +245,9 @@ gnl_source_remove_element	(GstBin *bin, GstElement *element)
 
   if (pret) {
     /* remove ghostpad */
-    if (source->private->ghostpad) {
-      gst_element_remove_pad (GST_ELEMENT (bin), source->private->ghostpad);
-      source->private->ghostpad = NULL;
+    if (source->priv->ghostpad) {
+      gst_element_remove_pad (GST_ELEMENT (bin), source->priv->ghostpad);
+      source->priv->ghostpad = NULL;
     }
     gst_object_unref (element);
     source->element = NULL;
