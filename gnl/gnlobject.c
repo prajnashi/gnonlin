@@ -79,6 +79,7 @@ static GstStateChangeReturn
 gnl_object_change_state (GstElement * element, GstStateChange transition);
 
 static gboolean gnl_object_prepare_func (GnlObject * object);
+static gboolean gnl_object_cleanup_func (GnlObject * object);
 
 static GstStateChangeReturn gnl_object_prepare (GnlObject * object);
 
@@ -116,6 +117,7 @@ gnl_object_class_init (GnlObjectClass * klass)
 
   gnlobject_class->covers = GST_DEBUG_FUNCPTR (gnl_object_covers_func);
   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_object_prepare_func);
+  gnlobject_class->cleanup = GST_DEBUG_FUNCPTR (gnl_object_cleanup_func);
 
   g_object_class_install_property (gobject_class, ARG_START,
       g_param_spec_uint64 ("start", "Start",
@@ -348,6 +350,29 @@ gnl_object_prepare (GnlObject * object)
   GST_DEBUG_OBJECT (object, "preparing");
 
   if (!(GNL_OBJECT_GET_CLASS (object)->prepare (object)))
+    ret = GST_STATE_CHANGE_FAILURE;
+
+  GST_DEBUG_OBJECT (object, "finished preparing, returning %d", ret);
+
+  return ret;
+}
+
+static gboolean
+gnl_object_cleanup_func (GnlObject * object)
+{
+  GST_DEBUG_OBJECT (object, "default cleanup function, returning TRUE");
+
+  return TRUE;
+}
+
+static GstStateChangeReturn
+gnl_object_cleanup (GnlObject * object)
+{
+  GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
+
+  GST_DEBUG_OBJECT (object, "cleaning-up");
+
+  if (!(GNL_OBJECT_GET_CLASS (object)->cleanup (object)))
     ret = GST_STATE_CHANGE_FAILURE;
 
   GST_DEBUG_OBJECT (object, "finished preparing, returning %d", ret);
@@ -1155,25 +1180,23 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
 {
   GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
 
-  GST_DEBUG_OBJECT (element, "beginning");
-
-  switch (transition) {
-    case GST_STATE_CHANGE_READY_TO_PAUSED:
-      /* prepare gnlobject */
-      ret = gnl_object_prepare (GNL_OBJECT (element));
-      break;
-    default:
-      break;
-  }
-
-  if (G_UNLIKELY (ret == GST_STATE_CHANGE_FAILURE))
-    goto failed;
-
-  GST_DEBUG_OBJECT (element, "have %d, about to call parent change_state", ret);
+  GST_DEBUG_OBJECT (element, "Calling parent change_state");
 
   ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
 
   GST_DEBUG_OBJECT (element, "Return from parent change_state was %d", ret);
+
+  switch (transition) {
+  case GST_STATE_CHANGE_READY_TO_PAUSED:
+    ret &= gnl_object_prepare (GNL_OBJECT (element));
+    break;
+  case GST_STATE_CHANGE_PAUSED_TO_READY:
+    /* cleanup gnlobject */
+    ret &= gnl_object_cleanup (GNL_OBJECT (element));
+    break;
+  default:
+    break;
+  }
 
   return ret;
 

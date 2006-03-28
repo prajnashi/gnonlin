@@ -122,6 +122,7 @@ struct _GnlObjectClass {
 						 GstClockTime stop,
 						 GnlCoverType type);
   gboolean		(*prepare)		(GnlObject *object);
+  gboolean		(*cleanup)		(GnlObject *object);
 };
 
 GType		gnl_object_get_type		(void);

@@ -26,6 +26,12 @@
 #include "gnl.h"
 #include "gnlmarshal.h"
 
+static GstStaticPadTemplate gnl_source_src_template =
+GST_STATIC_PAD_TEMPLATE ("src",
+    GST_PAD_SRC,
+    GST_PAD_SOMETIMES,
+    GST_STATIC_CAPS_ANY);
+
 GST_DEBUG_CATEGORY_STATIC (gnlsource);
 #define GST_CAT_DEFAULT gnlsource
 
@@ -87,6 +93,9 @@ gnl_source_class_init (GnlSourceClass *klass)
 
   gobject_class->dispose      = GST_DEBUG_FUNCPTR (gnl_source_dispose);
   gobject_class->finalize     = GST_DEBUG_FUNCPTR (gnl_source_finalize);
+
+  gst_element_class_add_pad_template (gstelement_class, 
+    gst_static_pad_template_get (&gnl_source_src_template));
 
 /*   gstelement_class->change_state 	= gnl_source_change_state; */
 

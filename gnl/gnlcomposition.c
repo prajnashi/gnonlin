@@ -33,6 +33,12 @@ static GstElementDetails gnl_composition_details = GST_ELEMENT_DETAILS (
    "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
    );
 
+static GstStaticPadTemplate gnl_composition_src_template =
+GST_STATIC_PAD_TEMPLATE ("src",
+    GST_PAD_SRC,
+    GST_PAD_SOMETIMES,
+    GST_STATIC_CAPS_ANY);
+
 GST_DEBUG_CATEGORY_STATIC (gnlcomposition);
 #define GST_CAT_DEFAULT gnlcomposition
 
@@ -173,6 +179,10 @@ gnl_composition_class_init (GnlCompositionClass *klass)
 
   gnlobject_class->prepare       = 
     GST_DEBUG_FUNCPTR (gnl_composition_prepare);
+
+  gst_element_class_add_pad_template (gstelement_class,
+				      gst_static_pad_template_get (&gnl_composition_src_template));
+
 /*   gnlobject_class->covers	 = gnl_composition_covers_func; */
 
 /*   klass->nearest_cover	 	 = gnl_composition_nearest_cover_func; */
@@ -251,6 +261,8 @@ gnl_composition_finalize (GObject *object)
 static void
 gnl_composition_reset	(GnlComposition *comp)
 {
+  GST_DEBUG_OBJECT (comp, "resetting");
+
   comp->private->segment_start = GST_CLOCK_TIME_NONE;
   comp->private->segment_stop = GST_CLOCK_TIME_NONE;
 
@@ -264,7 +276,6 @@ gnl_composition_reset	(GnlComposition *comp)
   if (comp->private->ghostpad) {
     gst_element_remove_pad (GST_ELEMENT (comp),
 			    comp->private->ghostpad);
-    gst_object_unref (comp->private->ghostpad);
     comp->private->ghostpad = NULL;
   }
   /* FIXME: uncomment the following when setting a NULL target is allowed */
@@ -456,9 +467,11 @@ gnl_composition_event_handler	(GstPad *ghostpad, GstEvent *event)
     break;
   }
   
-  if (res)
+  if (res) {
+    GST_DEBUG_OBJECT (comp, "About to call gnl_event_pad_func()");
     res = comp->private->gnl_event_pad_func (ghostpad, event);
-
+    GST_DEBUG_OBJECT (comp, "Done calling gnl_event_pad_func() %d", res);
+  }
   gst_object_unref (comp);
   return res;
 }
@@ -496,9 +509,14 @@ gnl_composition_ghost_pad_set_target	(GnlComposition *comp,
   gnl_object_ghost_pad_set_target (GNL_OBJECT (comp),
 				   comp->private->ghostpad,
 				   target);
+  GST_DEBUG_OBJECT (comp->private->ghostpad,
+		    "About to replace event_pad_func");
   comp->private->gnl_event_pad_func = GST_PAD_EVENTFUNC (comp->private->ghostpad);
   gst_pad_set_event_function (comp->private->ghostpad,
 			      GST_DEBUG_FUNCPTR (gnl_composition_event_handler));
+  GST_DEBUG_OBJECT (comp->private->ghostpad,
+		    "eventfunc is now %s",
+		    GST_DEBUG_FUNCPTR_NAME (GST_PAD_EVENTFUNC (comp->private->ghostpad)));
   if (!(hadghost)) {
     if (!(gst_element_add_pad (GST_ELEMENT (comp),
 			       comp->private->ghostpad)))
@@ -610,6 +628,8 @@ get_clean_toplevel_stack (GnlComposition *comp, GstClockTime timestamp,
       *stop_time = stop;
     else
       *stop_time = 0;
+    GST_DEBUG_OBJECT (comp, "Setting stop_time to %"GST_TIME_FORMAT,
+		      GST_TIME_ARGS (*stop_time));
   }
   
   return ret;
@@ -812,7 +832,8 @@ no_more_pads_object_cb	(GstElement *element, GnlComposition *comp)
       } else {
 	/* toplevel element */
 	gnl_composition_ghost_pad_set_target (comp, pad);
-	gst_pad_send_event (pad, get_new_seek_event(comp, FALSE));
+	if (!(gst_pad_send_event (pad, get_new_seek_event(comp, FALSE))))
+	  GST_WARNING_OBJECT (comp, "Sending seek event failed!");
       }
       /* remove signal handler */
       g_signal_handler_disconnect (object, entry->nomorepadshandler);
@@ -1090,7 +1111,8 @@ update_pipeline	(GnlComposition *comp, GstClockTime currenttime, gboolean initia
 	GstEvent	*event;
 	
 	event = get_new_seek_event (comp, initial);
-	gst_pad_send_event (pad, event);
+	if (!(gst_pad_send_event (pad, event)))
+	    GST_WARNING_OBJECT (comp, "Couldn't send seek");
 	gst_object_unref (pad);
       }
     }

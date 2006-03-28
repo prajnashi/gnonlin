@@ -26,7 +26,7 @@
 #include "gnlmarshal.h"
 
 static GstStaticPadTemplate gnl_filesource_src_template =
-GST_STATIC_PAD_TEMPLATE ("src%d",
+GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_SOMETIMES,
     GST_STATIC_CAPS_ANY);
@@ -259,6 +259,25 @@ decodebin_new_pad_cb	(GstElement *element, GstPad *pad, GnlFileSource *fs)
 }
 
 static void
+decodebin_pad_removed_cb (GstElement * element, GstPad * pad, GnlFileSource * fs)
+{
+  GstPad	*target;
+
+  GST_DEBUG_OBJECT (fs, "pad %s:%s",
+		    GST_DEBUG_PAD_NAME (pad));
+
+  if (fs->private->ghostpad) {
+    target = gst_ghost_pad_get_target (GST_GHOST_PAD (fs->private->ghostpad));
+    gst_pad_set_blocked (target, FALSE);
+
+    if ( target == pad ) {
+      gst_element_remove_pad (GST_ELEMENT (fs), fs->private->ghostpad);
+      fs->private->ghostpad = NULL;
+    }
+  }
+}
+
+static void
 gnl_filesource_init (GnlFileSource *filesource, GnlFileSourceClass *klass)
 {
   GST_OBJECT_FLAG_SET (filesource, GNL_OBJECT_SOURCE);
@@ -283,6 +302,10 @@ gnl_filesource_init (GnlFileSource *filesource, GnlFileSourceClass *klass)
 
   g_signal_connect (G_OBJECT (filesource->private->decodebin),
 		    "pad-added", G_CALLBACK (decodebin_new_pad_cb),
+		    (gpointer) filesource);
+
+  g_signal_connect (G_OBJECT (filesource->private->decodebin),
+		    "pad-removed", G_CALLBACK (decodebin_pad_removed_cb),
 		    (gpointer) filesource);
 
   GST_DEBUG_OBJECT (filesource, "done");

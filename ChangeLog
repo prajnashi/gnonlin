@@ -1,3 +1,26 @@
+2006-03-28  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_class_init),
+	(gnl_composition_reset), (gnl_composition_event_handler),
+	(gnl_composition_ghost_pad_set_target), (get_clean_toplevel_stack),
+	(no_more_pads_object_cb), (update_pipeline):
+	Add pad template.
+	More debug.
+	* gnl/gnlfilesource.c: (decodebin_pad_removed_cb),
+	(gnl_filesource_init):
+	Add pad template
+	Reset the ghostpad if the decodebin pad gets removed.
+	* gnl/gnlobject.c: (gnl_object_class_init),
+	(gnl_object_cleanup_func), (gnl_object_cleanup),
+	(gnl_object_change_state):
+	Call GnlObject::prepare AFTER calling parent change_state, otherwise
+	pads won't have been re-activated, flushing flash won't have been
+	removed and seek on the pads will definitely not work.
+	Essential for re-using gnlobjects.
+	* gnl/gnlobject.h:
+	* gnl/gnlsource.c: (gnl_source_class_init):
+	Add pad template
+
 2006-03-24  Wim Taymans  <wim@fluendo.com>
 
 	* gnl/gnlobject.c: (gnl_object_class_init), (gnl_object_init),
