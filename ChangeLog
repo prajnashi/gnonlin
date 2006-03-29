@@ -1,6 +1,11 @@
 2006-03-29  Edward Hervey  <edward@fluendo.com>
 
 	* Makefile.am:
+	whoops, trailing back-slash
+
+2006-03-29  Edward Hervey  <edward@fluendo.com>
+
+	* Makefile.am:
 	* configure.ac:
 	* pkgconfig/Makefile.am:
 	* pkgconfig/gnonlin.pc.in:
