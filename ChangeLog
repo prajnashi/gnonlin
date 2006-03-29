@@ -1,5 +1,19 @@
 2006-03-29  Edward Hervey  <edward@fluendo.com>
 
+	* configure.ac:
+	pre-release
+	* gnl/gnl.c:
+	Remove gnloperation for (pre-)release
+	* test/Makefile.am:
+	Fix for GST_PLUGIN_PATH since the tests use videotestsrc.
+	* test/simple.c: (gst_element_factory_make_or_warn),
+	(videotest_gnl_src), (GST_START_TEST), (gnonlin_suite):
+	Makes checks for element_factory_make()
+	Make sure we are looking for the proper values.
+	Comment out known broken test for (pre-)release
+
+2006-03-29  Edward Hervey  <edward@fluendo.com>
+
 	* Makefile.am:
 	whoops, trailing back-slash
 
