@@ -1,3 +1,15 @@
+2006-03-29  Edward Hervey  <edward@fluendo.com>
+
+	* configure.ac:
+	* test/Makefile.am:
+	* test/simple.c: (composition_pad_added_cb), (compare_segments),
+	(sinkpad_event_probe), (videotest_gnl_src), (segment_new),
+	(GST_START_TEST), (gnonlin_suite), (main):
+	Added testsuite system.
+	Added first batch of test to test:
+	_ proper start/stop/duration settings/update on sources and compositions
+	_ proper data flow in various source combination
+
 2006-03-28  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_class_init),

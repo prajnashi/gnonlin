@@ -177,6 +177,29 @@ dnl ######################
 GTK_DOC_CHECK([1.3])
 AS_PATH_PYTHON([2.1])
 
+dnl check for "check", unit testing library/header
+AM_PATH_CHECK(0.9.2,
+    [
+        HAVE_CHECK=yes
+        AC_MSG_NOTICE(CHECK_CFLAGS: $CHECK_CFLAGS)
+        AC_MSG_NOTICE(CHECK_LIBS: $CHECK_LIBS)
+    ],
+    HAVE_CHECK=no)
+AM_CONDITIONAL(HAVE_CHECK, test "x$HAVE_CHECK" = "xyes")
+
+dnl building of tests
+AC_ARG_ENABLE(tests,
+  AC_HELP_STRING([--disable-tests], [disable building test apps]),
+  [
+    case "${enableval}" in
+      yes) BUILD_TESTS=yes ;;
+      no)  BUILD_TESTS=no ;;
+      *)   AC_MSG_ERROR(bad value ${enableval} for --disable-tests) ;;
+    esac
+  ], 
+[BUILD_TESTS=yes]) dnl Default value
+AM_CONDITIONAL(BUILD_TESTS,         test "x$BUILD_TESTS" = "xyes")
+
 dnl ############################
 dnl # Set up some more defines #
 dnl ############################

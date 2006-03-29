@@ -1,14 +1,33 @@
-# noinst_PROGRAMS = \
-# 	sourcetest1	\
-# 	sourcetest2
-#\
-#	sourcetest3	\
-#	sourcetest4
-#\
-#simple simple1 composition layertest layertest2 simple2 group \
-#		  sourcetest1 sourcetest2 sourcetest3 \
-#		  layertest4 vlayertest sourcetest4
-EXTRA_DIST = pipelines.c
+include $(top_srcdir)/common/check.mak
 
-LDADD = $(GST_LIBS) $(GNL_LIBS) ../gnl/libgnl.la
-AM_CFLAGS = $(GST_CFLAGS) $(GNL_CFLAGS) -I$(top_srcdir)
+CHECK_REGISTRY = $(top_builddir)/test/test-registry.xml
+
+REGISTRY_ENVIRONMENT = \
+	GST_REGISTRY=$(CHECK_REGISTRY)
+
+TESTS_ENVIRONMENT = \
+        CK_DEFAULT_TIMEOUT=20                                   \
+	$(REGISTRY_ENVIRONMENT)					\
+	GST_PLUGIN_SYSTEM_PATH=					\
+	GST_PLUGIN_PATH=$(top_builddir)/gnl:$(GST_PLUGINS_DIR)
+
+# ths core dumps of some machines have PIDs appended
+CLEANFILES = core.* test-registry.xml
+
+clean-local: clean-local-check
+
+$(CHECK_REGISTRY):
+	$(TESTS_ENVIRONMENT)
+
+TESTS = $(check_PROGRAMS)
+
+check_PROGRAMS =	\
+	simple
+
+# these tests don't even pass
+noinst_PROGRAMS =
+
+AM_CFLAGS = $(GST_OBJ_CFLAGS) $(GST_CHECK_CFLAGS) $(CHECK_CFLAGS)
+LDADD = $(GST_OBJ_LIBS) $(GST_CHECK_LIBS) $(CHECK_LIBS)
+
+SUPPRESSIONS = $(top_srcdir)/common/gst.supp
