@@ -6,7 +6,6 @@ SUBDIRS = \
 	m4 \
 	common \
 	test \
-	pkgconfig
 # po should be enabled when I figure out why it's not building
 #	po
 

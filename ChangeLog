@@ -1,5 +1,15 @@
 2006-03-29  Edward Hervey  <edward@fluendo.com>
 
+	* Makefile.am:
+	* configure.ac:
+	* pkgconfig/Makefile.am:
+	* pkgconfig/gnonlin.pc.in:
+	Removing pkgconfig file generation. It's no longer needed since GNonLin
+	are GStreamer plugins and check should be done using the existing tools,
+	and/or at runtime.
+
+2006-03-29  Edward Hervey  <edward@fluendo.com>
+
 	* configure.ac:
 	* test/Makefile.am:
 	* test/simple.c: (composition_pad_added_cb), (compare_segments),

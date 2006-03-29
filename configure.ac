@@ -271,8 +271,6 @@ m4/Makefile
 test/Makefile
 gnl/Makefile
 gnl/gnlversion.h
-pkgconfig/Makefile
-pkgconfig/gnonlin.pc
 gnonlin.spec
 )
 AC_OUTPUT
