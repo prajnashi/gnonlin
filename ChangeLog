@@ -1,5 +1,10 @@
 2006-03-30  Edward Hervey  <edward@fluendo.com>
 
+	* autogen.sh:
+	Fix up autogen.sh for common/ since we're now in gstreamer cvs.
+
+2006-03-30  Edward Hervey  <edward@fluendo.com>
+
 	* Makefile.am:
 	test/directory is gone
 
