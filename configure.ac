@@ -98,7 +98,9 @@ GST_ARCH()
 
 dnl check for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
-GST_REQ=0.9.0.1
+GST_REQ=0.10.0
+GSTPB_REQ=0.10.0
+
 PKG_CHECK_MODULES(GST, gstreamer-$GST_MAJORMINOR >= $GST_REQ,
   HAVE_GST="yes", HAVE_GST="no")
 
@@ -106,11 +108,15 @@ if test "x$HAVE_GST" = "xno"; then
   AC_MSG_ERROR(no GStreamer found)
 fi
 
-GST_TOOLS_DIR=`pkg-config --variable=toolsdir gstreamer-$GST_MAJORMINOR`
+GST_TOOLS_DIR=`$PKG_CONFIG --variable=toolsdir gstreamer-$GST_MAJORMINOR`
 if test -z $GST_TOOLS_DIR; then
   AC_MSG_ERROR([no tools dir defined in GStreamer pkg-config file; core upgrade needed.])
 fi
 AC_SUBST(GST_TOOLS_DIR)
+
+GST_PLUGINS_DIR=`$PKG_CONFIG gstreamer-$GST_MAJORMINOR --variable pluginsdir`
+AC_SUBST(GST_PLUGINS_DIR)
+AC_MSG_NOTICE(Using GStreamer Core Plugins in $GST_PLUGINS_DIR)
 
 dnl check for gstreamer-base; uninstalled is selected preferentially
 PKG_CHECK_MODULES(GST_BASE, gstreamer-base-$GST_MAJORMINOR >= $GST_REQ,
@@ -122,6 +128,17 @@ fi
 
 AC_SUBST(GST_BASE_LIBS)
 AC_SUBST(GST_BASE_CFLAGS)
+
+dnl check for gstreamer-plugins-base; uninstalled is selected preferentially
+PKG_CHECK_MODULES(GSTPB, gstreamer-plugins-base-$GST_MAJORMINOR >= $GSTPB_REQ,
+  HAVE_GSTPB="yes", HAVE_GSTPB_BASE="no")
+
+if test "x$HAVE_GSTPB_BASE" = "xno"; then
+  AC_MSG_ERROR(no GStreamer Plugins Base Libs found)
+fi
+GSTPB_PLUGINS_DIR=`$PKG_CONFIG gstreamer-plugins-base-$GST_MAJORMINOR --variable pluginsdir`
+AC_SUBST(GSTPB_PLUGINS_DIR)
+AC_MSG_NOTICE(Using GStreamer Base Plugins in $GSTPB_PLUGINS_DIR)
 
 PKG_CHECK_MODULES(GST_CHECK, gstreamer-check-$GST_MAJORMINOR >= $GST_REQ,
   HAVE_GST_CHECK="yes", HAVE_GST_CHECK="no")

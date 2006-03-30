@@ -1,3 +1,11 @@
+2006-03-30  Thomas Vander Stichele  <thomas at apestaart dot org>
+
+	* Makefile.am:
+	* configure.ac:
+	* tests/check/Makefile.am:
+	  use pluginsdir exposed by core and base .pc files to find
+	  elements like videotestsrc and fakesink
+
 2006-03-30  Edward Hervey  <edward@fluendo.com>
 
 	* autogen.sh:
