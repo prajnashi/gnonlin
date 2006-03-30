@@ -5,8 +5,7 @@ SUBDIRS = \
 	tests \
 	docs \
 	m4 \
-	common \
-	test
+	common
 
 DIST_SUBDIRS = $(SUBDIRS)
 
