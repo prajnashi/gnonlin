@@ -2,12 +2,11 @@ DISTCHECK_CONFIGURE_FLAGS=--enable-gtk-doc
 
 SUBDIRS = \
 	gnl \
+	tests \
 	docs \
 	m4 \
 	common \
 	test
-# po should be enabled when I figure out why it's not building
-#	po
 
 DIST_SUBDIRS = $(SUBDIRS)
 
@@ -20,3 +19,15 @@ DISTCLEANFILES = _stdint.h
 
 include $(top_srcdir)/common/release.mak
 include $(top_srcdir)/common/po.mak
+
+check-valgrind:
+	cd tests/check && make check-valgrind
+
+if HAVE_CHECK
+check-torture:
+	cd tests/check && make torture
+else
+check-torture:
+	true
+endif
+

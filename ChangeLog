@@ -1,3 +1,16 @@
+2006-03-30  Thomas Vander Stichele  <thomas at apestaart dot org>
+
+	* Makefile.am:
+	* autogen.sh:
+	* configure.ac:
+	* po/Makefile.in.in:
+	* tests/check/Makefile.am:
+	* tests/check/simple.c: (composition_pad_added_cb),
+	(compare_segments), (sinkpad_event_probe), (videotest_gnl_src),
+	(segment_new), (GST_START_TEST), (gnonlin_suite), (main):
+	  make similar to the other gstreamer modules
+	  remove gettext stuff
+
 2006-03-29  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
