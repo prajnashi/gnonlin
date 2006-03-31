@@ -267,12 +267,20 @@ decodebin_pad_removed_cb (GstElement * element, GstPad * pad, GnlFileSource * fs
 		    GST_DEBUG_PAD_NAME (pad));
 
   if (fs->private->ghostpad) {
+    GST_DEBUG_OBJECT (fs, "We still have a ghostpad");
+
     target = gst_ghost_pad_get_target (GST_GHOST_PAD (fs->private->ghostpad));
     gst_pad_set_blocked (target, FALSE);
 
+    GST_DEBUG_OBJECT (fs, "Comparing received pad to our ghostpad's target: %s:%s",
+		      GST_DEBUG_PAD_NAME (target));
+
     if ( target == pad ) {
-      gst_element_remove_pad (GST_ELEMENT (fs), fs->private->ghostpad);
+      gnl_object_remove_ghost_pad (GNL_OBJECT (fs),
+				   fs->private->ghostpad);
       fs->private->ghostpad = NULL;
+    } else {
+      GST_DEBUG_OBJECT (fs, "The pad wasn't our ghostpad's target");
     }
   }
 }

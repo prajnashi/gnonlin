@@ -255,7 +255,7 @@ gnl_source_remove_element	(GstBin *bin, GstElement *element)
   if (pret) {
     /* remove ghostpad */
     if (source->priv->ghostpad) {
-      gst_element_remove_pad (GST_ELEMENT (bin), source->priv->ghostpad);
+      gnl_object_remove_ghost_pad (GNL_OBJECT (bin), source->priv->ghostpad);
       source->priv->ghostpad = NULL;
     }
     gst_object_unref (element);

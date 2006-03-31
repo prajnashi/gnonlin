@@ -40,6 +40,13 @@ dnl (This must come after AM_INIT_AUTOMAKE, since it modifies ACLOCAL)
 ACLOCAL_FLAGS="-I m4 -I common/m4"
 AC_SUBST(ACLOCAL_AMFLAGS, $ACLOCAL_FLAGS)
 
+dnl *** check for arguments to configure ***
+
+GST_ARG_DEBUG
+GST_ARG_VALGRIND
+GST_ARG_GCOV
+
+dnl find a compiler
 AC_PROG_CC
 AM_PROG_CC_STDC
 AM_PROG_AS
@@ -57,22 +64,14 @@ if test "x$GST_WALL" = "xyes"; then
    fi
 fi
 
-dnl determine c++ compiler
-AC_PROG_CXX
-dnl determine if c++ is available on this system
-AC_CHECK_PROG(HAVE_CXX, $CXX, yes, no)
-dnl determine c++ preprocessor
-AC_PROG_CXXCPP
 AC_ISC_POSIX
 
 AC_HEADER_STDC([])
 AC_C_INLINE
 AX_CREATE_STDINT_H
 
-dnl Check for malloc.h
-AC_CHECK_HEADER(malloc.h,[
-  AC_DEFINE(HAVE_MALLOC_H, 1, [whether malloc.h available])
-])
+AC_PATH_PROG(VALGRIND_PATH, valgrind, no)
+AM_CONDITIONAL(HAVE_VALGRIND, test ! "x$VALGRIND_PATH" = "xno")
 
 dnl Check for a way to display the function name in debug output
 GST_CHECK_FUNCTION()

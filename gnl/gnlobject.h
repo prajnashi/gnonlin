@@ -145,6 +145,9 @@ gboolean	gnl_object_ghost_pad_set_target	(GnlObject	*object,
 						 GstPad		*ghost,
 						 GstPad		*target);
 
+void		gnl_object_remove_ghost_pad	(GnlObject	*object,
+						 GstPad		*ghost);
+
 gboolean	gnl_object_covers		(GnlObject	*object,
 						 GstClockTime	start,
 						 GstClockTime	stop,

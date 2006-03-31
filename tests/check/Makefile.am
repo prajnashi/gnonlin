@@ -22,7 +22,7 @@ $(CHECK_REGISTRY):
 TESTS = $(check_PROGRAMS)
 
 check_PROGRAMS =	\
-	simple
+	./simple
 
 # these tests don't even pass
 noinst_PROGRAMS =
