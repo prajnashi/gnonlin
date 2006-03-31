@@ -434,9 +434,14 @@ GST_START_TEST (test_one_under_another)
     }
   }
 
+  fail_if (collect->expected_segments != NULL);
+
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
 
+  ASSERT_OBJECT_REFCOUNT(pipeline, "main pipeline", 1);
   gst_object_unref (pipeline);
+  ASSERT_OBJECT_REFCOUNT(bus, "main bus", 1);
+  gst_object_unref (bus);
 }
 
 GST_END_TEST;
@@ -558,9 +563,14 @@ GST_START_TEST (test_one_above_another)
     }
   }
 
+  fail_if (collect->expected_segments != NULL);
+
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
 
+  ASSERT_OBJECT_REFCOUNT(pipeline, "main pipeline", 1);
   gst_object_unref (pipeline);
+  ASSERT_OBJECT_REFCOUNT(bus, "main bus", 1);
+  gst_object_unref (bus);
 }
 
 GST_END_TEST;

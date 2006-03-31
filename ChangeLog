@@ -1,5 +1,10 @@
 2006-03-31  Edward Hervey  <edward@fluendo.com>
 
+	* tests/check/simple.c: (GST_START_TEST):
+	more checking.
+
+2006-03-31  Edward Hervey  <edward@fluendo.com>
+
 	* configure.ac:
 	Add debug, valgrind and gcov. Remove c++/malloc cruft
 	* gnl/gnlcomposition.c: (hash_value_destroy),
