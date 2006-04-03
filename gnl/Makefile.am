@@ -15,6 +15,7 @@ libgnl_la_SOURCES =		\
 	gnlsource.c		\
 	gnlfilesource.c
 libgnl_la_CFLAGS = $(GST_CFLAGS)
+libgnl_la_LIBADD = $(GST_LIBS)
 libgnl_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 
 gnl_headers =			\

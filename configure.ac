@@ -1,44 +1,52 @@
-dnl autoconf configuration file for gnonlin
-AC_INIT
-AC_CANONICAL_TARGET
+AC_PREREQ(2.52)
 
-dnl We disable static building for development, for time savings
-dnl this goes before AS_LIBTOOL to appease autoconf
-dnl *NOTE*: dnl this line before release, so release does static too
-AM_DISABLE_STATIC
+dnl initialize autoconf
+dnl when going to/from release please set the nano (fourth number) right !
+dnl releases only do Wall, cvs and prerelease does Werror too
+AC_INIT(GNonLin, 0.10.0.9,
+    http://bugzilla.gnome.org/enter_bug.cgi?product=GStreamer,
+    gnonlin)
+
+dnl initialize automake
+AM_INIT_AUTOMAKE
+
+dnl define PACKAGE_VERSION_* variables
+AS_VERSION
+
+dnl check if this is a release version
+AS_NANO(GST_CVS="no", GST_CVS="yes")
+
+dnl can autoconf find the source ?
+AC_CONFIG_SRCDIR([gnl/gnl.c])
+
+dnl define the output header for config
+AM_CONFIG_HEADER([config.h])
 
 dnl AM_MAINTAINER_MODE only provides the option to configure to enable it
 AM_MAINTAINER_MODE
 
-dnl when going to/from release please set the nano (fourth number) right !
-dnl releases only do Wall, cvs and prerelease does Werror too
-AS_VERSION(gnonlin, GNONLIN_VERSION, 0, 10, 0, 9,
-    GNL_CVS="no", GNL_CVS="yes")
-
-AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
+dnl sets host_* variables
+AC_CANONICAL_HOST
 
 dnl our libraries and install dirs use major.minor as a version
-GST_MAJORMINOR=$GNONLIN_VERSION_MAJOR.$GNONLIN_VERSION_MINOR
+GST_MAJORMINOR=$PACKAGE_VERSION_MAJOR.$PACKAGE_VERSION_MINOR
 dnl we override it here if we need to for the release candidate of new series
 GST_MAJORMINOR=0.10
 AC_SUBST(GST_MAJORMINOR)
 
-dnl CURRENT, REVISION, AGE
-dnl - library source changed -> increment REVISION
-dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
-dnl - interfaces added -> increment AGE
-dnl - interfaces removed -> AGE = 0
-AS_LIBTOOL(GNONLIN, 0, 0, 0)
-AS_LIBTOOL_TAGS
 AM_PROG_LIBTOOL
 
-AC_CONFIG_SRCDIR([gnl/gnl.c])
-AM_CONFIG_HEADER(config.h)
+dnl *** required versions of GStreamer stuff ***
+GST_REQ=0.10.4.1
+GSTPB_REQ=0.10.4
+
+dnl *** autotools stuff ****
+
+dnl allow for different autotools
+AS_AUTOTOOLS_ALTERNATE
 
 dnl Add parameters for aclocal
-dnl (This must come after AM_INIT_AUTOMAKE, since it modifies ACLOCAL)
-ACLOCAL_FLAGS="-I m4 -I common/m4"
-AC_SUBST(ACLOCAL_AMFLAGS, $ACLOCAL_FLAGS)
+AC_SUBST(ACLOCAL_AMFLAGS, "-I m4 -I common/m4")
 
 dnl *** check for arguments to configure ***
 
@@ -46,66 +54,46 @@ GST_ARG_DEBUG
 GST_ARG_VALGRIND
 GST_ARG_GCOV
 
+GST_ARG_WITH_PKG_CONFIG_PATH
+GST_ARG_WITH_PACKAGE_NAME
+GST_ARG_WITH_PACKAGE_ORIGIN
+
+dnl *** checks for platform ***
+
+dnl * hardware/architecture *
+
+dnl *** checks for programs ***
+
 dnl find a compiler
 AC_PROG_CC
-AM_PROG_CC_STDC
-AM_PROG_AS
-AS="${CC}"
-AS_PROG_OBJC
-
-dnl decide on error flags
-AS_COMPILER_FLAG(-Wall, GST_WALL="yes", GST_WALL="no")
-
-if test "x$GST_WALL" = "xyes"; then
-   GST_ERROR="$GST_ERROR -Wall"
-
-   if test "x$GST_CVS" = "xyes"; then
-     AS_COMPILER_FLAG(-Werror,GST_ERROR="$GST_ERROR -Werror",GST_ERROR="$GST_ERROR")
-   fi
-fi
-
-AC_ISC_POSIX
-
-AC_HEADER_STDC([])
-AC_C_INLINE
-AX_CREATE_STDINT_H
 
 AC_PATH_PROG(VALGRIND_PATH, valgrind, no)
 AM_CONDITIONAL(HAVE_VALGRIND, test ! "x$VALGRIND_PATH" = "xno")
 
-dnl Check for a way to display the function name in debug output
-GST_CHECK_FUNCTION()
+dnl check for documentation tools
+GTK_DOC_CHECK([1.3])
+AS_PATH_PYTHON([2.1])
 
-dnl ##############################
-dnl # Do automated configuration #
-dnl ##############################
+dnl *** checks for libraries ***
 
-dnl Check for tools:
-dnl ================
+dnl *** checks for header files ***
 
-dnl allow for different autotools
-AS_AUTOTOOLS_ALTERNATE()
+dnl *** checks for types/defines ***
 
-dnl modify pkg-config path
-AC_ARG_WITH(pkg-config-path, 
-   AC_HELP_STRING([--with-pkg-config-path],[colon-separated list of pkg-config(1) dirs]),
-   [export PKG_CONFIG_PATH=${withval}])
+dnl *** checks for structures ***
 
-GST_DOCBOOK_CHECK()
-dnl check architecture
-GST_ARCH()
+dnl *** checks for compiler characteristics ***
 
-dnl check for gstreamer
+dnl *** checks for library functions ***
+
+dnl *** checks for dependancy libraries ***
+
+dnl GLib is required
+GST_GLIB_CHECK([2.6])
+
+dnl checks for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
-GST_REQ=0.10.0
-GSTPB_REQ=0.10.0
-
-PKG_CHECK_MODULES(GST, gstreamer-$GST_MAJORMINOR >= $GST_REQ,
-  HAVE_GST="yes", HAVE_GST="no")
-
-if test "x$HAVE_GST" = "xno"; then
-  AC_MSG_ERROR(no GStreamer found)
-fi
+GST_CHECK_GST($GST_MAJORMINOR, [$GST_REQ])
 
 GST_TOOLS_DIR=`$PKG_CONFIG --variable=toolsdir gstreamer-$GST_MAJORMINOR`
 if test -z $GST_TOOLS_DIR; then
@@ -117,155 +105,75 @@ GST_PLUGINS_DIR=`$PKG_CONFIG gstreamer-$GST_MAJORMINOR --variable pluginsdir`
 AC_SUBST(GST_PLUGINS_DIR)
 AC_MSG_NOTICE(Using GStreamer Core Plugins in $GST_PLUGINS_DIR)
 
-dnl check for gstreamer-base; uninstalled is selected preferentially
-PKG_CHECK_MODULES(GST_BASE, gstreamer-base-$GST_MAJORMINOR >= $GST_REQ,
-  HAVE_GST_BASE="yes", HAVE_GST_BASE="no")
+GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ])
 
-if test "x$HAVE_GST_BASE" = "xno"; then
-  AC_MSG_ERROR(no GStreamer Base Libs found)
-fi
-
-AC_SUBST(GST_BASE_LIBS)
-AC_SUBST(GST_BASE_CFLAGS)
-
-dnl check for gstreamer-plugins-base; uninstalled is selected preferentially
-PKG_CHECK_MODULES(GSTPB, gstreamer-plugins-base-$GST_MAJORMINOR >= $GSTPB_REQ,
-  HAVE_GSTPB="yes", HAVE_GSTPB_BASE="no")
-
-if test "x$HAVE_GSTPB_BASE" = "xno"; then
-  AC_MSG_ERROR(no GStreamer Plugins Base Libs found)
-fi
+GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ])
 GSTPB_PLUGINS_DIR=`$PKG_CONFIG gstreamer-plugins-base-$GST_MAJORMINOR --variable pluginsdir`
 AC_SUBST(GSTPB_PLUGINS_DIR)
 AC_MSG_NOTICE(Using GStreamer Base Plugins in $GSTPB_PLUGINS_DIR)
 
-PKG_CHECK_MODULES(GST_CHECK, gstreamer-check-$GST_MAJORMINOR >= $GST_REQ,
-  HAVE_GST_CHECK="yes", HAVE_GST_CHECK="no")
+GST_CHECK_GST_CHECK($GST_MAJORMINOR, [$GST_REQ], no)
 
-AC_PATH_PROG(VALGRIND_PATH, valgrind, no)
-AM_CONDITIONAL(HAVE_VALGRIND, test ! "x$VALGRIND_PATH" = "xno")
-
-dnl Check for essential libraries first:
-dnl ====================================
-
-GST_GLIB_CHECK([2.6])
-
-dnl Check for additional libraries that we might use:
-dnl =================================================
-
-# we set the defaults always to make sure we have non-empty variables
-# for the Makefile
-
-dnl ===========================================================================
-dnl ============================= gst plug-ins ================================
-dnl ===========================================================================
-
-plugindir="\$(libdir)/gstreamer-$GST_MAJORMINOR"
-AC_SUBST(plugindir)
-
-GST_PLUGIN_LDFLAGS="-module -avoid-version -export-symbols-regex '^[_]*gst_plugin_desc\$\$' -no-undefined"
-AC_SUBST(GST_PLUGIN_LDFLAGS)
-
-dnl also add builddir include for enumtypes and marshal
-GST_CFLAGS="-I\$(top_srcdir)/gst-libs -I\$(top_builddir)/gst-libs $GST_CFLAGS $GST_ERROR"
-
-AC_SUBST(GST_LIBS)
-AC_SUBST(GST_CFLAGS)
-
+dnl FIXME: get rid of this by making sure gstreamer-check brings it in
 dnl check for "check", unit testing library/header
 AM_PATH_CHECK(0.9.2, HAVE_CHECK=yes, HAVE_CHECK=no)
 AM_CONDITIONAL(HAVE_CHECK, test "x$HAVE_CHECK" = "xyes")
 
-dnl ######################
-dnl # Checks for gtk-doc #
-dnl ######################
-
-GTK_DOC_CHECK([1.3])
-AS_PATH_PYTHON([2.1])
-
-dnl check for "check", unit testing library/header
-AM_PATH_CHECK(0.9.2,
-    [
-        HAVE_CHECK=yes
-        AC_MSG_NOTICE(CHECK_CFLAGS: $CHECK_CFLAGS)
-        AC_MSG_NOTICE(CHECK_LIBS: $CHECK_LIBS)
-    ],
-    HAVE_CHECK=no)
-AM_CONDITIONAL(HAVE_CHECK, test "x$HAVE_CHECK" = "xyes")
-
-dnl building of tests
-AC_ARG_ENABLE(tests,
-  AC_HELP_STRING([--disable-tests], [disable building test apps]),
-  [
-    case "${enableval}" in
-      yes) BUILD_TESTS=yes ;;
-      no)  BUILD_TESTS=no ;;
-      *)   AC_MSG_ERROR(bad value ${enableval} for --disable-tests) ;;
-    esac
-  ], 
-[BUILD_TESTS=yes]) dnl Default value
-AM_CONDITIONAL(BUILD_TESTS,         test "x$BUILD_TESTS" = "xyes")
-
-dnl ############################
-dnl # Set up some more defines #
-dnl ############################
+dnl *** set variables based on configure arguments ***
 
 dnl set license and copyright notice
-AC_DEFINE(GST_LICENSE, "LGPL", [GNonLin license])
+GST_LICENSE="LGPL"
+AC_DEFINE_UNQUOTED(GST_LICENSE, "$GST_LICENSE", [GStreamer license])
+AC_SUBST(GST_LICENSE)
 
-dnl package name in plugins
-AC_ARG_WITH(package-name,
-AC_HELP_STRING([--with-package-name],[specify package name to use in plugins]),
-[case "${withval}" in
-  yes) AC_MSG_ERROR(bad value ${withval} for --with-package-name) ;;
-  no) AC_MSG_ERROR(bad value ${withval} for --with-package-name) ;;
-  *) GST_PACKAGE="${withval}" ;;
-esac], 
-[
-dnl default value
-if test "x$GNL_CVS" = "xyes"
-then
-  dnl nano >= 1
-  GST_PACKAGE="GNonLin CVS/prerelease"
-else
-  GST_PACKAGE="GNonLin source release"
+dnl set location of plugin directory
+GST_SET_PLUGINDIR
+
+dnl define an ERROR_CFLAGS Makefile variable
+GST_SET_ERROR_CFLAGS($GST_CVS)
+
+dnl define correct level for debugging messages
+GST_SET_LEVEL_DEFAULT($GST_CVS)
+
+dnl used in examples
+GST_DEFAULT_ELEMENTS
+
+dnl *** finalize CFLAGS, LDFLAGS, LIBS
+
+dnl Overview:
+dnl GST_OPTION_CFLAGS:  common flags for profiling, debugging, errors, ...
+dnl GST_*:              flags shared by built objects to link against GStreamer
+dnl GST_ALL_LDFLAGS:    linker flags shared by all
+dnl GST_LIB_LDFLAGS:    additional linker flags for all libaries
+dnl GST_LT_LDFLAGS:     library versioning of our libraries
+dnl GST_PLUGIN_LDFLAGS: flags to be used for all plugins
+
+dnl GST_OPTION_CFLAGS
+if test "x$USE_DEBUG" = xyes; then
+   PROFILE_CFLAGS="-g"
 fi
-]
-)
-AC_MSG_NOTICE(Using $GST_PACKAGE as package name)
-AC_DEFINE_UNQUOTED(GST_PACKAGE, "$GST_PACKAGE", [package name in plugins])
+AC_SUBST(PROFILE_CFLAGS)
 
-dnl package origin URL
-AC_ARG_WITH(package-origin,
-AC_HELP_STRING([--with-package-origin],[specify package origin URL to use in plugins]),
-[case "${withval}" in
-  yes) AC_MSG_ERROR(bad value ${withval} for --with-package-origin) ;;
-  no) AC_MSG_ERROR(bad value ${withval} for --with-package-origin) ;;
-  *) GST_ORIGIN="${withval}" ;;
-esac], 
-[GST_ORIGIN="http://gnonlin.sourceforge.net/"]) dnl Default value
-AC_MSG_NOTICE(Using $GST_ORIGIN as package origin)
-AC_DEFINE_UNQUOTED(GST_ORIGIN, "$GST_ORIGIN", [package origin])
+DEPRECATED_CFLAGS="-DGST_DISABLE_DEPRECATED"
+AC_SUBST(DEPRECATED_CFLAGS)
 
-if test "x$prefix" = xNONE; then
-   AC_MSG_ERROR([No explicit prefix given.
+dnl every flag in GST_OPTION_CFLAGS can be overridden at make time
+GST_OPTION_CFLAGS="\$(ERROR_CFLAGS) \$(DEBUG_CFLAGS) \$(PROFILE_CFLAGS) \$(GCOV_CFLAGS) \$(OPT_CFLAGS) \$(DEPRECATED_CFLAGS)"
+AC_SUBST(GST_OPTION_CFLAGS)
 
-GNonLin requires you to explicitly enter in a prefix when configuring. This is
-because the default prefix, /usr/local, might not be the default GStreamer
-plugins path. What you probably want to do is to run
+dnl FIXME: do we want to rename to GST_ALL_* ?
+dnl prefer internal headers to already installed ones
+dnl add GST_OPTION_CFLAGS, but overridable
+GST_CFLAGS="$GST_CFLAGS \$(GST_OPTION_CFLAGS)"
+AC_SUBST(GST_CFLAGS)
+AC_SUBST(GST_LIBS)
 
-  $0 --prefix=/usr
+dnl this really should only contain flags, not libs - they get added before
+dnl whatevertarget_LIBS and -L flags here affect the rest of the linking
+GST_PLUGIN_LDFLAGS="-module -avoid-version -export-symbols-regex '^[_]*gst_plugin_desc\$\$' $GST_ALL_LDFLAGS"
+AC_SUBST(GST_PLUGIN_LDFLAGS)
 
-so that GStreamer can find the plugins.
-
-If you choose to install to a prefix that is not GStreamer's plugins path,
-you will need to modify GST_PLUGIN_PATH every time you run a GStreamer
-application which requires the GNonLin plugin. (Which is a pain.)])
-fi
-
-dnl #########################
-dnl # Make the output files #
-dnl #########################
+dnl *** output files ***
 
 dnl keep this alphabetic per directory, please
 AC_CONFIG_FILES(
@@ -282,4 +190,4 @@ gnonlin.spec
 )
 AC_OUTPUT
 
-echo "GNonLin configured, use make to build"
+echo "GNonLin configured. Type 'make' to build."
