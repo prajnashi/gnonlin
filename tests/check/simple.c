@@ -580,14 +580,19 @@ gnonlin_suite (void)
 {
   Suite *s = suite_create ("gnonlin");
   TCase *tc_chain = tcase_create ("general");
+  guint major, minor, micro, nano;
 
   suite_add_tcase (s, tc_chain);
-  tcase_add_test (tc_chain, test_one_after_other);
-  tcase_add_test (tc_chain, test_one_under_another);
 
-  /* Uncomment and fix this after the release 2006-03-29 */
-  /*   tcase_add_test (tc_chain, test_one_above_another); */
-
+  /* Only add the following test for core > 0.10.4 */
+  gst_version (&major, &minor, &micro, &nano);
+  if ((micro > 4) || (micro == 4 && nano > 0)) {
+    tcase_add_test (tc_chain, test_one_after_other);
+    tcase_add_test (tc_chain, test_one_under_another);
+    
+    /* Uncomment and fix this after the release 2006-03-29 */
+    /*   tcase_add_test (tc_chain, test_one_above_another); */
+  }
   return s;
 }
 

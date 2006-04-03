@@ -1,5 +1,13 @@
 2006-04-03  Edward Hervey  <edward@fluendo.com>
 
+	* configure.ac:
+	New pre-release (0.10.0.10).
+	Required version of gstreamer core/-base is 0.10.4.
+	* tests/check/simple.c: (gnonlin_suite):
+	Only run the tests with core > 0.10.4.0
+
+2006-04-03  Edward Hervey  <edward@fluendo.com>
+
 	* tests/check/simple.c: (GST_START_TEST):
 	When the pipeline is set to NULL, on slow/loaded systems the pipeline
 	might not have reached that state yet when checking for the refcount

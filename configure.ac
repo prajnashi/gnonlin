@@ -3,8 +3,8 @@ AC_PREREQ(2.52)
 dnl initialize autoconf
 dnl when going to/from release please set the nano (fourth number) right !
 dnl releases only do Wall, cvs and prerelease does Werror too
-AC_INIT(GNonLin, 0.10.0.9,
-    http://bugzilla.gnome.org/enter_bug.cgi?product=GStreamer,
+AC_INIT(GNonLin, 0.10.0.10,
+    http://gnonlin.sourceforge.net/,
     gnonlin)
 
 dnl initialize automake
@@ -37,7 +37,7 @@ AC_SUBST(GST_MAJORMINOR)
 AM_PROG_LIBTOOL
 
 dnl *** required versions of GStreamer stuff ***
-GST_REQ=0.10.4.1
+GST_REQ=0.10.4
 GSTPB_REQ=0.10.4
 
 dnl *** autotools stuff ****
