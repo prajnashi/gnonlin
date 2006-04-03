@@ -309,9 +309,9 @@ GST_START_TEST (test_one_after_other)
 
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
 
-  ASSERT_OBJECT_REFCOUNT(pipeline, "main pipeline", 1);
+  ASSERT_OBJECT_REFCOUNT_BETWEEN(pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
-  ASSERT_OBJECT_REFCOUNT(bus, "main bus", 1);
+  ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);
   gst_object_unref (bus);
 }
 
@@ -438,9 +438,9 @@ GST_START_TEST (test_one_under_another)
 
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
 
-  ASSERT_OBJECT_REFCOUNT(pipeline, "main pipeline", 1);
+  ASSERT_OBJECT_REFCOUNT_BETWEEN(pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
-  ASSERT_OBJECT_REFCOUNT(bus, "main bus", 1);
+  ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);
   gst_object_unref (bus);
 }
 
@@ -567,9 +567,9 @@ GST_START_TEST (test_one_above_another)
 
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
 
-  ASSERT_OBJECT_REFCOUNT(pipeline, "main pipeline", 1);
+  ASSERT_OBJECT_REFCOUNT_BETWEEN(pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
-  ASSERT_OBJECT_REFCOUNT(bus, "main bus", 1);
+  ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);
   gst_object_unref (bus);
 }
 

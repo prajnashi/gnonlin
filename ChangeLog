@@ -1,5 +1,12 @@
 2006-04-03  Edward Hervey  <edward@fluendo.com>
 
+	* tests/check/simple.c: (GST_START_TEST):
+	When the pipeline is set to NULL, on slow/loaded systems the pipeline
+	might not have reached that state yet when checking for the refcount
+	of the pipeline/bus. We now check that refcount is between 1 and 2 now.
+
+2006-04-03  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnl.c: (plugin_init):
 	* gnl/gnlcomposition.c: (gnl_composition_class_init),
 	(hash_value_destroy), (gnl_composition_init),
