@@ -28,12 +28,11 @@
 
 GST_BOILERPLATE (GnlOperation, gnl_operation, GnlObject, GNL_TYPE_OBJECT);
 
-static GstElementDetails gnl_operation_details = GST_ELEMENT_DETAILS ( 
-  "GNonLin Operation",
-  "Filter/Editor",
-  "Encapsulates filters/effects for use with GNL Objects",
-  "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>"
-  );
+static GstElementDetails gnl_operation_details =
+GST_ELEMENT_DETAILS ("GNonLin Operation",
+    "Filter/Editor",
+    "Encapsulates filters/effects for use with GNL Objects",
+    "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>");
 
 GST_DEBUG_CATEGORY_STATIC (gnloperation);
 #define GST_CAT_DEFAULT gnloperation
@@ -86,19 +85,18 @@ gnl_operation_base_init (gpointer g_class)
 }
 
 static void
-gnl_operation_class_init (GnlOperationClass *klass)
+gnl_operation_class_init (GnlOperationClass * klass)
 {
-  GObjectClass		*gobject_class;
-  GstElementClass	*gstelement_class;
-  GnlObjectClass        *gnlobject_class;
+  GObjectClass *gobject_class;
+  GstElementClass *gstelement_class;
+  GnlObjectClass *gnlobject_class;
 
-  gobject_class =       (GObjectClass*)klass;
-  gstelement_class =	(GstElementClass*)klass;
-  gnlobject_class =     (GnlObjectClass*)klass;
+  gobject_class = (GObjectClass *) klass;
+  gstelement_class = (GstElementClass *) klass;
+  gnlobject_class = (GnlObjectClass *) klass;
 
   GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation",
-			   GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD,
-			   "GNonLin Operation element");
+      GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Operation element");
 
 /*   gobject_class->set_property	= GST_DEBUG_FUNCPTR (gnl_operation_set_property); */
 /*   gobject_class->get_property	= GST_DEBUG_FUNCPTR (gnl_operation_get_property); */
@@ -111,7 +109,7 @@ gnl_operation_class_init (GnlOperationClass *klass)
 }
 
 static void
-gnl_operation_init (GnlOperation *operation, GnlOperationClass *klass)
+gnl_operation_init (GnlOperation * operation, GnlOperationClass * klass)
 {
 
 }
@@ -137,7 +135,7 @@ gnl_operation_init (GnlOperation *operation, GnlOperationClass *klass)
 /*   walk = gst_element_get_pad_list (element); */
 /*   while (walk) { */
 /*     GstPad *pad = GST_PAD (walk->data); */
-    
+
 /*     if (GST_PAD_IS_SRC(pad)) { */
 /*       if (foundsrc) */
 /* 	GST_WARNING ("More than one srcpad in %s", gst_element_get_name(GST_ELEMENT (operation))); */
@@ -255,7 +253,7 @@ gnl_operation_init (GnlOperation *operation, GnlOperationClass *klass)
 /* 			    GValue *value, GParamSpec *pspec) */
 /* { */
 /*   GnlOperation *operation; */
-  
+
 /*   g_return_if_fail (GNL_IS_OPERATION (object)); */
 
 /*   operation = GNL_OPERATION (object); */

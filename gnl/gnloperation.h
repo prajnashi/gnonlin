@@ -28,7 +28,6 @@
 #include "gnlobject.h"
 
 G_BEGIN_DECLS
-
 #define GNL_TYPE_OPERATION \
   (gnl_operation_get_type())
 #define GNL_OPERATION(obj) \
@@ -39,25 +38,24 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_OPERATION))
 #define GNL_IS_OPERATION_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OPERATION))
-
-struct _GnlOperation {
-  GnlObject 		parent;
+    struct _GnlOperation
+{
+  GnlObject parent;
 
 /*   guint			num_sinks; */
 /*   GstElement		*queue; */
 
   /* Controlled filter element */
-  GstElement		*element;
+  GstElement *element;
 };
 
-struct _GnlOperationClass {
-  GnlObjectClass	parent_class;
+struct _GnlOperationClass
+{
+  GnlObjectClass parent_class;
 };
 
 /* normal GOperation stuff */
-GType		gnl_operation_get_type		(void);
+GType gnl_operation_get_type (void);
 
 G_END_DECLS
-
 #endif /* __GNL_OPERATION_H__ */
-

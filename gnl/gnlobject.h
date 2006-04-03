@@ -29,7 +29,6 @@
 #include "gnltypes.h"
 
 G_BEGIN_DECLS
-
 #define GNL_TYPE_OBJECT \
   (gnl_object_get_type())
 #define GNL_OBJECT(obj) \
@@ -42,7 +41,6 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_OBJECT))
 #define GNL_IS_OBJECT_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OBJECT))
-
 /**
  * GnlCoverType"
  * @GNL_COVER_ALL  : Covers all the content
@@ -52,7 +50,7 @@ G_BEGIN_DECLS
  *
  * Type of coverage for the given start/stop values
 */
-typedef enum
+    typedef enum
 {
   GNL_COVER_ALL,
   GNL_COVER_SOME,
@@ -66,11 +64,12 @@ typedef enum
  * @GNL_OBJECT_IS_OPERATION:
  * @GNL_OBJECT_LAST_FLAG:
 */
-typedef enum {
-  GNL_OBJECT_SOURCE		= (GST_BIN_FLAG_LAST << 0),
-  GNL_OBJECT_OPERATION		= (GST_BIN_FLAG_LAST << 1),
+typedef enum
+{
+  GNL_OBJECT_SOURCE = (GST_BIN_FLAG_LAST << 0),
+  GNL_OBJECT_OPERATION = (GST_BIN_FLAG_LAST << 1),
   /* padding */
-  GNL_OBJECT_LAST_FLAG		= (GST_BIN_FLAG_LAST << 16)
+  GNL_OBJECT_LAST_FLAG = (GST_BIN_FLAG_LAST << 16)
 } GnlObjectFlags;
 
 #define GNL_OBJECT_IS_SOURCE(obj) \
@@ -78,82 +77,72 @@ typedef enum {
 #define GNL_OBJECT_IS_OPERATION(obj) \
   (GST_OBJECT_FLAG_IS_SET(obj, GNL_OBJECT_OPERATION))
 
-struct _GnlObject {
-  GstBin 		 parent;
-  
+struct _GnlObject
+{
+  GstBin parent;
+
   /* Time positionning */
-  GstClockTime  	 start;
-  GstClockTimeDiff	 duration;
+  GstClockTime start;
+  GstClockTimeDiff duration;
 
   /* read-only */
-  GstClockTime 		 stop;
+  GstClockTime stop;
 
-  GstClockTime  	 media_start;
-  GstClockTimeDiff	 media_duration;
-  
-  /* read-only */
-  GstClockTime 		 media_stop;
+  GstClockTime media_start;
+  GstClockTimeDiff media_duration;
 
   /* read-only */
-  gdouble		rate;
+  GstClockTime media_stop;
+
+  /* read-only */
+  gdouble rate;
 
   /* priority in parent */
-  guint			 priority;
+  guint priority;
 
   /* active in parent */
-  gboolean		 active;
+  gboolean active;
 
   /* Filtering caps */
-  GstCaps		 *caps;
+  GstCaps *caps;
 
   /* current segment seek <RO> */
-  gdouble		segment_rate;
-  GstSeekFlags		segment_flags;
-  gint64		segment_start;
-  gint64		segment_stop;
+  gdouble segment_rate;
+  GstSeekFlags segment_flags;
+  gint64 segment_start;
+  gint64 segment_stop;
 };
 
-struct _GnlObjectClass {
-  GstBinClass		parent_class;
-  
+struct _GnlObjectClass
+{
+  GstBinClass parent_class;
+
   /* virtual methods for subclasses */
-  gboolean		(*covers)		(GnlObject *object,
-		   				 GstClockTime start,
-						 GstClockTime stop,
-						 GnlCoverType type);
-  gboolean		(*prepare)		(GnlObject *object);
-  gboolean		(*cleanup)		(GnlObject *object);
+    gboolean (*covers) (GnlObject * object,
+      GstClockTime start, GstClockTime stop, GnlCoverType type);
+    gboolean (*prepare) (GnlObject * object);
+    gboolean (*cleanup) (GnlObject * object);
 };
 
-GType		gnl_object_get_type		(void);
+GType gnl_object_get_type (void);
 
-GstPad*		gnl_object_ghost_pad		(GnlObject	*object,
-						 const gchar	*name,
-						 GstPad		*target);
+GstPad *gnl_object_ghost_pad (GnlObject * object,
+    const gchar * name, GstPad * target);
 
-GstPad*		gnl_object_ghost_pad_full	(GnlObject	*object,
-						 const gchar	*name,
-						 GstPad		*target,
-						 gboolean	flush_hack);
+GstPad *gnl_object_ghost_pad_full (GnlObject * object,
+    const gchar * name, GstPad * target, gboolean flush_hack);
 
 
-GstPad*		gnl_object_ghost_pad_no_target	(GnlObject	*object,
-						 const gchar	*name,
-						 GstPadDirection dir);
+GstPad *gnl_object_ghost_pad_no_target (GnlObject * object,
+    const gchar * name, GstPadDirection dir);
 
-gboolean	gnl_object_ghost_pad_set_target	(GnlObject	*object,
-						 GstPad		*ghost,
-						 GstPad		*target);
+gboolean gnl_object_ghost_pad_set_target (GnlObject * object,
+    GstPad * ghost, GstPad * target);
 
-void		gnl_object_remove_ghost_pad	(GnlObject	*object,
-						 GstPad		*ghost);
+void gnl_object_remove_ghost_pad (GnlObject * object, GstPad * ghost);
 
-gboolean	gnl_object_covers		(GnlObject	*object,
-						 GstClockTime	start,
-						 GstClockTime	stop,
-						 GnlCoverType	type);
+gboolean gnl_object_covers (GnlObject * object,
+    GstClockTime start, GstClockTime stop, GnlCoverType type);
 
 G_END_DECLS
-
 #endif /* __GNL_OBJECT_H__ */
-

@@ -38,28 +38,23 @@ GST_DEBUG_CATEGORY_STATIC (gnlsource);
 GST_BOILERPLATE (GnlSource, gnl_source, GnlObject, GNL_TYPE_OBJECT);
 
 static GstElementDetails gnl_source_details = GST_ELEMENT_DETAILS
-(
-  "GNonLin Source",
-  "Filter/Editor",
-  "Manages source elements",
-  "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <edward@fluendo.com>"
-);
+    ("GNonLin Source",
+    "Filter/Editor",
+    "Manages source elements",
+    "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <edward@fluendo.com>");
 
-struct _GnlSourcePrivate {
-  gboolean	dispose_has_run;
-  GstPad	*ghostpad;
+struct _GnlSourcePrivate
+{
+  gboolean dispose_has_run;
+  GstPad *ghostpad;
 };
 
-static gboolean
-gnl_source_add_element	(GstBin *bin, GstElement *element);
+static gboolean gnl_source_add_element (GstBin * bin, GstElement * element);
 
-static gboolean
-gnl_source_remove_element	(GstBin *bin, GstElement *element);
+static gboolean gnl_source_remove_element (GstBin * bin, GstElement * element);
 
-static void 		
-gnl_source_dispose 		(GObject *object);
-static void
-gnl_source_finalize 		(GObject *object);
+static void gnl_source_dispose (GObject * object);
+static void gnl_source_finalize (GObject * object);
 
 static void
 gnl_source_base_init (gpointer g_class)
@@ -70,32 +65,31 @@ gnl_source_base_init (gpointer g_class)
 }
 
 static void
-gnl_source_class_init (GnlSourceClass *klass)
+gnl_source_class_init (GnlSourceClass * klass)
 {
-  GObjectClass 		*gobject_class;
-  GstElementClass 	*gstelement_class;
-  GstBinClass		*gstbin_class;
-  GnlObjectClass 	*gnlobject_class;
+  GObjectClass *gobject_class;
+  GstElementClass *gstelement_class;
+  GstBinClass *gstbin_class;
+  GnlObjectClass *gnlobject_class;
 
-  gobject_class = 	(GObjectClass*)klass;
-  gstelement_class = 	(GstElementClass*)klass;
-  gstbin_class =	(GstBinClass*)klass;
-  gnlobject_class = 	(GnlObjectClass*)klass;
+  gobject_class = (GObjectClass *) klass;
+  gstelement_class = (GstElementClass *) klass;
+  gstbin_class = (GstBinClass *) klass;
+  gnlobject_class = (GnlObjectClass *) klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
 
   GST_DEBUG_CATEGORY_INIT (gnlsource, "gnlsource",
-			   GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD,
-			   "GNonLin Source Element");
+      GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Source Element");
 
   gstbin_class->add_element = GST_DEBUG_FUNCPTR (gnl_source_add_element);
   gstbin_class->remove_element = GST_DEBUG_FUNCPTR (gnl_source_remove_element);
 
-  gobject_class->dispose      = GST_DEBUG_FUNCPTR (gnl_source_dispose);
-  gobject_class->finalize     = GST_DEBUG_FUNCPTR (gnl_source_finalize);
+  gobject_class->dispose = GST_DEBUG_FUNCPTR (gnl_source_dispose);
+  gobject_class->finalize = GST_DEBUG_FUNCPTR (gnl_source_finalize);
 
-  gst_element_class_add_pad_template (gstelement_class, 
-    gst_static_pad_template_get (&gnl_source_src_template));
+  gst_element_class_add_pad_template (gstelement_class,
+      gst_static_pad_template_get (&gnl_source_src_template));
 
 /*   gstelement_class->change_state 	= gnl_source_change_state; */
 
@@ -103,15 +97,15 @@ gnl_source_class_init (GnlSourceClass *klass)
 
 
 static void
-gnl_source_init (GnlSource *source, GnlSourceClass *klass)
+gnl_source_init (GnlSource * source, GnlSourceClass * klass)
 {
   GST_OBJECT_FLAG_SET (source, GNL_OBJECT_SOURCE);
   source->element = NULL;
-  source->priv = g_new0(GnlSourcePrivate, 1);
+  source->priv = g_new0 (GnlSourcePrivate, 1);
 }
 
 static void
-gnl_source_dispose (GObject *object)
+gnl_source_dispose (GObject * object)
 {
   GnlSource *source = GNL_SOURCE (object);
 
@@ -120,25 +114,25 @@ gnl_source_dispose (GObject *object)
 
   GST_INFO_OBJECT (object, "dispose");
   source->priv->dispose_has_run = TRUE;
-  
+
   G_OBJECT_CLASS (parent_class)->dispose (object);
   GST_INFO_OBJECT (object, "dispose END");
 }
 
 static void
-gnl_source_finalize (GObject *object)
+gnl_source_finalize (GObject * object)
 {
   GnlSource *source = GNL_SOURCE (object);
 
   GST_INFO_OBJECT (object, "finalize");
   g_free (source->priv);
-  
+
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
 
 static gint
-compare_src_pad (GstPad *pad, GstCaps *caps)
+compare_src_pad (GstPad * pad, GstCaps * caps)
 {
   gint ret;
 
@@ -159,15 +153,15 @@ compare_src_pad (GstPad *pad, GstCaps *caps)
 */
 
 static gboolean
-get_valid_src_pad (GnlSource *source, GstElement *element, GstPad **pad)
+get_valid_src_pad (GnlSource * source, GstElement * element, GstPad ** pad)
 {
-  GstIterator	*srcpads;
+  GstIterator *srcpads;
 
   g_return_val_if_fail (pad, FALSE);
 
   srcpads = gst_element_iterate_src_pads (element);
-  *pad = (GstPad*) gst_iterator_find_custom (srcpads,
-     (GCompareFunc) compare_src_pad, GNL_OBJECT(source)->caps);
+  *pad = (GstPad *) gst_iterator_find_custom (srcpads,
+      (GCompareFunc) compare_src_pad, GNL_OBJECT (source)->caps);
   gst_iterator_free (srcpads);
 
   if (*pad)
@@ -176,43 +170,42 @@ get_valid_src_pad (GnlSource *source, GstElement *element, GstPad **pad)
 }
 
 static void
-no_more_pads_in_child (GstElement *element, GnlSource *source)
+no_more_pads_in_child (GstElement * element, GnlSource * source)
 {
-  GstPad	*pad;
+  GstPad *pad;
 
   /* check if we can get a valid src pad to ghost */
   GST_DEBUG_OBJECT (element, "let's find a suitable pad");
 
   if (get_valid_src_pad (source, element, &pad)) {
     source->priv->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (source),
-						      GST_PAD_NAME (pad),
-						      pad);
+        GST_PAD_NAME (pad), pad);
     gst_object_unref (pad);
   };
 
   GST_DEBUG ("pad %s:%s ghost-ed", GST_DEBUG_PAD_NAME (pad));
-  
+
   if (!(source->priv->ghostpad))
     GST_WARNING_OBJECT (source, "Couldn't get a valid source pad");
-  
+
 }
 
 static gboolean
-gnl_source_add_element	(GstBin *bin, GstElement *element)
+gnl_source_add_element (GstBin * bin, GstElement * element)
 {
-  GnlSource	*source = GNL_SOURCE (bin);
-  gboolean	pret;
+  GnlSource *source = GNL_SOURCE (bin);
+  gboolean pret;
 
   if (source->element) {
     GST_WARNING_OBJECT (bin, "GnlSource can only handle one element at a time");
     return FALSE;
   }
-  
+
   /* call parent add_element */
   pret = GST_BIN_CLASS (parent_class)->add_element (bin, element);
 
   if (pret) {
-    GstPad	*pad;
+    GstPad *pad;
 
     source->element = element;
     gst_object_ref (element);
@@ -220,29 +213,28 @@ gnl_source_add_element	(GstBin *bin, GstElement *element)
     /* need to get the src pad */
     if (get_valid_src_pad (source, element, &pad)) {
       GST_DEBUG_OBJECT (bin, "We have a valid src pad: %s:%s",
-			GST_DEBUG_PAD_NAME (pad));
+          GST_DEBUG_PAD_NAME (pad));
       source->priv->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (source),
-							GST_PAD_NAME (pad),
-							pad);
+          GST_PAD_NAME (pad), pad);
       gst_object_unref (pad);
       if (!(source->priv->ghostpad))
-	return FALSE;
+        return FALSE;
     } else {
       GST_DEBUG_OBJECT (bin, "no src pads available yet, connecting callback");
       /* we'll get the pad later */
       g_signal_connect (G_OBJECT (element), "no-more-pads",
-			G_CALLBACK (no_more_pads_in_child), source);
+          G_CALLBACK (no_more_pads_in_child), source);
     }
   }
-  
+
   return pret;
 }
 
 static gboolean
-gnl_source_remove_element	(GstBin *bin, GstElement *element)
+gnl_source_remove_element (GstBin * bin, GstElement * element)
 {
-  GnlSource	*source = GNL_SOURCE (bin);
-  gboolean	pret;
+  GnlSource *source = GNL_SOURCE (bin);
+  gboolean pret;
 
   if ((!source->element) || (source->element != element)) {
     return FALSE;

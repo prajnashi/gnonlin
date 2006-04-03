@@ -62,8 +62,7 @@ enum
   ARG_CAPS,
 };
 
-static void
-gnl_object_dispose (GObject *object);
+static void gnl_object_dispose (GObject * object);
 static void
 gnl_object_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
@@ -185,9 +184,9 @@ gnl_object_init (GnlObject * object, GnlObjectClass * klass)
 }
 
 static void
-gnl_object_dispose (GObject *object)
+gnl_object_dispose (GObject * object)
 {
-  GnlObject * gnl = GNL_OBJECT (object);
+  GnlObject *gnl = GNL_OBJECT (object);
 
   if (gnl->caps) {
     gst_caps_unref (gnl->caps);
@@ -681,7 +680,7 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
 {
   GnlPadPrivate *priv;
   GnlObject *object;
-  
+
   priv = gst_pad_get_element_private (ghostpad);
   object = priv->object;
 
@@ -752,7 +751,8 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
   GST_LOG_OBJECT (ghostpad, "overriding ghostpad's internal pad function");
 
   if (!(priv = gst_pad_get_element_private (internal))) {
-    GST_DEBUG_OBJECT (internal, "Creating a GnlPadPrivate to put in element_private");
+    GST_DEBUG_OBJECT (internal,
+        "Creating a GnlPadPrivate to put in element_private");
     priv = g_new0 (GnlPadPrivate, 1);
 
     /* Remember existing pad functions */
@@ -760,17 +760,18 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
     priv->queryfunc = GST_PAD_QUERYFUNC (internal);
     priv->unlinkfunc = GST_PAD_UNLINKFUNC (internal);
     gst_pad_set_element_private (internal, priv);
-    
+
     /* add query/event function overrides on internal pad */
     gst_pad_set_event_function (internal,
-				GST_DEBUG_FUNCPTR (internalpad_event_function));
+        GST_DEBUG_FUNCPTR (internalpad_event_function));
     gst_pad_set_query_function (internal,
-				GST_DEBUG_FUNCPTR (internalpad_query_function));
+        GST_DEBUG_FUNCPTR (internalpad_query_function));
     if (priv->unlinkfunc)
       gst_pad_set_unlink_function (internal,
-				   GST_DEBUG_FUNCPTR (internalpad_unlink_function));
+          GST_DEBUG_FUNCPTR (internalpad_unlink_function));
   } else {
-    GST_WARNING_OBJECT (internal, "internal pad already had an element_private");
+    GST_WARNING_OBJECT (internal,
+        "internal pad already had an element_private");
   }
 
   priv->object = object;
@@ -793,10 +794,10 @@ ghostpad_link_function (GstPad * ghostpad, GstPad * peer)
 
   if (G_UNLIKELY (ret != GST_PAD_LINK_OK))
     goto link_error;
-  
+
   GST_DEBUG_OBJECT (ghostpad,
       "linking went ok, getting internal pad and overriding query/event functions");
-  
+
   control_internal_pad (ghostpad, GNL_OBJECT (GST_PAD_PARENT (ghostpad)));
 
   return ret;
@@ -812,8 +813,8 @@ link_error:
 static void
 ghostpad_unlink_function (GstPad * ghostpad)
 {
-  GstPad	*internal = gst_pad_get_peer (gst_ghost_pad_get_target
-					      (GST_GHOST_PAD (ghostpad)));
+  GstPad *internal = gst_pad_get_peer (gst_ghost_pad_get_target
+      (GST_GHOST_PAD (ghostpad)));
   GnlPadPrivate *priv;
 
   if (!internal)
@@ -1204,15 +1205,15 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
   GST_DEBUG_OBJECT (element, "Return from parent change_state was %d", ret);
 
   switch (transition) {
-  case GST_STATE_CHANGE_READY_TO_PAUSED:
-    ret &= gnl_object_prepare (GNL_OBJECT (element));
-    break;
-  case GST_STATE_CHANGE_PAUSED_TO_READY:
-    /* cleanup gnlobject */
-    ret &= gnl_object_cleanup (GNL_OBJECT (element));
-    break;
-  default:
-    break;
+    case GST_STATE_CHANGE_READY_TO_PAUSED:
+      ret &= gnl_object_prepare (GNL_OBJECT (element));
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_READY:
+      /* cleanup gnlobject */
+      ret &= gnl_object_cleanup (GNL_OBJECT (element));
+      break;
+    default:
+      break;
   }
 
   return ret;

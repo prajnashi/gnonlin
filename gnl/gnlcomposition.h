@@ -28,7 +28,6 @@
 #include "gnlobject.h"
 
 G_BEGIN_DECLS
-
 #define GNL_TYPE_COMPOSITION \
   (gnl_composition_get_type())
 #define GNL_COMPOSITION(obj) \
@@ -41,22 +40,21 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_COMPOSITION))
 #define GNL_IS_COMPOSITION_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_COMPOSITION))
-
 typedef struct _GnlCompositionPrivate GnlCompositionPrivate;
 
-struct _GnlComposition {
-  GnlObject		 parent;
+struct _GnlComposition
+{
+  GnlObject parent;
 
-  GnlCompositionPrivate	*private;
+  GnlCompositionPrivate *private;
 };
 
-struct _GnlCompositionClass {
-  GnlObjectClass	parent_class;
+struct _GnlCompositionClass
+{
+  GnlObjectClass parent_class;
 };
 
-GType			gnl_composition_get_type	(void);
+GType gnl_composition_get_type (void);
 
 G_END_DECLS
-
 #endif /* __GNL_COMPOSITION_H__ */
-

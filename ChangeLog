@@ -1,3 +1,45 @@
+2006-04-03  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnl.c: (plugin_init):
+	* gnl/gnlcomposition.c: (gnl_composition_class_init),
+	(hash_value_destroy), (gnl_composition_init),
+	(gnl_composition_dispose), (gnl_composition_finalize),
+	(unlock_child_state), (ready_and_lock_child_state),
+	(gnl_composition_reset), (gnl_composition_handle_message),
+	(priority_comp), (have_to_update_pipeline), (get_new_seek_event),
+	(handle_seek_event), (gnl_composition_event_handler),
+	(gnl_composition_ghost_pad_set_target), (get_stack_list),
+	(get_clean_toplevel_stack), (get_src_pad),
+	(gnl_composition_prepare), (gnl_composition_change_state),
+	(objects_start_compare), (objects_stop_compare),
+	(update_start_stop_duration), (no_more_pads_object_cb),
+	(compare_relink_stack), (update_pipeline), (object_start_changed),
+	(object_stop_changed), (object_priority_changed),
+	(object_active_changed), (object_pad_removed),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	* gnl/gnlcomposition.h:
+	* gnl/gnlfilesource.c: (gnl_filesource_class_init),
+	(compare_src_pad), (get_valid_src_pad), (ghost_seek_pad),
+	(pad_blocked_cb), (decodebin_new_pad_cb),
+	(decodebin_pad_removed_cb), (gnl_filesource_init),
+	(gnl_filesource_dispose), (gnl_filesource_finalize),
+	(gnl_filesource_prepare), (gnl_filesource_send_event),
+	(gnl_filesource_set_property), (gnl_filesource_get_property):
+	* gnl/gnlfilesource.h:
+	* gnl/gnlobject.c: (gnl_object_dispose), (ghostpad_event_function),
+	(control_internal_pad), (ghostpad_link_function),
+	(ghostpad_unlink_function), (gnl_object_change_state):
+	* gnl/gnlobject.h:
+	* gnl/gnloperation.c: (gnl_operation_class_init),
+	(gnl_operation_init):
+	* gnl/gnloperation.h:
+	* gnl/gnlsource.c: (gnl_source_class_init), (gnl_source_init),
+	(gnl_source_dispose), (gnl_source_finalize), (compare_src_pad),
+	(get_valid_src_pad), (no_more_pads_in_child),
+	(gnl_source_add_element), (gnl_source_remove_element):
+	* gnl/gnlsource.h:
+	Indent the source code using gstreamer/tools/gst-indent
+
 2006-04-03  Thomas Vander Stichele  <thomas at apestaart dot org>
 
 	* configure.ac:

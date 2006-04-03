@@ -28,7 +28,6 @@
 #include "gnlobject.h"
 
 G_BEGIN_DECLS
-
 #define GNL_TYPE_SOURCE \
   (gnl_source_get_type())
 #define GNL_SOURCE(obj) \
@@ -39,25 +38,24 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_SOURCE))
 #define GNL_IS_SOURCE_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_SOURCE))
-
 typedef struct _GnlSourcePrivate GnlSourcePrivate;
 
-struct _GnlSource {
-  GnlObject 		 parent;
+struct _GnlSource
+{
+  GnlObject parent;
 
   /* controlled source element, acces with gst_bin_[add|remove]_element */
-  GstElement 		*element;
+  GstElement *element;
 
-  GnlSourcePrivate	*priv;
+  GnlSourcePrivate *priv;
 };
 
-struct _GnlSourceClass {
-  GnlObjectClass	parent_class;
+struct _GnlSourceClass
+{
+  GnlObjectClass parent_class;
 };
 
-GType			gnl_source_get_type		(void);
+GType gnl_source_get_type (void);
 
 G_END_DECLS
-
 #endif /* __GNL_SOURCE_H__ */
-
