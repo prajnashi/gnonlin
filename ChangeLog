@@ -1,5 +1,10 @@
 2006-04-04  Edward Hervey  <edward@fluendo.com>
 
+	* tests/check/Makefile.am:
+	Forcing GST_DEBUG to figure out what's going wrong with the buildbots.
+
+2006-04-04  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlobject.c: (gnl_media_to_object_time):
 	Bug in converting media time over media_stop
 	
