@@ -1031,14 +1031,14 @@ compare_relink_stack (GnlComposition * comp, GList * stack)
  * Updates the internal pipeline and properties. If @currenttime is 
  * GST_CLOCK_TIME_NONE, it will not modify the current pipeline
  *
- * Returns: TRUE if the pipeline was modified.
+ * Returns: FALSE if there was an error updating the pipeline.
  */
 
 static gboolean
 update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     gboolean initial)
 {
-  gboolean ret = FALSE;
+  gboolean ret = TRUE;
 
   GST_DEBUG_OBJECT (comp, "currenttime:%" GST_TIME_FORMAT,
       GST_TIME_ARGS (currenttime));
@@ -1066,11 +1066,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     /* rebuild the stack and relink new elements */
     stack = get_clean_toplevel_stack (comp, currenttime, &new_stop);
     deactivate = compare_relink_stack (comp, stack);
-    if (deactivate)
-      ret = TRUE;
-    else {
-      GST_WARNING_OBJECT (comp, "didn't get anything to deactivate");
-    }
 
     /* set new segment_start/stop */
     comp->private->segment_start = currenttime;
@@ -1140,6 +1135,9 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
   } else {
     COMP_OBJECTS_UNLOCK (comp);
   }
+  
+  GST_DEBUG_OBJECT (comp, "Returning %d", ret);
+
   return ret;
 }
 

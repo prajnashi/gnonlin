@@ -1,3 +1,11 @@
+2006-04-04  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (update_pipeline):
+	update_pipeline was returning the wrong information.
+	It now returns FALSE only if there was an error updating the pipeline.
+	* tests/check/simple.c: (GST_START_TEST):
+	The test fails if the state_change() DOES return FAILURE.
+
 2006-04-03  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:

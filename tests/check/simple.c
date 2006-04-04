@@ -233,7 +233,7 @@ GST_START_TEST (test_one_after_other)
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
-  fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING) != GST_STATE_CHANGE_FAILURE);
+  fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE);
 
   while (carry_on) {
     message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 20);
@@ -257,7 +257,7 @@ GST_START_TEST (test_one_after_other)
     }
   }
 
-  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_READY);
+  fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_READY) == GST_STATE_CHANGE_FAILURE);
 
   fail_if (collect->expected_segments != NULL);
 
