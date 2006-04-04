@@ -143,6 +143,60 @@ segment_new (gdouble rate, GstFormat format, gint64 start, gint64 stop, gint64 p
     fail_if (duration != durval); \
   }
 
+
+GST_START_TEST (test_time_duration)
+{
+  guint64 start, stop;
+  gint64 duration;
+  GstElement *comp, *source1, *source2;
+
+  comp = gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
+
+  /*
+    Source 1
+    Start : 0s
+    Duration : 2s
+    Priority : 1
+  */
+  source1 = videotest_gnl_src ("source1", 0, 1 * GST_SECOND, 1, 1);
+  fail_if (source1 == NULL);
+  check_start_stop_duration(source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+
+  /*
+    Source 2
+    Start : 2s
+    Duration : 2s
+    Priority : 1
+  */
+  source2 = videotest_gnl_src ("source2", 1 * GST_SECOND, 1 * GST_SECOND, 2, 1);
+  fail_if (source2 == NULL);
+  check_start_stop_duration(source2, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
+
+  /* Add one source */
+
+  gst_bin_add (GST_BIN (comp), source1);
+  check_start_stop_duration(comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+
+  /* Second source */
+
+  gst_bin_add (GST_BIN (comp), source2);
+  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+
+  /* Remove second source */
+
+  gst_object_ref (source1);
+  gst_bin_remove (GST_BIN (comp), source1);
+  check_start_stop_duration(comp, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
+
+  /* Re-add second source */
+
+  gst_bin_add (GST_BIN (comp), source1);
+  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+
+}
+
+GST_END_TEST;
+
 GST_START_TEST (test_one_after_other)
 {
   GstElement *pipeline;
@@ -583,6 +637,8 @@ gnonlin_suite (void)
   guint major, minor, micro, nano;
 
   suite_add_tcase (s, tc_chain);
+
+  tcase_add_test (tc_chain, test_time_duration);
 
   /* Only add the following test for core > 0.10.4 */
   gst_version (&major, &minor, &micro, &nano);
