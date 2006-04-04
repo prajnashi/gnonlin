@@ -27,14 +27,15 @@ gst_element_factory_make_or_warn (const gchar * factoryname, const gchar * name)
 static void
 composition_pad_added_cb (GstElement *composition, GstPad *pad, CollectStructure * collect)
 {
-  GstCaps *linkcaps;
+/*   GstCaps *linkcaps; */
 
-  /* Connect new pad to fakesink sinkpad */
-  linkcaps = gst_caps_from_string ("video/x-raw-yuv,framerate=(fraction)25/1");
+/*   /\* Connect new pad to fakesink sinkpad *\/ */
+/*   linkcaps = gst_caps_from_string ("video/x-raw-yuv,framerate=(fraction)25/1"); */
   
-  fail_if ((!(gst_element_link_filtered (composition, collect->sink, linkcaps))));
+/*   fail_if ((!(gst_element_link_filtered (composition, collect->sink, linkcaps)))); */
 
-  gst_caps_unref (linkcaps);
+/*   gst_caps_unref (linkcaps); */
+  fail_if (!(gst_element_link (composition, collect->sink)));
 }
 
 /* return TRUE to discard the Segment */

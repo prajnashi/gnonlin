@@ -1,5 +1,10 @@
 2006-04-04  Edward Hervey  <edward@fluendo.com>
 
+	* tests/check/simple.c: (composition_pad_added_cb):
+	Let's do a simple link.
+
+2006-04-04  Edward Hervey  <edward@fluendo.com>
+
 	* tests/check/Makefile.am:
 	GST_DEBUG=*:4
 
