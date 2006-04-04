@@ -1,5 +1,11 @@
 2006-04-04  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlobject.c: (gnl_media_to_object_time):
+	Bug in converting media time over media_stop
+	
+
+2006-04-04  Edward Hervey  <edward@fluendo.com>
+
 	* tests/check/simple.c: (GST_START_TEST), (gnonlin_suite):
 	Added new test to check start/duration/stop correctness for
 	sources and compositions.

@@ -297,9 +297,8 @@ gnl_media_to_object_time (GnlObject * object, GstClockTime mtime,
     GST_DEBUG_OBJECT (object,
         "media time is at or after media_stop, forcing to stop");
     *otime = object->stop;
-  }
-
-  *otime = (mtime - object->media_start) / object->rate + object->start;
+  } else
+    *otime = (mtime - object->media_start) / object->rate + object->start;
 
   GST_DEBUG_OBJECT (object, "Returning ObjectTime : %" GST_TIME_FORMAT,
       GST_TIME_ARGS (*otime));
@@ -1001,11 +1000,14 @@ translate_message_segment_done (GnlObject * object, GstMessage * message)
   GstMessage *message2;
 
   gst_message_parse_segment_done (message, &format, &position);
+
   GST_LOG_OBJECT (object, "format:%d, position:%" GST_TIME_FORMAT,
       format, GST_TIME_ARGS (position));
+
   if (format != GST_FORMAT_TIME) {
     GST_WARNING_OBJECT (object,
         "Got SEGMENT_DONE with format different from TIME");
+
     if (GST_CLOCK_TIME_IS_VALID (object->media_stop)) {
       GST_WARNING_OBJECT (object, "Bumping to object->media_stop");
       position = (gint64) object->media_stop;
