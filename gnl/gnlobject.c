@@ -920,9 +920,9 @@ gnl_object_remove_ghost_pad (GnlObject * object, GstPad * ghost)
   GnlPadPrivate *priv;
 
   priv = gst_pad_get_element_private (ghost);
+  gst_element_remove_pad (GST_ELEMENT (object), ghost);
   if (priv)
     g_free (priv);
-  gst_element_remove_pad (GST_ELEMENT (object), ghost);
 }
 
 gboolean
