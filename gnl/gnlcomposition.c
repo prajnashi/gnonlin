@@ -511,8 +511,16 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
     GstPad *ptarget =
         gst_ghost_pad_get_target (GST_GHOST_PAD (comp->private->ghostpad));
 
+    if (ptarget == target) {
+      GST_DEBUG_OBJECT (comp, "Target of ghostpad is the same as existing one, not changing");
+      gst_object_unref (ptarget);
+      gst_object_ref (target);
+      return;
+    }
+
     GST_DEBUG_OBJECT (comp, "Previous target was %s:%s, blocking that pad",
         GST_DEBUG_PAD_NAME (ptarget));
+    
 /*     if (!gst_pad_is_blocked (ptarget) && !(gst_pad_set_blocked (ptarget, TRUE))) */
 /*       GST_WARNING_OBJECT (comp, "Couldn't block pad %s:%s", */
 /* 			  GST_DEBUG_PAD_NAME (ptarget)); */
