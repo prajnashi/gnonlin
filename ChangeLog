@@ -1,5 +1,10 @@
 2006-04-04  Edward Hervey  <edward@fluendo.com>
 
+	* tests/check/Makefile.am:
+	Higher debug level :(
+
+2006-04-04  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (gnl_composition_ghost_pad_set_target):
 	If new target and previous target are the same, don't retarget.
 
