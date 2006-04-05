@@ -1,3 +1,8 @@
+2006-04-05  Edward Hervey  <edward@fluendo.com>
+
+	* tests/check/Makefile.am:
+	Remove buildbot debug craziness since I now know what the problem is.
+
 2006-04-04  Edward Hervey  <edward@fluendo.com>
 
 	* tests/check/simple.c: (composition_pad_added_cb):
