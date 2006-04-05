@@ -1,5 +1,10 @@
 2006-04-05  Edward Hervey  <edward@fluendo.com>
 
+	* tests/check/Makefile.am:
+	Increasing timeout for tests since we're asking a lot
+
+2006-04-05  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (ready_and_lock_child_state),
 	(gnl_composition_handle_message), (handle_seek_event),
 	(gnl_composition_change_state), (update_pipeline),
