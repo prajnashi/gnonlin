@@ -6,6 +6,7 @@ REGISTRY_ENVIRONMENT = \
 	GST_REGISTRY=$(CHECK_REGISTRY)
 
 TESTS_ENVIRONMENT = \
+	GST_DEBUG=4,gnl*:5,check:5				\
         CK_DEFAULT_TIMEOUT=60                                   \
 	$(REGISTRY_ENVIRONMENT)					\
 	GST_PLUGIN_SYSTEM_PATH=					\
