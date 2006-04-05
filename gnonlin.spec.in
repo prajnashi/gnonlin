@@ -14,26 +14,12 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define		gst_req @GST_REQ@
 
 Requires: 	gstreamer >= %{gst_req}
-Requires:	gstreamer-tools >= %{gst_req}
 BuildRequires: 	gstreamer-devel >= %{gst_req}
 
 %description
-Gnonlin is a library built on top of GStreamer (http://gstreamer.net) which
+Gnonlin is a plugin for GStreamer (http://gstreamer.freedesktop.org) which
 provides support for writing non-linear audio and video editing applications. It
 introduces the concept of a timeline.
-
-%package devel
-Summary:        Libraries/include files for gnonlin development
-Requires: 	gstreamer-devel >= %{gst_req}
-Group:		Development/Libraries
-
-%description devel
-Gnonlin is a library built on top of GStreamer (http://gstreamer.net) which
-provides support for writing non-linear audio and video editing applications. It
-introduces the concept of a timeline.
-
-This package contains the libraries and includes files necessary to develop
-applications using gnonlin.
 
 %prep
 %setup -q -n gnonlin-%{version}
@@ -61,11 +47,6 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS COPYING README
 %{_libdir}/gstreamer-%{gst_majorminor}/libgnl*
 
-%files devel
-%defattr(-, root, root, -)
-%{_libdir}/pkgconfig/gnonlin.pc
-
-# %doc %{_datadir}/gtk-doc/html/gnonlin
 
 %changelog
 * Thu Jul 14 2005 Edward Hervey <edward at fluendo dot com>
