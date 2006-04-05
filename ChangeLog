@@ -1,5 +1,36 @@
 2006-04-05  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (ready_and_lock_child_state),
+	(gnl_composition_handle_message), (handle_seek_event),
+	(gnl_composition_change_state), (update_pipeline),
+	(object_start_changed), (object_stop_changed),
+	(object_priority_changed), (object_active_changed),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	Only force state change in (update_pipeline) when not being called from
+	state_change().
+	Properly emit EOS/SEGMENT_DONE at the end, but don't emit SEGMENT_DONE
+	for intermediate steps.
+	* gnl/gnlfilesource.c:
+	cleanup
+	* gnl/gnlobject.c: (gnl_object_ghost_pad_full),
+	(gnl_object_remove_ghost_pad):
+	more debug statements
+	* gnl/gnlsource.c: (gnl_source_class_init), (gnl_source_dispose),
+	(gnl_source_finalize), (element_pad_added_cb),
+	(element_pad_removed_cb), (ghost_seek_pad), (pad_blocked_cb),
+	(has_dynamic_srcpads), (gnl_source_add_element),
+	(gnl_source_remove_element), (gnl_source_send_event),
+	(gnl_source_change_state):
+	Make GnlSource more generic.
+	It now works with dynamic and non-dynamic source pads.
+	Eventually we'll be able to subclass GnlFileSource from GnlSource and
+	remove most of the duplicated code.
+	* tests/check/simple.c: (GST_START_TEST):
+	Removed wrong newsegment checks
+	Added lots more assertions
+
+2006-04-05  Edward Hervey  <edward@fluendo.com>
+
 	* tests/check/Makefile.am:
 	Remove buildbot debug craziness since I now know what the problem is.
 

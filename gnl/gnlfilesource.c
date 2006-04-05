@@ -56,8 +56,6 @@ struct _GnlFileSourcePrivate
   GstElement *decodebin;
   GstPad *ghostpad;
   GstEvent *seek;
-
-  gulong buswatchid;
 };
 
 static void gnl_filesource_dispose (GObject * object);

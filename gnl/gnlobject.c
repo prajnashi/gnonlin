@@ -851,6 +851,9 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
   GnlPadPrivate *priv;
   GstPad *ghost;
 
+  GST_DEBUG_OBJECT (object, "name:%s, target:%p, flush_hack:%d",
+		    name, target, flush_hack);
+
   g_return_val_if_fail (target, FALSE);
   g_return_val_if_fail ((dir != GST_PAD_UNKNOWN), FALSE);
 
@@ -918,6 +921,9 @@ gnl_object_remove_ghost_pad (GnlObject * object, GstPad * ghost)
 {
   GnlPadPrivate *priv;
 
+  GST_DEBUG_OBJECT (object, "ghostpad %s:%s",
+		    GST_DEBUG_PAD_NAME (ghost));
+  
   priv = gst_pad_get_element_private (ghost);
   gst_element_remove_pad (GST_ELEMENT (object), ghost);
   if (priv)
