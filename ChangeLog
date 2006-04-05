@@ -1,5 +1,16 @@
 2006-04-05  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (gnl_composition_finalize),
+	(gnl_composition_handle_message), (gnl_composition_change_state),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	more memleak fixes.
+	* gnl/gnlsource.c: (gnl_source_dispose), (gnl_source_finalize):
+	more debug.
+	* tests/check/simple.c: (GST_START_TEST), (gnonlin_suite):
+	Add more debug and refcount checks.
+
+2006-04-05  Edward Hervey  <edward@fluendo.com>
+
 	* tests/check/Makefile.am:
 	Increasing timeout for tests since we're asking a lot
 

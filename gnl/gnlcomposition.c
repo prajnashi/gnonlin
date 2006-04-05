@@ -241,6 +241,7 @@ gnl_composition_finalize (GObject * object)
   COMP_OBJECTS_LOCK (comp);
   g_list_free (comp->private->objects_start);
   g_list_free (comp->private->objects_stop);
+  g_list_free(comp->private->current);
   g_hash_table_destroy (comp->private->objects_hash);
   COMP_OBJECTS_UNLOCK (comp);
 
@@ -259,16 +260,16 @@ unlock_child_state (GstElement * child, GValue * ret, gpointer udata)
   return TRUE;
 }
 
-static gboolean
-ready_and_lock_child_state (GstElement * child, GValue * ret, gpointer udata)
-{
-  GST_DEBUG_OBJECT (child,
-      "unlocking state, setting to ready, re-locking state");
-  gst_element_set_locked_state (child, FALSE);
-/*   gst_element_set_state (child, GST_STATE_READY); */
-/*   gst_element_set_locked_state (child, TRUE); */
-  return TRUE;
-}
+/* static gboolean */
+/* ready_and_lock_child_state (GstElement * child, GValue * ret, gpointer udata) */
+/* { */
+/*   GST_DEBUG_OBJECT (child, */
+/*       "unlocking state, setting to ready, re-locking state"); */
+/*   gst_element_set_locked_state (child, FALSE); */
+/* /\*   gst_element_set_state (child, GST_STATE_READY); *\/ */
+/* /\*   gst_element_set_locked_state (child, TRUE); *\/ */
+/*   return TRUE; */
+/* } */
 
 static void
 gnl_composition_reset (GnlComposition * comp)
@@ -352,6 +353,7 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
 	    We drop all segments and only emit SEGMENT_DONE if segment->flags had segment
 	    and we've finished.
 	  */
+	  gst_message_unref (message);
 
           if (!(comp->private->segment->flags & GST_SEEK_FLAG_SEGMENT)
 	      && comp->private->ghostpad)
@@ -366,9 +368,10 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
 	    GST_BIN_CLASS (parent_class)->handle_message
 	      (bin, gst_message_new_segment_done(GST_OBJECT (comp), comp->private->segment->format, epos));
 	  }
+          GST_DEBUG_OBJECT (comp, "END of Nothing else to play");
         }
 
-	dropit = TRUE;
+	return;
       } else {
         GST_DEBUG_OBJECT (comp,
             "position outside current segment, discarding message");
@@ -746,7 +749,7 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
       g_value_set_boolean (&val, FALSE);
       childs = gst_bin_iterate_elements (GST_BIN (comp));
       res = gst_iterator_fold (childs,
-          (GstIteratorFoldFunction) ready_and_lock_child_state, &val, NULL);
+          (GstIteratorFoldFunction) unlock_child_state, &val, NULL);
       gst_iterator_free (childs);
     }
       break;
@@ -1250,8 +1253,6 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
       GST_TIME_ARGS (GNL_OBJECT (element)->stop));
 
   gst_object_ref (element);
-
-  gst_element_set_locked_state (element, TRUE);
 
   ret = GST_BIN_CLASS (parent_class)->add_element (bin, element);
   if (!ret)

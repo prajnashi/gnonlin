@@ -174,26 +174,36 @@ GST_START_TEST (test_time_duration)
   check_start_stop_duration(source2, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
 
   /* Add one source */
+  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+  ASSERT_OBJECT_REFCOUNT(source2, "source2", 1);
 
   gst_bin_add (GST_BIN (comp), source1);
   check_start_stop_duration(comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
 
   /* Second source */
 
   gst_bin_add (GST_BIN (comp), source2);
   check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
-  /* Remove second source */
+  ASSERT_OBJECT_REFCOUNT(source2, "source2", 1);
+
+  /* Remove first source */
 
   gst_object_ref (source1);
   gst_bin_remove (GST_BIN (comp), source1);
   check_start_stop_duration(comp, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
 
-  /* Re-add second source */
+  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+
+  /* Re-add first source */
 
   gst_bin_add (GST_BIN (comp), source1);
   check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
-
+  gst_object_unref (source1);
+  
+  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
 }
 
 GST_END_TEST;
@@ -239,22 +249,31 @@ GST_START_TEST (test_one_after_other)
   gst_bin_add (GST_BIN (comp), source1);
   check_start_stop_duration(comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
+  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+
   /* Second source */
 
   gst_bin_add (GST_BIN (comp), source2);
   check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
-  /* Remove second source */
+  ASSERT_OBJECT_REFCOUNT(source2, "source2", 1);
+
+  /* Remove first source */
 
   gst_object_ref (source1);
   gst_bin_remove (GST_BIN (comp), source1);
   check_start_stop_duration(comp, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
 
-  /* Re-add second source */
+  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+ 
+  /* Re-add first source */
 
   gst_bin_add (GST_BIN (comp), source1);
   check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  gst_object_unref (source1);
 
+  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+ 
   sink = gst_element_factory_make_or_warn ("fakesink", "sink");
   fail_if (sink == NULL);
 
@@ -282,7 +301,12 @@ GST_START_TEST (test_one_after_other)
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
+  GST_DEBUG ("Setting pipeline to PLAYING");
+  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE);
+
+  GST_DEBUG ("Let's poll the bus");
 
   while (carry_on) {
     message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
@@ -307,6 +331,8 @@ GST_START_TEST (test_one_after_other)
       gst_mini_object_unref (GST_MINI_OBJECT (message));
     }
   }
+
+  GST_DEBUG ("Setting pipeline to NULL");
 
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_READY) == GST_STATE_CHANGE_FAILURE);
 
@@ -419,6 +445,7 @@ GST_START_TEST (test_one_under_another)
 
   gst_bin_add (GST_BIN (comp), source1);
   check_start_stop_duration(comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
+  gst_object_unref (source1);
 
   sink = gst_element_factory_make_or_warn ("fakesink", "sink");
   fail_if (sink == NULL);
@@ -476,6 +503,7 @@ GST_START_TEST (test_one_under_another)
 
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL) == GST_STATE_CHANGE_FAILURE);
 
+  gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
   ASSERT_OBJECT_REFCOUNT_BETWEEN(pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
   ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);
@@ -540,6 +568,7 @@ GST_START_TEST (test_one_above_another)
 
   gst_bin_add (GST_BIN (comp), source1);
   check_start_stop_duration(comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
+  gst_object_unref (source1);
 
   sink = gst_element_factory_make_or_warn ("fakesink", "sink");
   fail_if (sink == NULL);

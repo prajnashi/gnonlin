@@ -124,6 +124,8 @@ gnl_source_dispose (GObject * object)
 {
   GnlSource *source = GNL_SOURCE (object);
 
+  GST_DEBUG_OBJECT (object, "dispose");
+
   if (source->priv->dispose_has_run)
     return;
 
@@ -147,6 +149,8 @@ static void
 gnl_source_finalize (GObject * object)
 {
   GnlSource *source = GNL_SOURCE (object);
+
+  GST_DEBUG_OBJECT (object, "finalize");
 
   g_free (source->priv);
 
