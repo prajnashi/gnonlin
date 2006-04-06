@@ -1,3 +1,10 @@
+== 0.10.1 release ==
+
+2006-04-06  Edward Hervey  <edward@fluendo.com>
+
+	* configure.ac:
+	0.10.1 release
+
 2006-04-05  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
