@@ -1,9 +1,14 @@
+=== release 0.10.1 ===
+
+2006-04-06  Thomas Vander Stichele <thomas at apestaart dot org>
+
+	* configure.ac:
+	  releasing 0.10.1, "Jamon Serrano"
+
 2006-04-06  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
 	back to development
-
-== 0.10.1 release ==
 
 2006-04-06  Edward Hervey  <edward@fluendo.com>
 

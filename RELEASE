@@ -1,53 +1,58 @@
 
-GNonLin : Release notes for GNonLin 0.10.0.5 "Doner con patatas"
+Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.1 "Jamon Serrano"
+        
 
 
-This is the third release of the GNonLin non-linear elements for GStreamer 0.10.
+The GStreamer team is proud to announce a new release
+in the 0.10.x stable series of GNonLin.
 
-** BETA VERSION **
 
-This is a pre-release version. It currently does not include the GnlOperation
-elements for using effects in compositions.
 
-This module contains the following elements:
+This module contains a set of plug-ins for GStreamer to ease the
+creation of multimedia editors, or any other application where a
+timeline-oriented use of GStreamer makes sense.
 
-  gnlsource : An element for using source elements/bins in a GnlComposition
-  gnlfilesource : A higher-level element for using a uri in a GnlComposition
-  gnlcomposition : A container element that handles GNonLin objects
-
+  
 Features of this release
+    
+      * Bug and memleak fixes
+      * unit testing added
 
-  * Works with GStreamer 0.10.x
-  * GnlFileSource high-level element
-  * Seek capability through compositions
-  * Fixes for more weird decoders/demuxers
-
-Examples
-
-The examples contained in the examples/ directory have still not been updated
-to the latest API. You should not rely on them.
+Bugs fixed in this release
+    
 
 Download
 
-You can find source releases of GNonLin on sourceforge:
-http://sourceforge.net/project/showfiles.php?group_id=32268
+You can find source releases of gnonlin in the download directory:
+http://gstreamer.freedesktop.org/src/gnonlin/
 
-GNonlin Homepage
+GStreamer Homepage
 
 More details can be found on the project's website:
-http://gnonlin.sourceforge.net/
+http://gstreamer.freedesktop.org/
 
 Support and Bugs
 
-We use Sourceforge Bug Tracking system for bug reports and feature requests:
-http://sourceforge.net/tracker/?group_id=32268
+We use GNOME's bugzilla for bug reports and feature requests:
+http://bugzilla.gnome.org/enter_bug.cgi?product=GStreamer
 
 Developers
 
-CVS is hosted on sourceforge cvs:
-http://sourceforge.net/cvs/?group_id=32268
+CVS is hosted on cvs.freedesktop.org.
 All code is in CVS and can be checked out from there.
+Interested developers of the core library, plug-ins, and applications should
+subscribe to the gstreamer-devel list. If there is sufficient interest we
+will create more lists as necessary.
 
-Maintainer
-
-  * Edward Hervey
+        
+Applications
+GNonLin is primarily used by PiTiVi (http://www.pitivi.org/)
+  
+Contributors to this release
+    
+      * Christian Schaller
+      * Edward Hervey
+      * Thomas Vander Stichele
+      * Wim Taymans
+      * Wouter Paesen
+ 
