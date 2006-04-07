@@ -1,5 +1,11 @@
 2006-04-07  Edward Hervey  <edward@fluendo.com>
 
+	* COPYING:
+	Convert all remaining files to be coherent with the change to LGPL
+	licensing.
+
+2006-04-07  Edward Hervey  <edward@fluendo.com>
+
 	* configure.ac:
 	Back to development (for good)
 
