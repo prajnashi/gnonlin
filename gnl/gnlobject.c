@@ -1212,17 +1212,23 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
 
   GST_DEBUG_OBJECT (element, "Return from parent change_state was %d", ret);
 
+  if (ret == GST_STATE_CHANGE_FAILURE)
+    goto beach;
+  
   switch (transition) {
     case GST_STATE_CHANGE_READY_TO_PAUSED:
-      ret &= gnl_object_prepare (GNL_OBJECT (element));
+      if (gnl_object_prepare (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE)
+	ret = GST_STATE_CHANGE_FAILURE;
       break;
     case GST_STATE_CHANGE_PAUSED_TO_READY:
       /* cleanup gnlobject */
-      ret &= gnl_object_cleanup (GNL_OBJECT (element));
+      if (gnl_object_cleanup (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE)
+	ret = GST_STATE_CHANGE_FAILURE;
       break;
     default:
       break;
   }
 
+ beach:
   return ret;
 }
