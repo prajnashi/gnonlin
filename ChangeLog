@@ -1,3 +1,10 @@
+=== release 0.10.2 ===
+
+2006-04-21   <>
+
+	* configure.ac:
+	  releasing 0.10.2, "... Y un cafe solo"
+
 2006-04-10  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlobject.c: (gnl_object_change_state):
