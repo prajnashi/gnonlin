@@ -343,7 +343,7 @@ gnl_filesource_prepare (GnlObject * object)
       GST_TIME_ARGS (object->start), GST_TIME_ARGS (object->stop));
   return gnl_filesource_send_event (GST_ELEMENT (object),
       gst_event_new_seek (1.0, GST_FORMAT_TIME,
-          0,
+          GST_SEEK_FLAG_FLUSH,
           GST_SEEK_TYPE_SET, object->start, GST_SEEK_TYPE_SET, object->stop));
 }
 
@@ -355,11 +355,14 @@ gnl_filesource_send_event (GstElement * element, GstEvent * event)
 
   switch (GST_EVENT_TYPE (event)) {
     case GST_EVENT_SEEK:
-      if (fs->private->ghostpad)
+      GST_DEBUG_OBJECT (fs, "got seek event");
+      
+      if (fs->private->seek)
+	gst_event_unref (fs->private->seek);
+      if (fs->private->ghostpad) {
+	fs->private->seek = NULL;
         res = gst_pad_send_event (fs->private->ghostpad, event);
-      else {
-        if (fs->private->seek)
-          gst_event_unref (fs->private->seek);
+      } else {
         fs->private->seek = event;
       }
       break;

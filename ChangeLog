@@ -1,3 +1,10 @@
+2006-04-25  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlfilesource.c: (gnl_filesource_prepare),
+	(gnl_filesource_send_event):
+	First event sent in _prepare() should have the flush flag.
+	Smells like a second paperbag release...
+
 2006-04-21  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
