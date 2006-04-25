@@ -1,3 +1,10 @@
+=== release 0.10.3 ===
+
+2006-04-25   <>
+
+	* configure.ac:
+	  releasing 0.10.3, "Birthday Cake"
+
 2006-04-25  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlfilesource.c: (gnl_filesource_prepare),
