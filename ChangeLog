@@ -1,5 +1,17 @@
 2006-05-05  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlfilesource.c: (gnl_filesource_class_init),
+	(decodebin_pad_added_cb), (find_ghost_pad),
+	(decodebin_pad_removed_cb), (gnl_filesource_init):
+	* gnl/gnlfilesource.h:
+	Simplify GnlFileSource to be a subclass of GnlSource.	
+	* gnl/gnlsource.c: (element_pad_added_cb),
+	(gnl_source_change_state):
+	Add event probe for dynamic pads too.
+	Don't error out in state_change.
+
+2006-05-05  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/Makefile.am:
 	* gnl/gnlfilesource.c:
 	* gnl/gnlmarshal.list:

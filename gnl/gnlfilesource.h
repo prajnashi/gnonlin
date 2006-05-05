@@ -42,14 +42,14 @@ typedef struct _GnlFileSourcePrivate GnlFileSourcePrivate;
 
 struct _GnlFileSource
 {
-  GnlObject parent;
+  GnlSource parent;
 
   GnlFileSourcePrivate *private;
 };
 
 struct _GnlFileSourceClass
 {
-  GnlObjectClass parent_class;
+  GnlSourceClass parent_class;
 };
 
 GType gnl_filesource_get_type (void);

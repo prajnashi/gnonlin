@@ -70,7 +70,10 @@ gnl_source_send_event (GstElement * element, GstEvent * event);
 static GstStateChangeReturn
 gnl_source_change_state (GstElement * element, GstStateChange transition);
 
-static void pad_blocked_cb (GstPad * pad, gboolean blocked, GnlSource * source);
+static void
+pad_blocked_cb (GstPad * pad, gboolean blocked, GnlSource * source);
+static gboolean
+pad_event_probe (GstPad * pad, GstEvent * event, GnlSource * source);
 
 static void
 gnl_source_base_init (gpointer g_class)
@@ -202,9 +205,17 @@ element_pad_added_cb (GstElement * element, GstPad * pad, GnlSource * source)
     return;
   }
 
+  GST_DEBUG_OBJECT (pad, "valid pad, about to add event probe and pad block");
+
+  source->priv->eventprobeid = gst_pad_add_event_probe
+	    (pad, G_CALLBACK (pad_event_probe), source);
+
   if (!(gst_pad_set_blocked_async (pad, TRUE,
 				   (GstPadBlockCallback) pad_blocked_cb, source)))
     GST_WARNING_OBJECT (source, "Couldn't set Async pad blocking");
+
+  GST_DEBUG_OBJECT (source, "Done handling pad %s:%s",
+		    GST_DEBUG_PAD_NAME (pad));
 }
 
 static void
@@ -510,7 +521,6 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
       
       if (!(get_valid_src_pad (source, source->element, &pad))) {
 	GST_WARNING_OBJECT (source, "Couldn't find a valid source pad");
-	ret = GST_STATE_CHANGE_FAILURE;
       } else {
 	GST_LOG_OBJECT (source, "Trying to async block source pad");
 	if (!(source->priv->eventprobeid))
@@ -529,7 +539,7 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
   if (ret == GST_STATE_CHANGE_FAILURE)
     goto beach;
 
-  ret &= GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
+  ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
 
   if (ret == GST_STATE_CHANGE_FAILURE)
     goto beach;
