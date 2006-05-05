@@ -60,7 +60,7 @@ struct _GnlCompositionPrivate
   /* source ghostpad */
   GstPad *ghostpad;
 
-  /* current stack */
+  /* current stack, list of GnlObject* */
   GList *current;
 
   /*
@@ -69,6 +69,9 @@ struct _GnlCompositionPrivate
    */
   GstClockTime segment_start;
   GstClockTime segment_stop;
+
+  /* pending child seek */
+  GstEvent *childseek;
 
   /* Seek segment handler */
   GstSegment *segment;
@@ -228,6 +231,11 @@ gnl_composition_dispose (GObject * object)
     comp->private->ghostpad = NULL;
   }
 
+  if (comp->private->childseek) {
+    gst_event_unref (comp->private->childseek);
+    comp->private->childseek = NULL;
+  }
+
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
@@ -257,6 +265,14 @@ unlock_child_state (GstElement * child, GValue * ret, gpointer udata)
 {
   GST_DEBUG_OBJECT (child, "unlocking state");
   gst_element_set_locked_state (child, FALSE);
+  return TRUE;
+}
+
+static gboolean
+lock_child_state (GstElement * child, GValue * ret, gpointer udata)
+{
+  GST_DEBUG_OBJECT (child, "unlocking state");
+  gst_element_set_locked_state (child, TRUE);
   return TRUE;
 }
 
@@ -292,6 +308,11 @@ gnl_composition_reset (GnlComposition * comp)
   if (comp->private->ghostpad) {
     gnl_object_remove_ghost_pad (GNL_OBJECT (comp), comp->private->ghostpad);
     comp->private->ghostpad = NULL;
+  }
+
+  if (comp->private->childseek) {
+    gst_event_unref (comp->private->childseek);
+    comp->private->childseek = NULL;
   }
 
   g_value_init (&val, G_TYPE_BOOLEAN);
@@ -434,7 +455,7 @@ get_new_seek_event (GnlComposition * comp, gboolean initial)
   if (!(initial))
     flags = comp->private->segment->flags;
   else
-    flags = GST_SEEK_FLAG_SEGMENT;
+    flags = GST_SEEK_FLAG_SEGMENT | GST_SEEK_FLAG_ACCURATE;
 
   start = MAX (comp->private->segment->start, comp->private->segment_start);
   stop = GST_CLOCK_TIME_IS_VALID (comp->private->segment->stop)
@@ -729,15 +750,7 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
       /* state-lock elements not used */
 /*     update_pipeline (comp, COMP_REAL_START (comp)); */
       break;
-    case GST_STATE_CHANGE_READY_TO_PAUSED:
-
-      /* set ghostpad target */
-      if (!(update_pipeline (comp, COMP_REAL_START (comp), TRUE, FALSE))) {
-        ret = GST_STATE_CHANGE_FAILURE;
-	goto beach;
-      }
-      break;
-    case GST_STATE_CHANGE_PAUSED_TO_READY:{
+    case GST_STATE_CHANGE_READY_TO_PAUSED:{
       GstIterator *childs;
       GstIteratorResult res;
       GValue val = { 0 };
@@ -749,11 +762,18 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
       g_value_set_boolean (&val, FALSE);
       childs = gst_bin_iterate_elements (GST_BIN (comp));
       res = gst_iterator_fold (childs,
-          (GstIteratorFoldFunction) unlock_child_state, &val, NULL);
+          (GstIteratorFoldFunction) lock_child_state, &val, NULL);
       gst_iterator_free (childs);
     }
+
+      /* set ghostpad target */
+      if (!(update_pipeline (comp, COMP_REAL_START (comp), TRUE, FALSE))) {
+        ret = GST_STATE_CHANGE_FAILURE;
+	goto beach;
+      }
       break;
-    case GST_STATE_CHANGE_READY_TO_NULL:
+  case GST_STATE_CHANGE_PAUSED_TO_READY:
+  case GST_STATE_CHANGE_READY_TO_NULL:
       gnl_composition_reset (comp);
       break;
     default:
@@ -766,6 +786,22 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
     return ret;
 
   switch (transition) {
+  case GST_STATE_CHANGE_NULL_TO_READY:{
+      GstIterator *childs;
+      GstIteratorResult res;
+      GValue val = { 0 };
+
+      /* state-lock all elements */
+      GST_DEBUG_OBJECT (comp,
+			"Locking all childs");
+      g_value_init (&val, G_TYPE_BOOLEAN);
+      g_value_set_boolean (&val, FALSE);
+      childs = gst_bin_iterate_elements (GST_BIN (comp));
+      res = gst_iterator_fold (childs,
+          (GstIteratorFoldFunction) lock_child_state, &val, NULL);
+      gst_iterator_free (childs);
+    }
+      break;
     default:
       break;
   }
@@ -880,8 +916,10 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
       } else {
         /* toplevel element */
         gnl_composition_ghost_pad_set_target (comp, pad);
-        if (!(gst_pad_send_event (pad, get_new_seek_event (comp, FALSE))))
-          GST_WARNING_OBJECT (comp, "Sending seek event failed!");
+	if (comp->private->childseek)
+	  if (!(gst_pad_send_event (pad, comp->private->childseek)))
+	    GST_WARNING_OBJECT (comp, "Sending seek event failed!");
+	comp->private->childseek = NULL;
       }
       /* remove signal handler */
       g_signal_handler_disconnect (object, entry->nomorepadshandler);
@@ -1095,6 +1133,12 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     comp->private->segment_start = currenttime;
     comp->private->segment_stop = new_stop;
 
+    /* Clear pending child seek*/
+    if (comp->private->childseek) {
+      gst_event_unref (comp->private->childseek);
+      comp->private->childseek = NULL;
+    }
+
     COMP_OBJECTS_UNLOCK (comp);
 
     if (deactivate) {
@@ -1142,11 +1186,13 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     GST_DEBUG_OBJECT (comp, "Finished activating objects in new stack");
 
     if (comp->private->current) {
-      pad = get_src_pad (GST_ELEMENT (comp->private->current->data));
-      if (pad) {
-        GstEvent *event;
+      GstEvent * event;
 
-        event = get_new_seek_event (comp, initial);
+      event = get_new_seek_event (comp, initial);
+
+      pad = get_src_pad (GST_ELEMENT (comp->private->current->data));
+
+      if (pad) {
         if (!(gst_pad_send_event (pad, event))) {
           GST_WARNING_OBJECT (comp, "Couldn't send seek");
           ret = FALSE;
@@ -1154,7 +1200,8 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         gst_object_unref (pad);
       } else {
         GST_WARNING_OBJECT (comp->private->current,
-            "Couldn't get the source pad.. might be normal");
+            "Couldn't get the source pad.. storing the pending child seek");
+	comp->private->childseek = event;
         ret = TRUE;
       }
     }

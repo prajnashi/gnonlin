@@ -456,6 +456,17 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
         "event already has GST_SEEK_FLAG_SEGMENT : %d", flags);
   }
 
+  /* add accurate seekflags */
+  if (!(flags & GST_SEEK_FLAG_ACCURATE)) {
+    GST_DEBUG_OBJECT (object, "Adding GST_SEEK_FLAG_ACCURATE");
+    flags |= GST_SEEK_FLAG_ACCURATE;
+  } else {
+    GST_DEBUG_OBJECT (object,
+        "event already has GST_SEEK_FLAG_ACCURATE : %d", flags);
+  }
+
+  
+
   GST_DEBUG_OBJECT (object,
       "SENDING SEEK rate:%f, format:TIME, flags:%d, curtype:SET, stoptype:SET, %"
       GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, nrate, flags,
@@ -1205,6 +1216,17 @@ static GstStateChangeReturn
 gnl_object_change_state (GstElement * element, GstStateChange transition)
 {
   GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
+  
+  switch (transition) {
+  case GST_STATE_CHANGE_READY_TO_PAUSED:
+    if (gnl_object_prepare (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE) {
+      ret = GST_STATE_CHANGE_FAILURE;
+      goto beach;
+    }
+    break;
+  default:
+    break;
+  }
 
   GST_DEBUG_OBJECT (element, "Calling parent change_state");
 
@@ -1216,10 +1238,6 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
     goto beach;
   
   switch (transition) {
-    case GST_STATE_CHANGE_READY_TO_PAUSED:
-      if (gnl_object_prepare (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE)
-	ret = GST_STATE_CHANGE_FAILURE;
-      break;
     case GST_STATE_CHANGE_PAUSED_TO_READY:
       /* cleanup gnlobject */
       if (gnl_object_cleanup (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE)

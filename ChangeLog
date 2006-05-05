@@ -1,3 +1,40 @@
+2006-05-05  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_dispose),
+	(lock_child_state), (gnl_composition_reset), (get_new_seek_event),
+	(gnl_composition_change_state), (no_more_pads_object_cb),
+	(update_pipeline):
+	If srcpad of top gnlobject is not available, store pending child seek so
+	we can send it when the pad appears.
+	Lock all childs in READY. They will be automatically (un)locked in
+	update_pipeline()
+	Add GST_SEEK_FLAG_ACCURATE to the seek event.
+	* gnl/gnlobject.c: (translate_incoming_seek),
+	(gnl_object_change_state):
+	Add GST_SEEK_FLAG_ACCURATE to incoming seek events if it wasn't already
+	there.
+	GnlObject::update() virtual method is called in READY->PAUSED before
+	calling the parent _change_state()
+	* gnl/gnlsource.c: (gnl_source_class_init), (gnl_source_prepare),
+	(element_pad_removed_cb), (ghost_seek_pad), (pad_blocked_cb),
+	(pad_event_probe), (gnl_source_add_element),
+	(gnl_source_change_state):
+	We need to block on events. Added an event_probe for that.
+	Implement GnlObject::prepare() so we can create a seek event if the
+	GnlSource is used stand-alone (not in composition).
+	* tests/check/Makefile.am:
+	* tests/check/gnlsource.c: (gst_element_factory_make_or_warn),
+	(gnlsource_pad_added_cb), (compare_segments),
+	(sinkpad_event_probe), (sinkpad_buffer_probe), (videotest_gnl_src),
+	(videotest_in_bin_gnl_src), (segment_new), (GST_START_TEST),
+	(gnonlin_suite), (main):
+	New unit test for testing standalone GnlSource behaviour
+	* tests/check/simple.c: (composition_pad_added_cb),
+	(sinkpad_event_probe), (sinkpad_buffer_probe),
+	(videotest_in_bin_gnl_src), (GST_START_TEST), (gnonlin_suite):
+	I have to admit the tests were... really borked.
+	Now they're much more sensitive.
+
 2006-04-25  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
