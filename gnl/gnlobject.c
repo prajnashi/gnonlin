@@ -24,7 +24,6 @@
 
 #include <string.h>
 #include "gnl.h"
-#include "gnlmarshal.h"
 
 typedef struct _GnlPadPrivate GnlPadPrivate;
 

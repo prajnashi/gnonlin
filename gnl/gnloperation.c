@@ -24,7 +24,6 @@
 #endif
 
 #include "gnl.h"
-#include "gnlmarshal.h"
 
 GST_BOILERPLATE (GnlOperation, gnl_operation, GnlObject, GNL_TYPE_OBJECT);
 

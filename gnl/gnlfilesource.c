@@ -23,7 +23,6 @@
 #endif
 
 #include "gnl.h"
-#include "gnlmarshal.h"
 
 static GstStaticPadTemplate gnl_filesource_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",

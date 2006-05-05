@@ -1,5 +1,28 @@
 2006-05-05  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/Makefile.am:
+	* gnl/gnlfilesource.c:
+	* gnl/gnlmarshal.list:
+	* gnl/gnlobject.c:
+	* gnl/gnloperation.c:
+	* gnl/gnlsource.c:
+	Remove gnlmarshal cruft that dates from... well....
+	Ok, fine, that was here since 0.8 era and not used since :)
+
+2006-05-05  Edward Hervey  <edward@fluendo.com>
+
+	* common/check.mak:
+	* configure.ac:
+	* gnl/Makefile.am:
+	* gnl/gnlfilesource.c: (hack_fakesink_new), (hack_fakesink_free),
+	(find_hack_fakesink), (decodebin_new_pad_cb),
+	(decodebin_pad_removed_cb), (gnl_filesource_dispose),
+	(gnl_filesource_prepare), (gnl_filesource_send_event):
+	* gnl/gnlmarshal.list:
+	* tests/Makefile.am:
+
+2006-05-05  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (gnl_composition_dispose),
 	(lock_child_state), (gnl_composition_reset), (get_new_seek_event),
 	(gnl_composition_change_state), (no_more_pads_object_cb),
