@@ -1,5 +1,10 @@
 2006-05-08  Edward Hervey  <edward@fluendo.com>
 
+	* autogen.sh:
+	Update dependency checking
+
+2006-05-08  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlfilesource.c: (gnl_filesource_class_init),
 	(gnl_filesource_init):
 	No more redundant bin containing filesrc and decodebin.
