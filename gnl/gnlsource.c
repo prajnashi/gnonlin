@@ -353,7 +353,6 @@ pad_event_probe (GstPad * pad, GstEvent * event, GnlSource * source)
     case GST_EVENT_FLUSH_STOP:
       return TRUE;
     default:
-      g_idle_add ((GSourceFunc) ghost_seek_pad, source);
       return FALSE;
   }
 }

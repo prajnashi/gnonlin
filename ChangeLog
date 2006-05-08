@@ -1,5 +1,13 @@
 2006-05-08  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlsource.c: (pad_event_probe):
+	Don't call ghost_seek_pad() in the event probe and only discard
+	the events. The buffer probe will eventually take care of that.
+	This guarantees that upstream elements are initialized and ready to
+	handle seek events.
+
+2006-05-08  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (gnl_composition_finalize),
 	(gnl_composition_handle_message),
 	(gnl_composition_ghost_pad_set_target),
