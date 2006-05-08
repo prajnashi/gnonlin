@@ -103,7 +103,7 @@ gnl_filesource_class_init (GnlFileSourceClass * klass)
 static void
 gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
 {
-  GstElement	*filesrc, *decodebin;
+  GstElement *filesrc, *decodebin;
 
   GST_OBJECT_FLAG_SET (filesource, GNL_OBJECT_SOURCE);
   filesource->private = g_new0 (GnlFileSourcePrivate, 1);
@@ -122,15 +122,14 @@ gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
         ("Could not create a decodebin element, are you sure you have decodebin installed ?");
 
   filesource->private->filesource = filesrc;
-  
-  gst_bin_add_many (GST_BIN (filesource),
-      filesrc, decodebin, NULL);
 
-  if (!(gst_element_link (filesrc,
-              decodebin)))
+  gst_bin_add_many (GST_BIN (filesource), filesrc, decodebin, NULL);
+
+  if (!(gst_element_link (filesrc, decodebin)))
     g_warning ("Could not link the file source element to decodebin");
 
-  GNL_SOURCE_GET_CLASS (filesource)->control_element (GNL_SOURCE (filesource), decodebin);
+  GNL_SOURCE_GET_CLASS (filesource)->control_element (GNL_SOURCE (filesource),
+      decodebin);
 
   GST_DEBUG_OBJECT (filesource, "done");
 }

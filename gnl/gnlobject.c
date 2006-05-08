@@ -464,7 +464,7 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
         "event already has GST_SEEK_FLAG_ACCURATE : %d", flags);
   }
 
-  
+
 
   GST_DEBUG_OBJECT (object,
       "SENDING SEEK rate:%f, format:TIME, flags:%d, curtype:SET, stoptype:SET, %"
@@ -862,7 +862,7 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
   GstPad *ghost;
 
   GST_DEBUG_OBJECT (object, "name:%s, target:%p, flush_hack:%d",
-		    name, target, flush_hack);
+      name, target, flush_hack);
 
   g_return_val_if_fail (target, FALSE);
   g_return_val_if_fail ((dir != GST_PAD_UNKNOWN), FALSE);
@@ -931,9 +931,8 @@ gnl_object_remove_ghost_pad (GnlObject * object, GstPad * ghost)
 {
   GnlPadPrivate *priv;
 
-  GST_DEBUG_OBJECT (object, "ghostpad %s:%s",
-		    GST_DEBUG_PAD_NAME (ghost));
-  
+  GST_DEBUG_OBJECT (object, "ghostpad %s:%s", GST_DEBUG_PAD_NAME (ghost));
+
   priv = gst_pad_get_element_private (ghost);
   gst_element_remove_pad (GST_ELEMENT (object), ghost);
   if (priv)
@@ -1215,16 +1214,16 @@ static GstStateChangeReturn
 gnl_object_change_state (GstElement * element, GstStateChange transition)
 {
   GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
-  
+
   switch (transition) {
-  case GST_STATE_CHANGE_READY_TO_PAUSED:
-    if (gnl_object_prepare (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE) {
-      ret = GST_STATE_CHANGE_FAILURE;
-      goto beach;
-    }
-    break;
-  default:
-    break;
+    case GST_STATE_CHANGE_READY_TO_PAUSED:
+      if (gnl_object_prepare (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE) {
+        ret = GST_STATE_CHANGE_FAILURE;
+        goto beach;
+      }
+      break;
+    default:
+      break;
   }
 
   GST_DEBUG_OBJECT (element, "Calling parent change_state");
@@ -1235,17 +1234,17 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
 
   if (ret == GST_STATE_CHANGE_FAILURE)
     goto beach;
-  
+
   switch (transition) {
     case GST_STATE_CHANGE_PAUSED_TO_READY:
       /* cleanup gnlobject */
       if (gnl_object_cleanup (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE)
-	ret = GST_STATE_CHANGE_FAILURE;
+        ret = GST_STATE_CHANGE_FAILURE;
       break;
     default:
       break;
   }
 
- beach:
+beach:
   return ret;
 }

@@ -1,5 +1,24 @@
 2006-05-08  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (gnl_composition_finalize),
+	(gnl_composition_handle_message),
+	(gnl_composition_ghost_pad_set_target),
+	(gnl_composition_change_state), (no_more_pads_object_cb),
+	(update_pipeline):
+	* gnl/gnlfilesource.c: (gnl_filesource_init):
+	* gnl/gnlobject.c: (translate_incoming_seek),
+	(gnl_object_ghost_pad_full), (gnl_object_remove_ghost_pad),
+	(gnl_object_change_state):
+	* gnl/gnlsource.c: (gnl_source_class_init), (gnl_source_prepare),
+	(element_pad_added_cb), (element_pad_removed_cb), (ghost_seek_pad),
+	(pad_event_probe), (has_dynamic_srcpads),
+	(gnl_source_control_element_func), (gnl_source_add_element),
+	(gnl_source_remove_element), (gnl_source_change_state):
+	* gnl/gnlsource.h:
+	Indent properly using gstreamer/tools/gst-indent
+
+2006-05-08  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (gnl_composition_ghost_pad_set_target),
 	(get_src_pad), (update_pipeline):
 	Convert non-fatal GST_WARNING to GST_DEBUG.
