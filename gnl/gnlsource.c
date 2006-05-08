@@ -75,6 +75,9 @@ pad_blocked_cb (GstPad * pad, gboolean blocked, GnlSource * source);
 static gboolean
 pad_event_probe (GstPad * pad, GstEvent * event, GnlSource * source);
 
+static gboolean
+gnl_source_control_element_func (GnlSource * source, GstElement * element);
+
 static void
 gnl_source_base_init (gpointer g_class)
 {
@@ -100,6 +103,9 @@ gnl_source_class_init (GnlSourceClass * klass)
 
   GST_DEBUG_CATEGORY_INIT (gnlsource, "gnlsource",
       GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Source Element");
+
+  klass->controls_one = TRUE;
+  klass->control_element = GST_DEBUG_FUNCPTR (gnl_source_control_element_func);
 
   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_source_prepare);
 
@@ -383,6 +389,40 @@ has_dynamic_srcpads (GstElement * element)
 }
 
 static gboolean
+gnl_source_control_element_func (GnlSource * source, GstElement * element)
+{
+  GstPad *pad = NULL;
+
+  GST_DEBUG_OBJECT (source, "element:%s, source->element:%p",
+		    GST_ELEMENT_NAME (element),
+		    source->element);
+
+  g_return_val_if_fail (source->element == NULL, FALSE);
+
+  source->element = element;
+  gst_object_ref (element);
+
+  if (get_valid_src_pad (source, source->element, &pad)) {
+    gst_object_unref (pad);
+    GST_DEBUG_OBJECT (source, "There is a valid source pad, we consider the object as NOT having dynamic pads");
+    source->priv->dynamicpads = FALSE;
+  } else {
+    source->priv->dynamicpads = has_dynamic_srcpads(element);
+    GST_DEBUG_OBJECT (source, "No valid source pad yet, dynamicpads:%d",
+		      source->priv->dynamicpads);
+    if (source->priv->dynamicpads) {
+      /* connect to pad-added/removed signals */
+      source->priv->padremovedid = g_signal_connect
+	(G_OBJECT (element), "pad-removed", G_CALLBACK (element_pad_removed_cb), source);
+      source->priv->padaddedid = g_signal_connect
+	(G_OBJECT (element), "pad-added", G_CALLBACK (element_pad_added_cb), source);
+    }
+  }
+
+  return TRUE;
+}
+
+static gboolean
 gnl_source_add_element (GstBin * bin, GstElement * element)
 {
   GnlSource *source = GNL_SOURCE (bin);
@@ -391,7 +431,7 @@ gnl_source_add_element (GstBin * bin, GstElement * element)
   GST_DEBUG_OBJECT (source, "Adding element %s",
 		    GST_ELEMENT_NAME (element));
   
-  if (source->element) {
+  if (GNL_SOURCE_GET_CLASS (source)->controls_one && source->element) {
     GST_WARNING_OBJECT (bin, "GnlSource can only handle one element at a time");
     return FALSE;
   }
@@ -399,27 +439,8 @@ gnl_source_add_element (GstBin * bin, GstElement * element)
   /* call parent add_element */
   pret = GST_BIN_CLASS (parent_class)->add_element (bin, element);
 
-  if (pret) {
-    GstPad *pad;
-    source->element = element;
-    gst_object_ref (element);
-
-    if (get_valid_src_pad (source, source->element, &pad)) {
-      gst_object_unref (pad);
-      GST_DEBUG_OBJECT (source, "There is a valid source pad, we consider the object as NOT having dynamic pads");
-      source->priv->dynamicpads = FALSE;
-    } else {
-      source->priv->dynamicpads = has_dynamic_srcpads(element);
-      GST_DEBUG_OBJECT (source, "No valid source pad yet, dynamicpads:%d",
-			source->priv->dynamicpads);
-      if (source->priv->dynamicpads) {
-	/* connect to pad-added/removed signals */
-	source->priv->padremovedid = g_signal_connect
-	  (G_OBJECT (element), "pad-removed", G_CALLBACK (element_pad_removed_cb), source);
-	source->priv->padaddedid = g_signal_connect
-	  (G_OBJECT (element), "pad-added", G_CALLBACK (element_pad_added_cb), source);
-      }
-    }
+  if (pret && GNL_SOURCE_GET_CLASS (source)->controls_one) {
+    gnl_source_control_element_func (source, element);
   }
   return pret;
 }
@@ -433,13 +454,12 @@ gnl_source_remove_element (GstBin * bin, GstElement * element)
   GST_DEBUG_OBJECT (source, "Removing element %s",
 		    GST_ELEMENT_NAME (element));
   
-  if ((!source->element) || (source->element != element)) {
-    return FALSE;
-  }
-
-
   /* try to remove it */
   pret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
+
+  if ((!source->element) || (source->element != element)) {
+    return TRUE;
+  }
 
   if (pret) {
     /* remove ghostpad */

@@ -1,3 +1,21 @@
+2006-05-08  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlfilesource.c: (gnl_filesource_class_init),
+	(gnl_filesource_init):
+	No more redundant bin containing filesrc and decodebin.
+	We use the GnlSource controls_one and control_element() class properties
+	to inform GnlSource it should control decodebin but still accept
+	filesrc.
+	* gnl/gnlsource.c: (gnl_source_class_init),
+	(gnl_source_control_element_func), (gnl_source_add_element),
+	(gnl_source_remove_element):
+	* gnl/gnlsource.h:
+	Added two class properties:
+	_ controls_one which tells whether the class controls only one object
+	_ control_element() virtual_method which should be called by subclasses
+	that have several elements to specify which element should be checked
+	for pad-added/pad-removed.
+
 2006-05-05  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlfilesource.c: (gnl_filesource_class_init),

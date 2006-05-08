@@ -34,6 +34,8 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_CAST((obj),GNL_TYPE_SOURCE,GnlSource))
 #define GNL_SOURCE_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST((klass),GNL_TYPE_SOURCE,GnlSourceClass))
+#define GNL_SOURCE_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), GNL_TYPE_SOURCE, GnlSourceClass))
 #define GNL_IS_SOURCE(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_SOURCE))
 #define GNL_IS_SOURCE_CLASS(obj) \
@@ -53,6 +55,11 @@ struct _GnlSource
 struct _GnlSourceClass
 {
   GnlObjectClass parent_class;
+
+  /* controls_one is TRUE if the class only controls one element */
+  gboolean	controls_one;
+  /* control_element() takes care of controlling the given element */
+  gboolean	(*control_element) (GnlSource * source, GstElement * element);
 };
 
 GType gnl_source_get_type (void);

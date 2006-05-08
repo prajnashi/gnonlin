@@ -74,12 +74,16 @@ gnl_filesource_class_init (GnlFileSourceClass * klass)
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
   GnlObjectClass *gnlobject_class;
+  GnlSourceClass *gnlsource_class;
 
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
   gnlobject_class = (GnlObjectClass *) klass;
+  gnlsource_class = (GnlSourceClass *) klass;
 
   parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
+
+  gnlsource_class->controls_one = FALSE;
 
   GST_DEBUG_CATEGORY_INIT (gnlfilesource, "gnlfilesource",
       GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin File Source Element");
@@ -97,57 +101,9 @@ gnl_filesource_class_init (GnlFileSourceClass * klass)
 }
 
 static void
-decodebin_pad_added_cb (GstElement * decodebin, GstPad * pad, GstElement * bin)
-{
-  GstPad * ghostpad;
-
-  GST_DEBUG_OBJECT (decodebin, "New pad %s:%s, ghosting it on bin %s",
-		    GST_DEBUG_PAD_NAME (pad),
-		    GST_ELEMENT_NAME (bin));
-  
-  ghostpad = gst_ghost_pad_new (GST_PAD_NAME (pad), pad);
-
-  gst_element_add_pad (bin, ghostpad);
-
-  GST_DEBUG_OBJECT (decodebin, "Ghosted pad");
-}
-
-static gint
-find_ghost_pad (gconstpointer *a, gconstpointer *b)
-{
-  GstGhostPad *ghostpad = GST_GHOST_PAD (a);
-  GstPad *pad = GST_PAD (b);
-  GstPad *target = gst_ghost_pad_get_target (ghostpad);
-
-  if (target) {
-    if (target == pad) {
-      gst_object_unref (target);
-      return 0;
-    }
-    gst_object_unref (target);
-  }
-  return -1;
-}
-
-static void
-decodebin_pad_removed_cb (GstElement * decodebin, GstPad * pad, GstElement * bin)
-{
-  GstIterator *iterator;
-  GstPad *ghostpad = NULL;
-  /* Figure out which of the bin's pad is ghosted on this pad */
-
-  iterator = gst_element_iterate_src_pads (bin);
-  ghostpad = gst_iterator_find_custom (iterator, (GCompareFunc) find_ghost_pad, pad);
-  gst_iterator_free (iterator);
-
-  if (ghostpad)
-    gst_element_remove_pad (bin, ghostpad);
-}
-
-static void
 gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
 {
-  GstElement	*filesrc, *decodebin, *bin;
+  GstElement	*filesrc, *decodebin;
 
   GST_OBJECT_FLAG_SET (filesource, GNL_OBJECT_SOURCE);
   filesource->private = g_new0 (GnlFileSourcePrivate, 1);
@@ -167,27 +123,14 @@ gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
 
   filesource->private->filesource = filesrc;
   
-  bin = gst_bin_new ("gnlfilesource-bin");
-
-  gst_bin_add_many (GST_BIN (bin),
+  gst_bin_add_many (GST_BIN (filesource),
       filesrc, decodebin, NULL);
 
   if (!(gst_element_link (filesrc,
               decodebin)))
     g_warning ("Could not link the file source element to decodebin");
 
-  GST_DEBUG_OBJECT (filesource, "About to add signal watch");
-
-  g_signal_connect (G_OBJECT (decodebin),
-      "pad-added", G_CALLBACK (decodebin_pad_added_cb), (gpointer) bin);
-
-  g_signal_connect (G_OBJECT (decodebin),
-      "pad-removed", G_CALLBACK (decodebin_pad_removed_cb),
-      (gpointer) bin);
-
-  GST_DEBUG_OBJECT (filesource, "Adding filesource bin to ourself");
-  
-  gst_bin_add (GST_BIN (filesource), bin);
+  GNL_SOURCE_GET_CLASS (filesource)->control_element (GNL_SOURCE (filesource), decodebin);
 
   GST_DEBUG_OBJECT (filesource, "done");
 }
