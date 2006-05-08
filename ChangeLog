@@ -1,5 +1,11 @@
 2006-05-08  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (gnl_composition_ghost_pad_set_target),
+	(get_src_pad), (update_pipeline):
+	Convert non-fatal GST_WARNING to GST_DEBUG.
+
+2006-05-08  Edward Hervey  <edward@fluendo.com>
+
 	* autogen.sh:
 	Update dependency checking
 

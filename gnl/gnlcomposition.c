@@ -556,16 +556,8 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
     GST_DEBUG_OBJECT (comp, "Previous target was %s:%s, blocking that pad",
         GST_DEBUG_PAD_NAME (ptarget));
     
-/*     if (!gst_pad_is_blocked (ptarget) && !(gst_pad_set_blocked (ptarget, TRUE))) */
-/*       GST_WARNING_OBJECT (comp, "Couldn't block pad %s:%s", */
-/* 			  GST_DEBUG_PAD_NAME (ptarget)); */
     gst_object_unref (ptarget);
   }
-
-/*   if (gst_pad_is_blocked (target)) */
-/*      if (!(gst_pad_set_blocked (target, FALSE))) */
-/*      GST_WARNING_OBJECT (comp, "Couldn't unblock pad %s:%s", */
-/* 			 GST_DEBUG_PAD_NAME (target)); */
 
   gnl_object_ghost_pad_set_target (GNL_OBJECT (comp),
       comp->private->ghostpad, target);
@@ -578,7 +570,7 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
       GST_DEBUG_FUNCPTR_NAME (GST_PAD_EVENTFUNC (comp->private->ghostpad)));
   if (!(hadghost)) {
     if (!(gst_element_add_pad (GST_ELEMENT (comp), comp->private->ghostpad)))
-      GST_WARNING ("couldn't add the ghostpad");
+      GST_WARNING ("Couldn't add the ghostpad");
     else
       gst_element_no_more_pads (GST_ELEMENT (comp));
   }
@@ -717,7 +709,7 @@ get_src_pad (GstElement * element)
   it = gst_element_iterate_src_pads (element);
   itres = gst_iterator_next (it, (gpointer) & srcpad);
   if (itres != GST_ITERATOR_OK) {
-    GST_WARNING ("%s doesn't have a src pad !", GST_ELEMENT_NAME (element));
+    GST_DEBUG ("%s doesn't have a src pad !", GST_ELEMENT_NAME (element));
     srcpad = NULL;
   }
   gst_iterator_free (it);
@@ -1199,7 +1191,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         }
         gst_object_unref (pad);
       } else {
-        GST_WARNING_OBJECT (comp->private->current,
+        GST_DEBUG_OBJECT (comp->private->current,
             "Couldn't get the source pad.. storing the pending child seek");
 	comp->private->childseek = event;
         ret = TRUE;
