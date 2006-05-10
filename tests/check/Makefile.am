@@ -23,6 +23,7 @@ TESTS = $(check_PROGRAMS)
 
 check_PROGRAMS =	\
 	./simple	\
+	./complex	\
 	./gnlsource
 
 # these tests don't even pass

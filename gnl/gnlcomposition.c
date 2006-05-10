@@ -651,7 +651,7 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
  */
 
 static GList *
-get_clean_toplevel_stack (GnlComposition * comp, GstClockTime timestamp,
+get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
     GstClockTime * stop_time)
 {
   GList *stack, *tmp;
@@ -660,9 +660,29 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime timestamp,
   GstClockTime stop = G_MAXUINT64;
 
   GST_DEBUG_OBJECT (comp, "timestamp:%" GST_TIME_FORMAT,
-      GST_TIME_ARGS (timestamp));
+      GST_TIME_ARGS (*timestamp));
 
-  stack = get_stack_list (comp, timestamp, 0, TRUE);
+  stack = get_stack_list (comp, *timestamp, 0, TRUE);
+  if (!stack) {
+    GnlObject *object = NULL;
+
+    GST_DEBUG_OBJECT (comp, "Got empty stack, checking if it really was after the last object");
+    /* Find the first active object just after *timestamp */    
+    for (tmp = comp->private->objects_start; tmp; tmp = g_list_next (tmp)) {
+      object = (GnlObject *) tmp->data;
+
+      if ((object->start > *timestamp) && object->active)
+	break;
+    }
+    
+    if (tmp) {
+      GST_DEBUG_OBJECT (comp, "Found a valid object after %"GST_TIME_FORMAT" : %s [%"GST_TIME_FORMAT"]",
+			GST_TIME_ARGS (*timestamp), GST_ELEMENT_NAME (object),
+			GST_TIME_ARGS (object->start));
+      *timestamp = object->start;
+      stack = get_stack_list (comp, *timestamp, 0, TRUE);
+    }
+  }
   for (tmp = stack; tmp && size; tmp = g_list_next (tmp), size--) {
     GnlObject *object = tmp->data;
 
@@ -1121,7 +1141,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         gst_element_state_get_name (state));
 
     /* rebuild the stack and relink new elements */
-    stack = get_clean_toplevel_stack (comp, currenttime, &new_stop);
+    stack = get_clean_toplevel_stack (comp, &currenttime, &new_stop);
     deactivate = compare_relink_stack (comp, stack);
 
     /* set new segment_start/stop */

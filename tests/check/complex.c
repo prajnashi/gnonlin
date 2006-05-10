@@ -176,71 +176,7 @@ segment_new (gdouble rate, GstFormat format, gint64 start, gint64 stop, gint64 p
     fail_if (duration != durval); \
   }
 
-
-GST_START_TEST (test_time_duration)
-{
-  guint64 start, stop;
-  gint64 duration;
-  GstElement *comp, *source1, *source2;
-
-  comp = gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
-
-  /*
-    Source 1
-    Start : 0s
-    Duration : 1s
-    Priority : 1
-  */
-  source1 = videotest_gnl_src ("source1", 0, 1 * GST_SECOND, 1, 1);
-  fail_if (source1 == NULL);
-  check_start_stop_duration(source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
-
-  /*
-    Source 2
-    Start : 1s
-    Duration : 1s
-    Priority : 1
-  */
-  source2 = videotest_gnl_src ("source2", 1 * GST_SECOND, 1 * GST_SECOND, 2, 1);
-  fail_if (source2 == NULL);
-  check_start_stop_duration(source2, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
-
-  /* Add one source */
-  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
-  ASSERT_OBJECT_REFCOUNT(source2, "source2", 1);
-
-  gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
-
-  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
-
-  /* Second source */
-
-  gst_bin_add (GST_BIN (comp), source2);
-  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
-
-  ASSERT_OBJECT_REFCOUNT(source2, "source2", 1);
-
-  /* Remove first source */
-
-  gst_object_ref (source1);
-  gst_bin_remove (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
-
-  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
-
-  /* Re-add first source */
-
-  gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
-  gst_object_unref (source1);
-  
-  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
-}
-
-GST_END_TEST;
-
-GST_START_TEST (test_one_after_other)
+GST_START_TEST (test_one_space_another)
 {
   GstElement *pipeline;
   GstElement *comp, *sink, *source1, *source2;
@@ -268,13 +204,13 @@ GST_START_TEST (test_one_after_other)
 
   /*
     Source 2
-    Start : 1s
+    Start : 2s
     Duration : 1s
     Priority : 1
   */
-  source2 = videotest_gnl_src ("source2", 1 * GST_SECOND, 1 * GST_SECOND, 2, 1);
+  source2 = videotest_gnl_src ("source2", 2 * GST_SECOND, 1 * GST_SECOND, 2, 1);
   fail_if (source2 == NULL);
-  check_start_stop_duration(source2, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration(source2, 2 * GST_SECOND, 3 * GST_SECOND, 1 * GST_SECOND);
 
   /* Add one source */
 
@@ -286,7 +222,7 @@ GST_START_TEST (test_one_after_other)
   /* Second source */
 
   gst_bin_add (GST_BIN (comp), source2);
-  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration(comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT(source2, "source2", 1);
 
@@ -294,14 +230,14 @@ GST_START_TEST (test_one_after_other)
 
   gst_object_ref (source1);
   gst_bin_remove (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration(comp, 2 * GST_SECOND, 3 * GST_SECOND, 1 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
  
   /* Re-add first source */
 
   gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration(comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
   gst_object_unref (source1);
 
   ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
@@ -322,8 +258,8 @@ GST_START_TEST (test_one_after_other)
 							   0, 1 * GST_SECOND, 0));
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   1 * GST_SECOND, 2 * GST_SECOND,
-							   1 * GST_SECOND));
+							   2 * GST_SECOND, 3 * GST_SECOND,
+							   2 * GST_SECOND));
 
   g_signal_connect (G_OBJECT (comp), "pad-added",
 		    G_CALLBACK (composition_pad_added_cb), collect);
@@ -380,8 +316,8 @@ GST_START_TEST (test_one_after_other)
 							   0, 1 * GST_SECOND, 0));
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   1 * GST_SECOND, 2 * GST_SECOND,
-							   1 * GST_SECOND));  
+							   2 * GST_SECOND, 3 * GST_SECOND,
+							   2 * GST_SECOND));  
   collect->gotsegment = FALSE;
 
 
@@ -431,7 +367,7 @@ GST_START_TEST (test_one_after_other)
 
 GST_END_TEST;
 
-GST_START_TEST (test_one_under_another)
+GST_START_TEST (test_one_bin_space_another)
 {
   GstElement *pipeline;
   GstElement *comp, *sink, *source1, *source2;
@@ -450,27 +386,27 @@ GST_START_TEST (test_one_under_another)
   /*
     Source 1
     Start : 0s
-    Duration : 4s
+    Duration : 1s
     Priority : 1
   */
-  source1 = videotest_gnl_src ("source1", 0, 2 * GST_SECOND, 1, 1);
+  source1 = videotest_in_bin_gnl_src ("source1", 0, 1 * GST_SECOND, 1, 1);
   fail_if (source1 == NULL);
-  check_start_stop_duration(source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration(source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
   /*
     Source 2
     Start : 2s
-    Duration : 4s
-    Priority : 2
+    Duration : 1s
+    Priority : 1
   */
-  source2 = videotest_gnl_src ("source2", 1 * GST_SECOND, 2 * GST_SECOND, 2, 2);
+  source2 = videotest_in_bin_gnl_src ("source2", 2 * GST_SECOND, 1 * GST_SECOND, 1, 1);
   fail_if (source2 == NULL);
-  check_start_stop_duration(source2, 1 * GST_SECOND, 3 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration(source2, 2 * GST_SECOND, 3 * GST_SECOND, 1 * GST_SECOND);
 
   /* Add one source */
 
   gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration(comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
   /* Second source */
 
@@ -481,7 +417,7 @@ GST_START_TEST (test_one_under_another)
 
   gst_object_ref (source1);
   gst_bin_remove (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 1 * GST_SECOND, 3 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration(comp, 2 * GST_SECOND, 3 * GST_SECOND, 1 * GST_SECOND);
 
   /* Re-add second source */
 
@@ -502,7 +438,7 @@ GST_START_TEST (test_one_under_another)
   /* Expected segments */
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   0, 2 * GST_SECOND, 0));
+							   0, 1 * GST_SECOND, 0));
 
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
@@ -555,7 +491,7 @@ GST_START_TEST (test_one_under_another)
 
 GST_END_TEST;
 
-GST_START_TEST (test_one_bin_after_other)
+GST_START_TEST (test_one_above_another)
 {
   GstElement *pipeline;
   GstElement *comp, *sink, *source1, *source2;
@@ -575,11 +511,11 @@ GST_START_TEST (test_one_bin_after_other)
     Source 1
     Start : 0s
     Duration : 2s
-    Priority : 1
+    Priority : 2
   */
-  source1 = videotest_in_bin_gnl_src ("source1", 0, 1 * GST_SECOND, 1, 1);
+  source1 = videotest_gnl_src ("source1", 0, 2 * GST_SECOND, 1, 2);
   fail_if (source1 == NULL);
-  check_start_stop_duration(source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration(source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   /*
     Source 2
@@ -587,40 +523,32 @@ GST_START_TEST (test_one_bin_after_other)
     Duration : 2s
     Priority : 1
   */
-  source2 = videotest_in_bin_gnl_src ("source2", 1 * GST_SECOND, 1 * GST_SECOND, 2, 1);
+  source2 = videotest_gnl_src ("source2", 1 * GST_SECOND, 2 * GST_SECOND, 2, 1);
   fail_if (source2 == NULL);
-  check_start_stop_duration(source2, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration(source2, 1 * GST_SECOND, 3 * GST_SECOND, 2 * GST_SECOND);
 
   /* Add one source */
 
   gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
-
-  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   /* Second source */
 
   gst_bin_add (GST_BIN (comp), source2);
-  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration(comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
 
-  ASSERT_OBJECT_REFCOUNT(source2, "source2", 1);
-
-  /* Remove first source */
+  /* Remove second source */
 
   gst_object_ref (source1);
   gst_bin_remove (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration(comp, 1 * GST_SECOND, 3 * GST_SECOND, 2 * GST_SECOND);
 
-  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
- 
-  /* Re-add first source */
+  /* Re-add second source */
 
   gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration(comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration(comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
   gst_object_unref (source1);
 
-  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
- 
   sink = gst_element_factory_make_or_warn ("fakesink", "sink");
   fail_if (sink == NULL);
 
@@ -635,9 +563,10 @@ GST_START_TEST (test_one_bin_after_other)
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
 							   0, 1 * GST_SECOND, 0));
+
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   1 * GST_SECOND, 2 * GST_SECOND,
+							   1 * GST_SECOND, 3 * GST_SECOND,
 							   1 * GST_SECOND));
 
   g_signal_connect (G_OBJECT (comp), "pad-added",
@@ -649,60 +578,8 @@ GST_START_TEST (test_one_bin_after_other)
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
-  GST_DEBUG ("Setting pipeline to PLAYING");
-  ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
 
-  fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE);
-
-  GST_DEBUG ("Let's poll the bus");
-
-  while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
-    if (message) {
-      switch (GST_MESSAGE_TYPE (message)) {
-      case GST_MESSAGE_EOS:
-	/* we should check if we really finished here */
-	GST_WARNING ("Got an EOS");
-	carry_on = FALSE;
-	break;
-      case GST_MESSAGE_SEGMENT_START:
-      case GST_MESSAGE_SEGMENT_DONE:
-	/* We shouldn't see any segement messages, since we didn't do a segment seek */
-	GST_WARNING ("Saw a Segment start/stop");
-	fail_if (FALSE);
-	break;
-      case GST_MESSAGE_ERROR:
-	fail_if (TRUE);
-      default:
-	break;
-      }
-      gst_mini_object_unref (GST_MINI_OBJECT (message));
-    }
-  }
-
-  GST_DEBUG ("Setting pipeline to NULL");
-
-  fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_READY) == GST_STATE_CHANGE_FAILURE);
-
-  fail_if (collect->expected_segments != NULL);
-
-  GST_DEBUG ("Resetted pipeline to READY");
-
-  /* Expected segments */
-  collect->expected_segments = g_list_append (collect->expected_segments,
-					      segment_new (1.0, GST_FORMAT_TIME,
-							   0, 1 * GST_SECOND, 0));
-  collect->expected_segments = g_list_append (collect->expected_segments,
-					      segment_new (1.0, GST_FORMAT_TIME,
-							   1 * GST_SECOND, 2 * GST_SECOND,
-							   1 * GST_SECOND)); 
-  collect->gotsegment = FALSE;
-
-  GST_DEBUG ("Setting pipeline to PLAYING again");
-
-  fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE);
-
-  carry_on = TRUE;
   while (carry_on) {
     message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
     if (message) {
@@ -713,22 +590,21 @@ GST_START_TEST (test_one_bin_after_other)
 	break;
       case GST_MESSAGE_SEGMENT_START:
       case GST_MESSAGE_SEGMENT_DONE:
-	/* We shouldn't see any segement messages, since we didn't do a segment seek */
-	GST_WARNING ("Saw a Segment start/stop");
-	fail_if (FALSE);
+	/* check if the segment is the correct one (0s-4s) */
+	carry_on = FALSE;
 	break;
       case GST_MESSAGE_ERROR:
 	fail_if (TRUE);
       default:
 	break;
       }
-      gst_mini_object_unref (GST_MINI_OBJECT (message));
+      gst_message_unref (message);
     }
   }
 
   fail_if (collect->expected_segments != NULL);
 
-  fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL) == GST_STATE_CHANGE_FAILURE);
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
 
   ASSERT_OBJECT_REFCOUNT_BETWEEN(pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
@@ -742,19 +618,17 @@ Suite *
 gnonlin_suite (void)
 {
   Suite *s = suite_create ("gnonlin");
-  TCase *tc_chain = tcase_create ("general");
+  TCase *tc_chain = tcase_create ("complex");
   guint major, minor, micro, nano;
 
   suite_add_tcase (s, tc_chain);
 
-  tcase_add_test (tc_chain, test_time_duration);
-
   /* Only add the following test for core > 0.10.4 */
   gst_version (&major, &minor, &micro, &nano);
   if ((micro > 4) || (micro == 4 && nano > 0)) {
-    tcase_add_test (tc_chain, test_one_after_other);
-    tcase_add_test (tc_chain, test_one_under_another);
-    tcase_add_test (tc_chain, test_one_bin_after_other);
+    tcase_add_test (tc_chain, test_one_space_another);
+    tcase_add_test (tc_chain, test_one_bin_space_another);
+/*     tcase_add_test (tc_chain, test_one_above_another); */
   }
   return s;
 }

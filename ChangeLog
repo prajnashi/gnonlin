@@ -1,5 +1,20 @@
 2006-05-10  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (get_clean_toplevel_stack),
+	(update_pipeline):
+	Fix for correctly playing compositions with gaps between objects.
+	* tests/check/Makefile.am:
+	* tests/check/complex.c: (gst_element_factory_make_or_warn),
+	(composition_pad_added_cb), (compare_segments),
+	(sinkpad_event_probe), (sinkpad_buffer_probe), (videotest_gnl_src),
+	(videotest_in_bin_gnl_src), (segment_new), (GST_START_TEST),
+	(gnonlin_suite), (main):
+	Added new unittests for compositions with gaps between objects.
+	* tests/check/simple.c: (gnonlin_suite):
+	Moved de-activated test_one_above_another to complex
+
+2006-05-10  Edward Hervey  <edward@fluendo.com>
+
 	* configure.ac:
 	0.10.3.2 pre-release
 
