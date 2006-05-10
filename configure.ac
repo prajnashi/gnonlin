@@ -119,28 +119,6 @@ dnl check for "check", unit testing library/header
 AM_PATH_CHECK(0.9.2, HAVE_CHECK=yes, HAVE_CHECK=no)
 AM_CONDITIONAL(HAVE_CHECK, test "x$HAVE_CHECK" = "xyes")
 
-dnl GTK is optional and used in examples
-HAVE_GTK=NO
-PKG_CHECK_MODULES(GTK2, gtk+-2.0 >= 2.2.0, HAVE_GTK_22=yes, HAVE_GTK_22=no)
-if test "x$HAVE_GTK_22" = "xyes"; then
-  HAVE_GTK=yes
-  GTK_VERSION=`$PKG_CONFIG --variable=gtk_binary_version gtk+-2.0`
-  AC_SUBST(GTK_VERSION)
-  GTK_PREFIX=`$PKG_CONFIG --variable=prefix gdk-pixbuf-2.0`
-  AC_SUBST(GTK_BASE_DIR)
-else
-  PKG_CHECK_MODULES(GTK2, gtk+-2.0, HAVE_GTK_20=yes, HAVE_GTK_20=no)
-fi
-if test "x$HAVE_GTK_20" = "xyes"; then
-  HAVE_GTK=yes
-fi
-GTK_CFLAGS=$GTK2_CFLAGS
-GTK_LIBS=$GTK2_LIBS
-AC_SUBST(GTK_LIBS)
-AC_SUBST(GTK_CFLAGS)
-AC_SUBST(HAVE_GTK)
-AM_CONDITIONAL(HAVE_GTK, test "x$HAVE_GTK" = "xyes")
-
 dnl *** set variables based on configure arguments ***
 
 dnl set license and copyright notice
@@ -206,8 +184,6 @@ common/m4/Makefile
 m4/Makefile
 tests/Makefile
 tests/check/Makefile
-tests/examples/Makefile
-tests/examples/seek/Makefile
 gnl/Makefile
 gnl/gnlversion.h
 gnonlin.spec
