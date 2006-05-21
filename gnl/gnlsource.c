@@ -53,6 +53,9 @@ struct _GnlSourcePrivate
   gulong padremovedid;          /* signal handler for element pad-removed signal */
   gulong padaddedid;            /* signal handler for element pad-added signal */
   gulong eventprobeid;          /* signal handler for event probe */
+
+  gboolean pendingblock;	/* We have a pending pad_block */
+  GstPad *ghostedpad;		/* Pad (to be) ghosted */
 };
 
 static gboolean gnl_source_prepare (GnlObject * object);
@@ -200,8 +203,8 @@ element_pad_added_cb (GstElement * element, GstPad * pad, GnlSource * source)
 {
   GST_DEBUG_OBJECT (source, "pad %s:%s", GST_DEBUG_PAD_NAME (pad));
 
-  if (source->priv->ghostpad) {
-    GST_WARNING_OBJECT (source, "We already have ghost-ed a valid source pad");
+  if (source->priv->ghostpad || source->priv->pendingblock) {
+    GST_WARNING_OBJECT (source, "We already have (pending) ghost-ed a valid source pad");
     return;
   }
 
@@ -218,6 +221,10 @@ element_pad_added_cb (GstElement * element, GstPad * pad, GnlSource * source)
   if (!(gst_pad_set_blocked_async (pad, TRUE,
               (GstPadBlockCallback) pad_blocked_cb, source)))
     GST_WARNING_OBJECT (source, "Couldn't set Async pad blocking");
+  else {
+    source->priv->ghostedpad = pad;
+    source->priv->pendingblock = TRUE;
+  }
 
   GST_DEBUG_OBJECT (source, "Done handling pad %s:%s",
       GST_DEBUG_PAD_NAME (pad));
@@ -291,13 +298,11 @@ get_valid_src_pad (GnlSource * source, GstElement * element, GstPad ** pad)
 static gboolean
 ghost_seek_pad (GnlSource * source)
 {
-  GstPad *pad;
+  GstPad *pad = source->priv->ghostedpad;
 
-  if (source->priv->ghostpad)
+  if (source->priv->ghostpad || !pad)
     goto beach;
 
-  if (!(get_valid_src_pad (source, source->element, &pad)))
-    goto beach;
 
   GST_DEBUG_OBJECT (source, "ghosting %s:%s", GST_DEBUG_PAD_NAME (pad));
 
@@ -322,6 +327,7 @@ ghost_seek_pad (GnlSource * source)
   GST_DEBUG_OBJECT (source, "about to unblock %s:%s", GST_DEBUG_PAD_NAME (pad));
   gst_pad_set_blocked_async (pad, FALSE,
       (GstPadBlockCallback) pad_blocked_cb, source);
+  source->priv->pendingblock = FALSE;
 
   gst_object_unref (pad);
 
@@ -530,7 +536,7 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
       GST_LOG_OBJECT (source, "ghostpad:%p, dynamicpads:%d",
           source->priv->ghostpad, source->priv->dynamicpads);
 
-      if (!(source->priv->ghostpad)) {
+      if (!(source->priv->ghostpad) && !source->priv->pendingblock) {
         GstPad *pad;
 
         GST_LOG_OBJECT (source, "no ghostpad and not dynamic pads");
@@ -540,10 +546,12 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
         if (!(get_valid_src_pad (source, source->element, &pad))) {
           GST_WARNING_OBJECT (source, "Couldn't find a valid source pad");
         } else {
-          GST_LOG_OBJECT (source, "Trying to async block source pad");
+          GST_LOG_OBJECT (source, "Trying to async block source pad %s:%s",
+			  GST_DEBUG_PAD_NAME (pad));
+	  source->priv->ghostedpad = pad;
           if (!(source->priv->eventprobeid))
             source->priv->eventprobeid = gst_pad_add_event_probe
-                (pad, G_CALLBACK (pad_event_probe), source);
+	      (pad, G_CALLBACK (pad_event_probe), source);
           gst_pad_set_blocked_async (pad, TRUE,
               (GstPadBlockCallback) pad_blocked_cb, source);
           gst_object_unref (pad);
@@ -573,6 +581,7 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
         gnl_object_remove_ghost_pad (GNL_OBJECT (source),
             source->priv->ghostpad);
         source->priv->ghostpad = NULL;
+	source->priv->ghostedpad = NULL;
         gst_object_unref (target);
       }
     default:

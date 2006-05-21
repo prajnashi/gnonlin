@@ -1,3 +1,10 @@
+2006-05-21  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlsource.c: (element_pad_added_cb), (ghost_seek_pad),
+	(gnl_source_change_state):
+	Handle the case where more than one pads of the controlled element is
+	a valid src pad (intersects with the caps).
+
 2006-05-11  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
