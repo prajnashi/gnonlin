@@ -531,6 +531,7 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
         GST_WARNING_OBJECT (source,
             "GnlSource doesn't have an element to control !");
         ret = GST_STATE_CHANGE_FAILURE;
+	break;
       }
 
       GST_LOG_OBJECT (source, "ghostpad:%p, dynamicpads:%d",

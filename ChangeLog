@@ -1,3 +1,14 @@
+2006-05-22  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (no_more_pads_object_cb),
+	(update_pipeline):
+	Change the composition's ghostpad target at the same time as we send the
+	seek event. This avoids the case where we check for the pad availability
+	too early (not present) and then never switch the ghostpad target.
+	* gnl/gnlsource.c: (gnl_source_change_state):
+	if we don't have a controlled element, don't even care about calling
+	parent's _change_state()
+
 2006-05-21  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlsource.c: (element_pad_added_cb), (ghost_seek_pad),

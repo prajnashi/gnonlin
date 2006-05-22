@@ -113,8 +113,19 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
 #define COMP_ENTRY(comp, object) \
   (g_hash_table_lookup (comp->private->objects_hash, (gconstpointer) object))
 
-#define COMP_OBJECTS_LOCK(comp) (g_mutex_lock (comp->private->objects_lock))
-#define COMP_OBJECTS_UNLOCK(comp) (g_mutex_unlock (comp->private->objects_lock))
+#define COMP_OBJECTS_LOCK(comp) G_STMT_START {				\
+    GST_LOG_OBJECT (comp, "locking objects_lock from thread %p",		\
+      g_thread_self());							\
+    g_mutex_lock (comp->private->objects_lock);				\
+    GST_LOG_OBJECT (comp, "locked object_lock from thread %p",		\
+		    g_thread_self());					\
+  } G_STMT_END
+
+#define COMP_OBJECTS_UNLOCK(comp) G_STMT_START {			\
+    GST_LOG_OBJECT (comp, "unlocking objects_lock from thread %p",		\
+		    g_thread_self());					\
+    g_mutex_unlock (comp->private->objects_lock);			\
+  } G_STMT_END
 
 static gboolean gnl_composition_prepare (GnlObject * object);
 
@@ -933,7 +944,7 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
         gnl_composition_ghost_pad_set_target (comp, pad);
         if (comp->private->childseek)
           if (!(gst_pad_send_event (pad, comp->private->childseek)))
-            GST_WARNING_OBJECT (comp, "Sending seek event failed!");
+            GST_ERROR_OBJECT (comp, "Sending seek event failed!");
         comp->private->childseek = NULL;
       }
       /* remove signal handler */
@@ -1135,6 +1146,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     GList *deactivate;
     GstPad *pad = NULL;
     GstClockTime new_stop;
+    gboolean switchtarget = FALSE;
 
     GST_DEBUG_OBJECT (comp,
         "now really updating the pipeline, current-state:%s",
@@ -1172,19 +1184,8 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
 
     /* if toplevel element has changed, redirect ghostpad to it */
     if ((stack) && ((!(comp->private->current))
-            || (comp->private->current->data != stack->data))) {
-      GST_DEBUG_OBJECT (comp, "Top stack object has changed, switching pad");
-      pad = get_src_pad (GST_ELEMENT (stack->data));
-      if (pad) {
-        gnl_composition_ghost_pad_set_target (comp, pad);
-        gst_object_unref (pad);
-      } else {
-        /* The pad might be created dynamically */
-      }
-    } else {
-      GST_DEBUG_OBJECT (comp,
-          "Top stack object is still the same, keeping existing pad");
-    }
+            || (comp->private->current->data != stack->data)))
+      switchtarget = TRUE;
 
     GST_DEBUG_OBJECT (comp, "activating objects in new stack to %s",
         gst_element_state_get_name (nextstate));
@@ -1204,14 +1205,36 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
       GstEvent *event;
 
       event = get_new_seek_event (comp, initial);
-
+      
       pad = get_src_pad (GST_ELEMENT (comp->private->current->data));
 
       if (pad) {
+	GST_DEBUG_OBJECT (comp, "We have a valid toplevel element pad %s:%s",
+			  GST_DEBUG_PAD_NAME (pad));
+
+	if (switchtarget) {
+	  GST_DEBUG_OBJECT (comp, "Top stack object has changed, switching pad");
+	  if (pad) {
+	    GST_LOG_OBJECT (comp, "Setting the composition's ghostpad target to %s:%s",
+			    GST_DEBUG_PAD_NAME (pad));
+	    gnl_composition_ghost_pad_set_target (comp, pad);
+	    gst_object_unref (pad);
+	  } else {
+	    GST_LOG_OBJECT (comp, "No srcpad was available on stack's toplevel element");
+	    /* The pad might be created dynamically */
+	  }
+	} else {
+	  GST_DEBUG_OBJECT (comp,
+			    "Top stack object is still the same, keeping existing pad");
+	}
+
         if (!(gst_pad_send_event (pad, event))) {
-          GST_WARNING_OBJECT (comp, "Couldn't send seek");
+          GST_ERROR_OBJECT (comp, "Couldn't send seek");
           ret = FALSE;
-        }
+        } else {
+	  GST_LOG_OBJECT (comp, "seek event sent successfully to %s:%s",
+			  GST_DEBUG_PAD_NAME (pad));
+	}
         gst_object_unref (pad);
       } else {
         GST_DEBUG_OBJECT (comp->private->current,
