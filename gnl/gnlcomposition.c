@@ -247,6 +247,11 @@ gnl_composition_dispose (GObject * object)
     comp->private->childseek = NULL;
   }
 
+  if (comp->private->current) {
+    g_list_free (comp->private->current);
+    comp->private->current = NULL;
+  }
+
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
@@ -538,12 +543,18 @@ gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
 
   if (res) {
     GST_DEBUG_OBJECT (comp, "About to call gnl_event_pad_func()");
+    COMP_OBJECTS_LOCK (comp);
     res = comp->private->gnl_event_pad_func (ghostpad, event);
+    COMP_OBJECTS_UNLOCK (comp);
     GST_DEBUG_OBJECT (comp, "Done calling gnl_event_pad_func() %d", res);
   }
   gst_object_unref (comp);
   return res;
 }
+
+/* gnl_composition_ghost_pad_set_target:
+ * target: The target #GstPad. The refcount will be decremented (given to the ghostpad).
+ */
 
 static void
 gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
@@ -564,7 +575,6 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
       GST_DEBUG_OBJECT (comp,
           "Target of ghostpad is the same as existing one, not changing");
       gst_object_unref (ptarget);
-      gst_object_ref (target);
       return;
     }
 
@@ -955,7 +965,6 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
 
   COMP_OBJECTS_UNLOCK (comp);
 
-  gst_object_unref (pad);
 
   GST_DEBUG_OBJECT (comp, "end");
 }
@@ -1204,6 +1213,8 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     if (comp->private->current) {
       GstEvent *event;
 
+      COMP_OBJECTS_LOCK (comp);
+
       event = get_new_seek_event (comp, initial);
       
       pad = get_src_pad (GST_ELEMENT (comp->private->current->data));
@@ -1218,7 +1229,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
 	    GST_LOG_OBJECT (comp, "Setting the composition's ghostpad target to %s:%s",
 			    GST_DEBUG_PAD_NAME (pad));
 	    gnl_composition_ghost_pad_set_target (comp, pad);
-	    gst_object_unref (pad);
 	  } else {
 	    GST_LOG_OBJECT (comp, "No srcpad was available on stack's toplevel element");
 	    /* The pad might be created dynamically */
@@ -1242,6 +1252,9 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         comp->private->childseek = event;
         ret = TRUE;
       }
+
+    COMP_OBJECTS_UNLOCK (comp);
+
     }
   } else {
     COMP_OBJECTS_UNLOCK (comp);

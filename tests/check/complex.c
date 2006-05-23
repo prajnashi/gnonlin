@@ -359,6 +359,7 @@ GST_START_TEST (test_one_space_another)
 
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL) == GST_STATE_CHANGE_FAILURE);
 
+  gst_object_unref (GST_OBJECT (sinkpad));
   ASSERT_OBJECT_REFCOUNT_BETWEEN(pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
   ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);
@@ -482,6 +483,7 @@ GST_START_TEST (test_one_bin_space_another)
 
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL) == GST_STATE_CHANGE_FAILURE);
 
+  gst_object_unref (GST_OBJECT (sinkpad));
   gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
   ASSERT_OBJECT_REFCOUNT_BETWEEN(pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
@@ -606,6 +608,7 @@ GST_START_TEST (test_one_above_another)
 
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
 
+  gst_object_unref (GST_OBJECT (sinkpad));
   ASSERT_OBJECT_REFCOUNT_BETWEEN(pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
   ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);

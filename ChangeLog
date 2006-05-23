@@ -1,3 +1,15 @@
+2006-05-23  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_dispose),
+	(gnl_composition_ghost_pad_set_target), (update_pipeline),
+	(gnl_composition_event_handler):
+	Protect critical part with comp_objects_lock.
+	Don't unref pad given to gnl_composition_ghost_pad_set_target().
+	* tests/check/complex.c: (GST_START_TEST):
+	* tests/check/gnlsource.c: (GST_START_TEST):
+	* tests/check/simple.c: (GST_START_TEST):
+	memleak fixes in tests.
+
 2006-05-22  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (no_more_pads_object_cb),

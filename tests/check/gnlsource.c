@@ -271,6 +271,8 @@ GST_START_TEST (test_simple_videotestsrc)
 
   fail_if (collect->expected_segments != NULL);
 
+  gst_object_unref (GST_OBJECT (sinkpad));
+
   GST_DEBUG ("Resetted pipeline to READY");  
 }
 
@@ -363,6 +365,8 @@ GST_START_TEST (test_videotestsrc_in_bin)
   }
 
   GST_DEBUG ("Setting pipeline to NULL");
+
+  gst_object_unref (GST_OBJECT (sinkpad));
 
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_READY) == GST_STATE_CHANGE_FAILURE);
 
