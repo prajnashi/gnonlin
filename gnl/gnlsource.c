@@ -188,8 +188,8 @@ gnl_source_prepare (GnlObject * object)
 
     source->priv->event = gst_event_new_seek (1.0, GST_FORMAT_TIME,
         GST_SEEK_FLAG_ACCURATE,
-        GST_SEEK_TYPE_SET, object->media_start,
-        GST_SEEK_TYPE_SET, object->media_stop);
+        GST_SEEK_TYPE_SET, object->start,
+        GST_SEEK_TYPE_SET, object->stop);
   }
 
   gst_object_unref (parent);
@@ -319,8 +319,11 @@ ghost_seek_pad (GnlSource * source)
 
   if (source->priv->event) {
     GST_DEBUG_OBJECT (source, "sending queued seek event");
-    gst_pad_send_event (source->priv->ghostpad, source->priv->event);
-    GST_DEBUG_OBJECT (source, "queued seek sent");
+    if (!(gst_pad_send_event (source->priv->ghostpad, source->priv->event)))
+      GST_ELEMENT_ERROR (source, RESOURCE, SEEK,
+			 (NULL), ("Sending initial seek to upstream element failed"));
+    else
+      GST_DEBUG_OBJECT (source, "queued seek sent");
     source->priv->event = NULL;
   }
 
