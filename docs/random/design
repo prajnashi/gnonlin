@@ -1,50 +1,104 @@
-GNonLin overview
+GNonLin Design Document
+
+Global Overview
+---------------
 
 GNonLin works as a companion library for GStreamer, in order to be able to
 easily manipulate and assemble media streams through time, and use that 
-composition in any GStreamer graph.
+composition in any GStreamer graph just like any other GStreamer element.
 
-* GnlObject
+GNonLin Object (GnlObject)
+--------------------------
 
- All gnonlin objects derive from this base class. It has the following 
-properties:
+  Base class for all GNonLin objects. Virtual class.
 
- * Media start/stop time. This allows to select a specific time range from the 
-   underlying media stream.
+  Contains all the properties, functions and methods for time-shifting.
 
- * Start/Stop time. This allows to position the given object in it's parent 
-   object.
+* Properties:
 
- * (Order of) Priority. When you assemble several objects together and they 
-   overlap in time, this property allows you to decide which one has priority 
-   over the others. The lower the value, the higher the priority.
+  _ start: Start position of the object in it's container.
+  _ duration: Duration of the object in it's container.
+  _ stop: Stop position of the object in it's container (read-only, computed
+	from start and duration properties).
 
- * It derives from a GstBin, therefore all GNonLin elements can be used alone in
-   a GStreamer graph.
+  _ media-start: Start position of the element controlled by the object.
+  _ media-duration: Duration of the element controlled by the object.
+  _ media-stop: Stop position of the element controlled by the object
+	(read-only, computed from media-start and media-duration properties).
 
-* GnlSource
+  _ rate: Rate of the outgoing stream (read-only, computed from duration and
+	media-duration properties).
 
- Wrapper to use GStreamer source elements in GNonLin. In addition to GnlObject 
-properties it has an element property which is the wrapped element.
+  _ caps: GstCaps used to filter the object's caps. The first pad whose caps
+	intersect with these caps will be used by the GnlObject.
+  _ priority: Priority of the object in it's container GnlComposition. 0 is
+	the highest priority (the object will supersed any other object set
+	to play at the same time), and 2^32 is the lowest priority (the object
+	will be scheduled to play if nothing else is set to play at that time).
+  _ active: If set to FALSE, this object will not be used in it's container
+	GnlComposition
 
-* GnlOperation
+* Time-shifting:
 
- Wrapper to use GStreamer filter/effects elements in GNonLin. It can only support
-elements with one output pad.
+    The values set for start, duration, media-start and media-duration will be
+  used to decide which section will be taken in the controlled element, and
+  how it will be shifted in time.
+    The outputted data will be [media-start -> media-stop] from the controlled
+  element , shifted to appear as [start -> stop].
+    This time-shifting is done by intercepting incoming and outgoing events in
+  the element pad controlled by the GnlObject.
 
-* GnlComposition
+GNonLin source (GnlSource)
+--------------------------
 
- Class for "combining" several "one source output" GnlObjects. Used as such it 
-can only handle same-media type. In addition to adding/removing GnlObjects to 
-it, you can also set a default source which will be played during "gaps".
+  Object for controlling source elements (only provide data).
 
-* GnlTimeline
+* Controlling a GstElement:
 
- Class for "combining" several GnlComposition together. This is the highest level
-GNonLin element.
+    The GnlSource can control a source GstElement which is added to it (using
+  the standard gst_bin_add() function).
+    If the element provides several pads, the first pad whose caps intersect the
+  one specified in the caps property will be used.
+
+
+GNonLin operation (GnlOperation)
+--------------------------------
+
+  Object for controlling multiple-input single-output elements.
+
+* Number of input:
+
+    The number of inputs to be used by this operation is set with the 'inputs'
+  priority. This will be used by the container composition to automatically
+  link it to the proper sources. 
+
+
+GNonLin composition (GnlComposition)
+------------------------------------
+
+  Contains GnlObjects and connects them dynamicly to create a composition.
+
+* Adding/Removing objects to the composition:
+
+    Any GnlObject derivative can be added/removed to/from a composition using
+  the standard gst_bin_add()/gst_bin_remove() methods.
+
+* What is played at any given time:
+
+    The object taken for output at one given time is the object:
+    _ which is active
+    _ AND is set for that time (start <= time < stop)
+    _ AND has the highest priority (smallest numerical value)
+
+    If that object is an operation with has N sinkpads, the composition will
+  recursively connect the GnlObjects by increasing priorities:
+    _ which are active
+    _ AND set for that time (start <= time < stop)
+    _ If the object is an operation, recursively apply this rule.
 
 
 Object Hierarchy:
+-----------------
 
 GstBin
  !
@@ -55,5 +109,3 @@ GstBin
        +--- GnlOperation
        !
        +--- GnlComposition
-             !
-             +--- GnlTimeline

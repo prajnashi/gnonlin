@@ -1,3 +1,8 @@
+2006-06-06  Edward Hervey  <edward@fluendo.com>
+
+	* docs/random/design:
+	Updated to real 0.10 behaviour + added details.
+
 2006-05-31  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlsource.c: (gnl_source_prepare):
