@@ -602,6 +602,43 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
   GST_DEBUG_OBJECT (comp, "END");
 }
 
+static GstClockTime
+next_stop_in_region_above_priority (GnlComposition * composition,
+				    GstClockTime start,
+				    GstClockTime stop, guint priority)
+{
+  GList * tmp = composition->private->objects_start;
+  GnlObject * object;
+  GstClockTime res = stop;
+
+  GST_DEBUG_OBJECT (composition, "start: %" GST_TIME_FORMAT " stop: %"
+		    GST_TIME_FORMAT " priority:%d",
+		    GST_TIME_ARGS (start),
+		    GST_TIME_ARGS (stop),
+		    priority);
+
+  /* Find first object with priority < priority, and start < start_position <= stop */
+  for (; tmp ; tmp = g_list_next (tmp)) {
+    object = tmp->data;
+
+    if (object->priority >= priority)
+      continue;
+
+    if (object->stop <= start)
+      continue;
+
+    if (object->start > stop)
+      break;
+    
+    res = object->start;
+    GST_DEBUG_OBJECT (composition, "Found %s [prio:%d] at %" GST_TIME_FORMAT,
+		      GST_OBJECT_NAME (object),
+		      object->priority,
+		      GST_TIME_ARGS (object->start));
+  }
+  return res;
+}
+
 /**
  * get_stack_list:
  * @comp: The #GnlComposition
@@ -679,11 +716,14 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
   GList *ret = NULL;
   gint size = 1;
   GstClockTime stop = G_MAXUINT64;
+  guint top_priority = -1;
 
   GST_DEBUG_OBJECT (comp, "timestamp:%" GST_TIME_FORMAT,
       GST_TIME_ARGS (*timestamp));
 
   stack = get_stack_list (comp, *timestamp, 0, TRUE);
+
+  /* Case for gaps, therefore no objects at specified *timestamp */
   if (!stack) {
     GnlObject *object = NULL;
 
@@ -704,9 +744,12 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
       stack = get_stack_list (comp, *timestamp, 0, TRUE);
     }
   }
+
   for (tmp = stack; tmp && size; tmp = g_list_next (tmp), size--) {
     GnlObject *object = tmp->data;
 
+    if (top_priority == -1)
+      top_priority = object->priority;
     ret = g_list_append (ret, object);
     if (stop > object->stop)
       stop = object->stop;
@@ -714,6 +757,9 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
     /* size += number of input for operation */
   }
 
+  /* Figure out if there's anything blocking us with smaller priority */
+  stop = next_stop_in_region_above_priority (comp, *timestamp, stop, top_priority);
+  
   g_list_free (stack);
 
   if (stop_time) {

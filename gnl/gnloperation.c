@@ -36,44 +36,21 @@ GST_ELEMENT_DETAILS ("GNonLin Operation",
 GST_DEBUG_CATEGORY_STATIC (gnloperation);
 #define GST_CAT_DEFAULT gnloperation
 
-/* enum { */
-/*   ARG_0, */
-/*   ARG_ELEMENT, */
-/* }; */
+enum
+{
+  ARG_0,
+  ARG_SINKS,
+};
 
-/* static void		gnl_operation_base_init		(gpointer g_class); */
-/* static void 		gnl_operation_class_init 	(GnlOperationClass *klass); */
-/* static void 		gnl_operation_init 		(GnlOperation *operation); */
-/* static void		gnl_operation_set_property 	(GObject *object, guint prop_id, */
-/* 							 const GValue *value, GParamSpec *pspec); */
-/* static void		gnl_operation_get_property 	(GObject *object, guint prop_id, GValue *value, */
-/* 		                                         GParamSpec *pspec); */
+static void gnl_operation_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec);
+static void gnl_operation_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec);
 
-/* static GstElementStateReturn	gnl_operation_change_state (GstElement *element); */
+static gboolean gnl_operation_prepare (GnlObject * object);
 
-/* static GnlObjectClass *parent_class = NULL; */
-
-/* GType */
-/* gnl_operation_get_type (void) */
-/* { */
-/*   static GType operation_type = 0; */
-
-/*   if (!operation_type) { */
-/*     static const GTypeInfo operation_info = { */
-/*       sizeof (GnlOperationClass), */
-/*       (GBaseInitFunc) gnl_operation_base_init, */
-/*       NULL, */
-/*       (GClassInitFunc) gnl_operation_class_init, */
-/*       NULL, */
-/*       NULL, */
-/*       sizeof (GnlOperation), */
-/*       32, */
-/*       (GInstanceInitFunc) gnl_operation_init, */
-/*     }; */
-/*     operation_type = g_type_register_static (GNL_TYPE_OBJECT, "GnlOperation", &operation_info, 0); */
-/*   } */
-/*   return operation_type; */
-/* } */
+static gboolean gnl_operation_add_element (GstBin * bin, GstElement * element);
+static gboolean gnl_operation_remove_element (GstBin * bin, GstElement * element);
 
 static void
 gnl_operation_base_init (gpointer g_class)
@@ -86,183 +63,204 @@ gnl_operation_base_init (gpointer g_class)
 static void
 gnl_operation_class_init (GnlOperationClass * klass)
 {
-  GObjectClass *gobject_class;
-  GstElementClass *gstelement_class;
-  GnlObjectClass *gnlobject_class;
-
-  gobject_class = (GObjectClass *) klass;
-  gstelement_class = (GstElementClass *) klass;
-  gnlobject_class = (GnlObjectClass *) klass;
+  GObjectClass *gobject_class = (GObjectClass *) klass;
+  GstBinClass *gstbin_class = (GstBinClass *) klass;
+/*   GstElementClass *gstelement_class = (GstElementClass *) klass; */
+  GnlObjectClass *gnlobject_class = (GnlObjectClass *) klass;
 
   GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation",
       GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Operation element");
 
-/*   gobject_class->set_property	= GST_DEBUG_FUNCPTR (gnl_operation_set_property); */
-/*   gobject_class->get_property	= GST_DEBUG_FUNCPTR (gnl_operation_get_property); */
+  gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_operation_set_property);
+  gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_operation_get_property);
 
-/*   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_ELEMENT, */
-/*     g_param_spec_object ("element", "Element", "The element to manage", */
-/*                          GST_TYPE_ELEMENT, G_PARAM_READWRITE)); */
+  gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_operation_prepare);
 
-/*   gstelement_class->change_state	= gnl_operation_change_state; */
+  gstbin_class->add_element = GST_DEBUG_FUNCPTR (gnl_operation_add_element);
+  gstbin_class->remove_element = GST_DEBUG_FUNCPTR (gnl_operation_remove_element);
+
+  g_object_class_install_property (gobject_class, ARG_SINKS,
+      g_param_spec_uint ("sinks", "Sinks", "Number of input sinks",
+          1, G_MAXUINT, 1, G_PARAM_READWRITE));
+
 }
 
 static void
 gnl_operation_init (GnlOperation * operation, GnlOperationClass * klass)
 {
-
+  operation->num_sinks = 1;
+  operation->realsinks = 0;
+  operation->element = NULL;
 }
 
-/* static GstElement * */
-/* gnl_operation_get_element (GnlOperation *operation) */
-/* { */
-/*   g_return_val_if_fail (GNL_IS_OPERATION (operation), NULL); */
+static gboolean
+element_is_valid_filter (GstElement * element)
+{
+  GstElementFactory * factory;
+  const GList * templates;
+  gboolean havesink = FALSE;
+  gboolean havesrc = FALSE;
+  gboolean done = FALSE;
+  GstIterator *pads;
+  gpointer res;
+  GstPad * pad;
 
-/*   return operation->element; */
-/* } */
+  pads = gst_element_iterate_pads (element);
 
-/* static void */
-/* gnl_operation_set_element (GnlOperation *operation, GstElement *element) */
-/* { */
-/*   const GList *walk; */
-/*   gboolean	foundsrc = FALSE; */
+  while (!done) {
+    switch (gst_iterator_next (pads, &res)) {
+    case GST_ITERATOR_OK:
+      pad = (GstPad *) res;
+      if (gst_pad_get_direction (pad) == GST_PAD_SRC)
+	havesrc = TRUE;
+      else if (gst_pad_get_direction (pad) == GST_PAD_SINK)
+	havesink = TRUE;
+      break;
+    case GST_ITERATOR_RESYNC:
+      havesrc = FALSE;
+      havesink = FALSE;
+      break;
+    case GST_ITERATOR_DONE:
+    case GST_ITERATOR_ERROR:
+      done = TRUE;
+    }
+  }
 
-/*   operation->element = element; */
+  if (havesrc && havesink)
+    return TRUE;
+  
+  factory = gst_element_get_factory (element);
+  
+  for (templates = gst_element_factory_get_static_pad_templates (factory);
+       templates; templates = g_list_next (templates)) {
+    GstStaticPadTemplate * template = (GstStaticPadTemplate*) templates->data;
+    
+    if (template->direction == GST_PAD_SRC)
+      havesrc = TRUE;
+    else if (template->direction == GST_PAD_SINK)
+      havesink = TRUE;
+  }
+  
+  return (havesink && havesrc);
+}
 
-/*   gst_bin_add (GST_BIN (operation), element); */
+static gboolean
+gnl_operation_add_element (GstBin * bin, GstElement * element)
+{
+  GnlOperation * operation = GNL_OPERATION (bin);
+  gboolean res = FALSE;
 
-/*   walk = gst_element_get_pad_list (element); */
-/*   while (walk) { */
-/*     GstPad *pad = GST_PAD (walk->data); */
+  if (operation->element) {
+    GST_WARNING_OBJECT (operation, "We already control an element : %s",
+			GST_OBJECT_NAME (operation->element));
+  } else {
+    if (!element_is_valid_filter (element)) {
+      GST_WARNING_OBJECT (operation, "Element %s is not a valid filter element");
+    } else {
+      res = GST_BIN_CLASS (parent_class)->add_element (bin, element);
+    }
+  }
 
-/*     if (GST_PAD_IS_SRC(pad)) { */
-/*       if (foundsrc) */
-/* 	GST_WARNING ("More than one srcpad in %s", gst_element_get_name(GST_ELEMENT (operation))); */
-/*       else */
-/* 	foundsrc = TRUE; */
-/* /\*       operation->queue = gst_element_factory_make("queue", "operation-queue"); *\/ */
-/* /\*       gst_bin_add(GST_BIN (operation), operation->queue); *\/ */
-/* /\*       if (!gst_pad_link(pad, gst_element_get_pad (operation->queue, "sink"))) *\/ */
-/* /\* 	GST_WARNING ("Couldn't link %s:%s and operation-queue:sink", *\/ */
-/* /\* 		     GST_DEBUG_PAD_NAME (pad)); *\/ */
-/*       if (!gst_element_add_ghost_pad (GST_ELEMENT (operation), */
-/* 				      gst_element_get_pad (element, "src"), */
-/* 				      GST_PAD_NAME(pad))) */
-/* 	GST_WARNING ("Couldn't add ghost pad src from pad %s:%s !", */
-/* 		     GST_DEBUG_PAD_NAME (pad)); */
-/*     } else { */
-/*       gst_element_add_ghost_pad (GST_ELEMENT (operation), */
-/* 				 pad, gst_object_get_name (GST_OBJECT (pad))); */
-/*       operation->num_sinks++; */
-/*     } */
-/*     walk = g_list_next (walk); */
-/*   } */
+  return res;
+}
 
-/* } */
+static gboolean
+gnl_operation_remove_element (GstBin * bin, GstElement * element)
+{
+  GnlOperation * operation = GNL_OPERATION (bin);
+  gboolean res = FALSE;
 
-/* /\** */
-/*  * gnl_operation_new: */
-/*  * @name: the name of the #GnlOperation to create */
-/*  * @element: the #GstElement which is to be the provider */
-/*  * */
-/*  * Returns: a newly allocated #GnlOperation, or NULL if the creation failed */
-/*  *\/ */
+  if (operation->element) {
+    if ((res = GST_BIN_CLASS (parent_class)->remove_element (bin, element)))
+      operation->element = NULL;
+    
+  }
+  return res;
+}
 
-/* GnlOperation* */
-/* gnl_operation_new (const gchar *name, GstElement *element) */
-/* { */
-/*   GnlOperation *operation; */
+static void
+gnl_operation_set_sinks (GnlOperation * operation, guint sinks)
+{
+  /* FIXME : Check if sinkpad of element is on-demand .... */
 
-/*   g_return_val_if_fail (name != NULL, NULL); */
+  operation->num_sinks = sinks;
+}
 
-/*   operation = g_object_new (GNL_TYPE_OPERATION, NULL); */
-/*   gst_object_set_name (GST_OBJECT (operation), name); */
+static void
+gnl_operation_set_property (GObject *object, guint prop_id,
+			    const GValue *value, GParamSpec *pspec)
+{
+  GnlOperation *operation;
 
-/*   gnl_operation_set_element (operation, element); */
+  g_return_if_fail (GNL_IS_OPERATION (object));
 
-/*   return operation; */
-/* } */
+  operation = GNL_OPERATION (object);
 
-/* /\** */
-/*  * gnl_operation_get_num_sinks: */
-/*  * @operation: A #GnlOperation */
-/*  * */
-/*  * Returns: The number of sink pads */
-/*  *\/ */
+  switch (prop_id) {
+    case ARG_SINKS:
+      gnl_operation_set_sinks (operation, g_value_get_uint (value));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
 
-/* guint */
-/* gnl_operation_get_num_sinks (GnlOperation *operation) */
-/* { */
-/*   return operation->num_sinks;  */
-/* } */
+static void
+gnl_operation_get_property (GObject *object, guint prop_id,
+			    GValue *value, GParamSpec *pspec)
+{
+  GnlOperation *operation;
 
+  g_return_if_fail (GNL_IS_OPERATION (object));
 
+  operation = GNL_OPERATION (object);
 
-/* static GstElementStateReturn */
-/* gnl_operation_change_state (GstElement *element) */
-/* { */
-/* /\*   GnlOperation	*oper = GNL_OPERATION (element); *\/ */
+  switch (prop_id) {
+    case ARG_SINKS:
+      g_value_set_uint (value, operation->num_sinks);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
 
-/*   switch (GST_STATE_TRANSITION(element)) { */
-/*   case GST_STATE_NULL_TO_READY: */
-/*     GST_INFO ("NULL -> READY"); */
-/*     break; */
-/*   case GST_STATE_READY_TO_PAUSED: */
-/*     GST_INFO ("READY -> PAUSED"); */
-/*     break; */
-/*   case GST_STATE_PAUSED_TO_PLAYING: */
-/*     GST_INFO ("PAUSED -> PLAYING"); */
-/*     break; */
-/*   case GST_STATE_PLAYING_TO_PAUSED: */
-/*     GST_INFO ("PLAYING -> PAUSED"); */
-/*     break; */
-/*   case GST_STATE_PAUSED_TO_READY: */
-/*     GST_INFO ("PAUSED -> READY"); */
-/*     break; */
-/*   case GST_STATE_READY_TO_NULL: */
-/*     GST_INFO ("READY -> NULL"); */
-/*     break; */
-/*   } */
+static gboolean
+add_sink_pad (GnlOperation * operation)
+{
+  return TRUE;
+}
 
-/*   return GST_ELEMENT_CLASS (parent_class)->change_state (element); */
-/* } */
+static gboolean
+remove_sink_pad (GnlOperation * operation)
+{
+  return TRUE;
+}
 
-/* static void */
-/* gnl_operation_set_property (GObject *object, guint prop_id, */
-/* 			    const GValue *value, GParamSpec *pspec) */
-/* { */
-/*   GnlOperation *operation; */
+static void
+synchronize_sinks (GnlOperation * operation)
+{
+  if (operation->num_sinks == operation->realsinks)
+    return;
 
-/*   g_return_if_fail (GNL_IS_OPERATION (object)); */
+  if (operation->num_sinks > operation->realsinks) {
+    /* Add pad */
+    add_sink_pad (operation);
+  } else {
+    /* Remove pad */
+    remove_sink_pad (operation);
+  }
+}
 
-/*   operation = GNL_OPERATION (object); */
+static gboolean
+gnl_operation_prepare (GnlObject * object)
+{
+  if (!(GNL_OPERATION (object)->element))
+    return FALSE;
 
-/*   switch (prop_id) { */
-/*     case ARG_ELEMENT: */
-/*       gnl_operation_set_element (operation, GST_ELEMENT (g_value_get_object (value))); */
-/*       break; */
-/*     default: */
-/*       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec); */
-/*       break; */
-/*   } */
-/* } */
+  /* Prepare the pads */
+  synchronize_sinks (GNL_OPERATION (object));
 
-/* static void */
-/* gnl_operation_get_property (GObject *object, guint prop_id,  */
-/* 			    GValue *value, GParamSpec *pspec) */
-/* { */
-/*   GnlOperation *operation; */
-
-/*   g_return_if_fail (GNL_IS_OPERATION (object)); */
-
-/*   operation = GNL_OPERATION (object); */
-
-/*   switch (prop_id) { */
-/*     case ARG_ELEMENT: */
-/*       g_value_set_object (value, gnl_operation_get_element (operation)); */
-/*       break; */
-/*     default: */
-/*       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec); */
-/*       break; */
-/*   } */
-/* } */
+  return TRUE;
+}

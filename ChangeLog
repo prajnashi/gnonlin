@@ -1,3 +1,21 @@
+2006-06-08  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (next_stop_in_region_above_priority),
+	(get_clean_toplevel_stack):
+	Composition now looks for anything hiding the configured segment, in
+	order to properly adjust the end of the configured segment.
+	This should make default sources work.
+	* gnl/gnloperation.c: (gnl_operation_class_init),
+	(gnl_operation_init), (element_is_valid_filter),
+	(gnl_operation_add_element), (gnl_operation_remove_element),
+	(gnl_operation_set_sinks), (gnl_operation_set_property),
+	(gnl_operation_get_property), (add_sink_pad), (remove_sink_pad),
+	(synchronize_sinks), (gnl_operation_prepare):
+	* gnl/gnloperation.h:
+	First big update. Still some more work to do though.
+	* tests/check/complex.c: (gnonlin_suite):
+	Re-activated testsuite to check for 'hiding' situations.
+
 2006-06-06  Edward Hervey  <edward@fluendo.com>
 
 	* docs/random/design:

@@ -42,10 +42,12 @@ G_BEGIN_DECLS
 {
   GnlObject parent;
 
-/*   guint			num_sinks; */
-/*   GstElement		*queue; */
+  guint num_sinks;	/* Number of sink inputs. */
 
-  /* Controlled filter element */
+  /* <private> */
+  guint realsinks;	/* Number of real sink pads. */
+  GList *sinks;		/* Sinkpads */
+
   GstElement *element;
 };
 

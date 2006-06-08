@@ -631,7 +631,7 @@ gnonlin_suite (void)
   if ((micro > 4) || (micro == 4 && nano > 0)) {
     tcase_add_test (tc_chain, test_one_space_another);
     tcase_add_test (tc_chain, test_one_bin_space_another);
-/*     tcase_add_test (tc_chain, test_one_above_another); */
+    tcase_add_test (tc_chain, test_one_above_another);
   }
   return s;
 }
