@@ -1,3 +1,8 @@
+2006-06-11  Edward Hervey  <edward@fluendo.com>
+
+	* docs/random/design:
+	Fleshed up design doc a bit more.
+
 2006-06-08  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (next_stop_in_region_above_priority),

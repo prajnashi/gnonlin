@@ -60,17 +60,36 @@ GNonLin source (GnlSource)
     If the element provides several pads, the first pad whose caps intersect the
   one specified in the caps property will be used.
 
+GNonLin file source (GnlFileSource)
+-----------------------------------
+
+  Convenience source. Contains a filesource and a decodebin element.
+
+* Source file
+
+    The location of the file to control.
 
 GNonLin operation (GnlOperation)
 --------------------------------
 
   Object for controlling multiple-input single-output elements.
 
-* Number of input:
+* Controlling an effect GstElement:
+
+    The same rules applies here as for GnlSource. The only difference is that
+  the operation will check that the given element has (potential) input sources.
+
+* Number of inputs:
 
     The number of inputs to be used by this operation is set with the 'inputs'
   priority. This will be used by the container composition to automatically
-  link it to the proper sources. 
+  link it to the proper sources.
+    The default value, 0, means that it will be up to the parent composition to
+  request new input pads if it needs more. If a value was specified, then the
+  composition will only use those N inputs. This suits both the cases where, the
+  developer automatically wants that operation to apply to all the underlying
+  sources, and the case where the developers only wants that operation to apply
+  to a given number of underlying sources.
 
 
 GNonLin composition (GnlComposition)
@@ -90,7 +109,7 @@ GNonLin composition (GnlComposition)
     _ AND is set for that time (start <= time < stop)
     _ AND has the highest priority (smallest numerical value)
 
-    If that object is an operation with has N sinkpads, the composition will
+    If that object is an operation which has N sinkpads, the composition will
   recursively connect the GnlObjects by increasing priorities:
     _ which are active
     _ AND set for that time (start <= time < stop)
@@ -105,6 +124,8 @@ GstBin
  +--- GnlObject
        !
        +--- GnlSource
+       !     !
+       !     +--- GnlFileSource
        !
        +--- GnlOperation
        !
