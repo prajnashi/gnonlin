@@ -1,5 +1,11 @@
 2006-06-12  Edward Hervey  <edward@fluendo.com>
 
+	* tests/check/complex.c: (GST_START_TEST), (gnonlin_suite):
+	Added unit-test for the previous fixes to gnlcomposition with default
+	sources.
+
+2006-06-12  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (next_stop_in_region_above_priority),
 	(get_stack_list):
 	Fixed wrong get_stack_list(), stop at the correct place.
