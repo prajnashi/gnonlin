@@ -635,6 +635,7 @@ next_stop_in_region_above_priority (GnlComposition * composition,
 		      GST_OBJECT_NAME (object),
 		      object->priority,
 		      GST_TIME_ARGS (object->start));
+    break;
   }
   return res;
 }
@@ -681,18 +682,17 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
         object->priority);
 
     if (object->start <= timestamp) {
-      if (object->stop <= timestamp) {
-        if (stack) {
-          GST_LOG_OBJECT (comp, "too far, stopping iteration");
-          break;
-        }
-      } else if ((object->priority >= priority)
-          && ((!activeonly) || (object->active))) {
+      if ((object->stop > timestamp) &&
+	  (object->priority >= priority) &&
+	  ((!activeonly) || (object->active))) {
         GST_LOG_OBJECT (comp, "adding %s: sorted to the stack",
             GST_OBJECT_NAME (object));
         stack = g_list_insert_sorted (stack, object,
             (GCompareFunc) priority_comp);
       }
+    } else {
+      GST_LOG_OBJECT (comp, "too far, stopping iteration");
+      break;
     }
   }
 
