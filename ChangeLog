@@ -1,5 +1,9 @@
 2006-06-12  Edward Hervey  <edward@fluendo.com>
 
+	* configure.ac: pre-release 0.10.4.2
+
+2006-06-12  Edward Hervey  <edward@fluendo.com>
+
 	* tests/check/complex.c: (GST_START_TEST), (gnonlin_suite):
 	Added unit-test for the previous fixes to gnlcomposition with default
 	sources.
