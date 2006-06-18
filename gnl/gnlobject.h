@@ -144,5 +144,12 @@ void gnl_object_remove_ghost_pad (GnlObject * object, GstPad * ghost);
 gboolean gnl_object_covers (GnlObject * object,
     GstClockTime start, GstClockTime stop, GnlCoverType type);
 
+/* HACKS */
+gboolean gnl_pad_set_blocked_async (GstPad * pad,
+				    gboolean blocked, GstPadBlockCallback callback, gpointer user_data);
+
+gulong gnl_pad_add_event_probe (GstPad * pad, GCallback callback, gpointer data);
+void gnl_pad_remove_event_probe (GstPad * pad, guint handler_id);
+
 G_END_DECLS
 #endif /* __GNL_OBJECT_H__ */

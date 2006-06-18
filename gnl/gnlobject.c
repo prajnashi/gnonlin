@@ -542,6 +542,8 @@ internalpad_event_function (GstPad * internal, GstEvent * event)
 {
   GnlPadPrivate *priv = gst_pad_get_element_private (internal);
   GnlObject *object = priv->object;
+  GstMessage * message = NULL;
+  gboolean res;
 
   GST_DEBUG_OBJECT (internal, "event:%s", GST_EVENT_TYPE_NAME (event));
 
@@ -555,6 +557,9 @@ internalpad_event_function (GstPad * internal, GstEvent * event)
     case GST_PAD_SRC:
       if (GST_EVENT_TYPE (event) == GST_EVENT_NEWSEGMENT) {
         event = translate_outgoing_new_segment (object, event);
+	message = gst_message_new_segment_start (GST_OBJECT (object),
+						 GST_FORMAT_TIME,
+						 (gint64) object->start);
       } else if (priv->ghostpriv->flush_hack && !priv->ghostpriv->need_flush) {
         /* FIXME : REMOVE THIS AFTER FLUSH HACK SOLVED */
         GST_DEBUG_OBJECT (internal, "Flush hack in effect");
@@ -581,7 +586,11 @@ internalpad_event_function (GstPad * internal, GstEvent * event)
       break;
   }
   GST_DEBUG_OBJECT (internal, "Calling priv->eventfunc %p", priv->eventfunc);
-  return priv->eventfunc (internal, event);
+  res = priv->eventfunc (internal, event);
+  if (message)
+    gst_element_post_message (GST_ELEMENT (object), message);
+
+  return res;
 }
 
 /*
@@ -1247,4 +1256,86 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
 
 beach:
   return ret;
+}
+
+/* THESE ARE HACKS, REMOVE WHEN IT IS FIXED IN CORE (See bug #341029) */
+gboolean
+gnl_pad_set_blocked_async (GstPad * pad, gboolean blocked,
+			   GstPadBlockCallback callback, gpointer user_data)
+{
+  gboolean was_ghost = FALSE;
+  gboolean res;
+
+  GST_LOG_OBJECT (pad, "blocked:%d", blocked);
+
+  while (GST_IS_GHOST_PAD (pad)) {
+    GstPad * tpad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
+    if (!tpad)
+      return FALSE;
+    if (was_ghost)
+      gst_object_unref (pad);
+    was_ghost = TRUE;
+    pad = tpad;
+  }
+
+  if (was_ghost)
+    GST_LOG_OBJECT (pad, "Was ghostpad, using this pad");
+  
+  res = gst_pad_set_blocked_async (pad, blocked, callback, user_data);
+
+  if (was_ghost)
+    gst_object_unref (pad);
+
+  return res;
+}
+
+gulong
+gnl_pad_add_event_probe (GstPad * pad, GCallback callback, gpointer data)
+{
+  gulong res;
+  gboolean was_ghost = FALSE;
+
+  while (GST_IS_GHOST_PAD (pad)) {
+    GstPad * tpad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
+    if (!tpad)
+      return 0;
+    if (was_ghost)
+      gst_object_unref (pad);
+    was_ghost = TRUE;
+    pad = tpad;
+  }
+
+  if (was_ghost)
+    GST_LOG_OBJECT (pad, "Was ghostpad, using this pad");
+  
+  res = gst_pad_add_event_probe (pad, callback, data);
+
+  if (was_ghost)
+    gst_object_unref (pad);
+
+  return res;
+}
+
+void
+gnl_pad_remove_event_probe (GstPad * pad, guint handler_id)
+{
+  gboolean was_ghost = FALSE;
+
+  while (GST_IS_GHOST_PAD (pad)) {
+    GstPad * tpad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
+    if (!tpad)
+      return;
+    if (was_ghost)
+      gst_object_unref (pad);
+    was_ghost = TRUE;
+    pad = tpad;
+  }
+
+  if (was_ghost)
+    GST_LOG_OBJECT (pad, "Was ghostpad, using this pad");
+  
+  gst_pad_remove_event_probe (pad, handler_id);
+
+  if (was_ghost)
+    gst_object_unref (pad);
 }

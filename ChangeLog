@@ -1,3 +1,35 @@
+2006-06-18  Edward Hervey  <edward@fluendo.com>
+
+	* docs/random/design:
+	Precision about gnloperation sinks property.
+	* gnl/gnlcomposition.c: (gnl_composition_init),
+	(gnl_composition_finalize), (lock_child_state),
+	(gnl_composition_reset), (segment_done_main_thread),
+	(gnl_composition_handle_message), (seek_handling),
+	(handle_seek_event), (pad_blocked),
+	(gnl_composition_ghost_pad_set_target),
+	(update_start_stop_duration), (compare_relink_stack),
+	(update_pipeline), (object_start_changed), (object_stop_changed):
+	Non-racy seeking handling. All seeks are put in the main thread.
+	A lock-protected value takes care of discarding previous seeks. This
+	avoids freeze situations when scrubbing/seeking a lot.
+	Use of pad blocks for non-used sources.
+	* gnl/gnlobject.c: (internalpad_event_function),
+	(gnl_pad_set_blocked_async), (gnl_pad_add_event_probe),
+	(gnl_pad_remove_event_probe):
+	* gnl/gnlobject.h:
+	Emit 'segment-start' message when we receive a newsegment event. This
+	allows the composition to know when a seek is really starting and
+	therefore stop all pending seeks.
+	Added functions (hacks) for recursive ghostpad handling. Should go
+	away once the issue is fixed in core (See #341029).
+	* gnl/gnlsource.c: (element_pad_added_cb),
+	(element_pad_removed_cb), (ghost_seek_pad),
+	(gnl_source_change_state):
+	Use gnl_pad_* recursive ghostpads hack functions.
+	* tests/check/simple.c: (GST_START_TEST):
+	Fix comment
+
 2006-06-12  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac: pre-release 0.10.4.2

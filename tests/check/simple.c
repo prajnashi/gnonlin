@@ -576,7 +576,7 @@ GST_START_TEST (test_one_bin_after_other)
   /*
     Source 1
     Start : 0s
-    Duration : 2s
+    Duration : 1s
     Priority : 1
   */
   source1 = videotest_in_bin_gnl_src ("source1", 0, 1 * GST_SECOND, 1, 1);
@@ -585,8 +585,8 @@ GST_START_TEST (test_one_bin_after_other)
 
   /*
     Source 2
-    Start : 2s
-    Duration : 2s
+    Start : 1s
+    Duration : 1s
     Priority : 1
   */
   source2 = videotest_in_bin_gnl_src ("source2", 1 * GST_SECOND, 1 * GST_SECOND, 2, 1);

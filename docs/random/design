@@ -90,6 +90,9 @@ GNonLin operation (GnlOperation)
   developer automatically wants that operation to apply to all the underlying
   sources, and the case where the developers only wants that operation to apply
   to a given number of underlying sources.
+    If the controlled operation has non-request sinkpads, then the number of
+  inputs will be set to the number of sinkpads. Trying to manually change that
+  property will fail.
 
 
 GNonLin composition (GnlComposition)
