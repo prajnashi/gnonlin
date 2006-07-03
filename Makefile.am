@@ -14,6 +14,8 @@ EXTRA_DIST = \
 	AUTHORS COPYING NEWS README RELEASE REQUIREMENTS \
 	ChangeLog autogen.sh
 
+ACLOCAL_AMFLAGS = -I common/m4 -I m4
+
 DISTCLEANFILES = _stdint.h
 
 include $(top_srcdir)/common/release.mak

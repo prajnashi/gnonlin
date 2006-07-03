@@ -1,3 +1,10 @@
+2006-07-03  Edward Hervey  <edward@fluendo.com>
+
+	* Makefile.am:
+	* configure.ac:
+	Make gnonlin build properly on CygWin.
+	Fixes #341492
+
 2006-06-18  Edward Hervey  <edward@fluendo.com>
 
 	* docs/random/design:
