@@ -41,6 +41,7 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_OBJECT))
 #define GNL_IS_OBJECT_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_OBJECT))
+
 /**
  * GnlCoverType"
  * @GNL_COVER_ALL  : Covers all the content
@@ -64,6 +65,7 @@ G_BEGIN_DECLS
  * @GNL_OBJECT_IS_OPERATION:
  * @GNL_OBJECT_LAST_FLAG:
 */
+
 typedef enum
 {
   GNL_OBJECT_SOURCE = (GST_BIN_FLAG_LAST << 0),
@@ -71,6 +73,7 @@ typedef enum
   /* padding */
   GNL_OBJECT_LAST_FLAG = (GST_BIN_FLAG_LAST << 16)
 } GnlObjectFlags;
+
 
 #define GNL_OBJECT_IS_SOURCE(obj) \
   (GST_OBJECT_FLAG_IS_SET(obj, GNL_OBJECT_SOURCE))
@@ -143,13 +146,6 @@ void gnl_object_remove_ghost_pad (GnlObject * object, GstPad * ghost);
 
 gboolean gnl_object_covers (GnlObject * object,
     GstClockTime start, GstClockTime stop, GnlCoverType type);
-
-/* HACKS */
-gboolean gnl_pad_set_blocked_async (GstPad * pad,
-				    gboolean blocked, GstPadBlockCallback callback, gpointer user_data);
-
-gulong gnl_pad_add_event_probe (GstPad * pad, GCallback callback, gpointer data);
-void gnl_pad_remove_event_probe (GstPad * pad, guint handler_id);
 
 G_END_DECLS
 #endif /* __GNL_OBJECT_H__ */

@@ -1,3 +1,32 @@
+2006-07-11  Edward Hervey  <edward@fluendo.com>
+
+	* configure.ac:
+	Require core >= 0.10.8.1 (for ghostpad and blocking fixes).
+	* gnl/gnlcomposition.c: (hash_value_destroy), (unlock_childs),
+	(gnl_composition_reset), (segment_done_main_thread),
+	(get_new_seek_event), (handle_seek_event),
+	(gnl_composition_ghost_pad_set_target),
+	(gnl_composition_change_state), (no_more_pads_object_cb),
+	(update_pipeline), (object_start_changed), (object_stop_changed),
+	(object_priority_changed), (object_active_changed),
+	(object_pad_added), (gnl_composition_add_object),
+	(gnl_composition_remove_object):
+	All source pads created are now blocked by default.
+	Don't lock the state of sources in READY. Let them all reach paused.
+	Remove cruft now fixed in GStreamer core.
+	* gnl/gnlobject.c: (internalpad_event_function),
+	(ghostpad_event_function), (control_internal_pad),
+	(ghostpad_link_function), (gnl_object_ghost_pad_full),
+	(gnl_object_ghost_pad_no_target),
+	(gnl_object_ghost_pad_set_target):
+	* gnl/gnlobject.h:
+	Remove all the cruft which is now fixed in GStreamer core.
+	* gnl/gnlsource.c: (gnl_source_prepare), (element_pad_added_cb),
+	(element_pad_removed_cb), (ghost_seek_pad), (pad_blocked_cb),
+	(gnl_source_change_state):
+	Remove all the pad blocking on events with ghostpad cruft which is
+	now fixed in GStreamer core.
+
 2006-07-03  Edward Hervey  <edward@fluendo.com>
 
 	* Makefile.am:

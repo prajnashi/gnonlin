@@ -37,8 +37,6 @@ struct _GnlPadPrivate
   GstPadLinkFunction linkfunc;
   GstPadUnlinkFunction unlinkfunc;
 
-  gboolean flush_hack;
-  gboolean need_flush;
 };
 
 GST_BOILERPLATE (GnlObject, gnl_object, GstBin, GST_TYPE_BIN);
@@ -560,20 +558,6 @@ internalpad_event_function (GstPad * internal, GstEvent * event)
 	message = gst_message_new_segment_start (GST_OBJECT (object),
 						 GST_FORMAT_TIME,
 						 (gint64) object->start);
-      } else if (priv->ghostpriv->flush_hack && !priv->ghostpriv->need_flush) {
-        /* FIXME : REMOVE THIS AFTER FLUSH HACK SOLVED */
-        GST_DEBUG_OBJECT (internal, "Flush hack in effect");
-        if ((GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_START)
-            || (GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_STOP)) {
-          GST_DEBUG_OBJECT (object,
-              "dropping flush event because of flush hack");
-          gst_event_unref (event);
-          return TRUE;
-        }
-      } else {
-        GST_DEBUG_OBJECT (internal,
-            "didn't drop flush ghost->flush_hack:%d ->need_flush:%d",
-            priv->ghostpriv->flush_hack, priv->ghostpriv->need_flush);
       }
 
       break;
@@ -667,31 +651,6 @@ internalpad_unlink_function (GstPad * internal)
         "priv->unlinkfunc == NULL !! What's going on ?");
 }
 
-/* Add flush flag to seek event */
-static GstEvent *
-flush_hack_check (GstEvent * event, GnlPadPrivate * priv)
-{
-  gdouble rate;
-  GstFormat format;
-  GstSeekFlags flags;
-  GstSeekType cur_type, stop_type;
-  gint64 cur, stop;
-
-  gst_event_parse_seek (event, &rate, &format, &flags,
-      &cur_type, &cur, &stop_type, &stop);
-
-  if ((flags & GST_SEEK_FLAG_FLUSH)) {
-    GST_DEBUG ("Already has FLUSH flag");
-    priv->need_flush = TRUE;
-    return event;
-  } else {
-    GST_DEBUG ("Creating new event with flush flag");
-    gst_event_unref (event);
-    priv->need_flush = FALSE;
-    return gst_event_new_seek (rate, format,
-        flags | GST_SEEK_FLAG_FLUSH, cur_type, cur, stop_type, stop);
-  }
-}
 
 static gboolean
 ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
@@ -710,9 +669,6 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
   switch (priv->dir) {
     case GST_PAD_SRC:
       if (GST_EVENT_TYPE (event) == GST_EVENT_SEEK) {
-        /* FIXME: REMOVE THIS AFTER FLUSH HACK SOLVED */
-        if (priv->flush_hack)
-          event = flush_hack_check (event, priv);
 
         event = translate_incoming_seek (object, event);
       }
@@ -795,8 +751,6 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
   priv->object = object;
   priv->ghostpriv = privghost;
   priv->dir = GST_PAD_DIRECTION (ghostpad);
-  priv->flush_hack = privghost->flush_hack;
-  priv->need_flush = privghost->need_flush;
   gst_object_unref (internal);
 }
 
@@ -816,7 +770,6 @@ ghostpad_link_function (GstPad * ghostpad, GstPad * peer)
   GST_DEBUG_OBJECT (ghostpad,
       "linking went ok, getting internal pad and overriding query/event functions");
 
-  control_internal_pad (ghostpad, GNL_OBJECT (GST_PAD_PARENT (ghostpad)));
 
   return ret;
 
@@ -867,7 +820,6 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
     GstPad * target, gboolean flush_hack)
 {
   GstPadDirection dir = GST_PAD_DIRECTION (target);
-  GnlPadPrivate *priv;
   GstPad *ghost;
 
   GST_DEBUG_OBJECT (object, "name:%s, target:%p, flush_hack:%d",
@@ -885,16 +837,13 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
     return NULL;
   }
 
-  /* FIXME : REMOVE THIS ONCE THE FLUSH HACK HAS GONE !! */
-  priv = gst_pad_get_element_private (ghost);
-  priv->flush_hack = flush_hack;
-  priv->need_flush = TRUE;
 
-  /* add it to element */
+ /* add it to element */
   if (!(gst_element_add_pad (GST_ELEMENT (object), ghost))) {
     GST_WARNING ("couldn't add newly created ghostpad");
     return NULL;
   }
+  control_internal_pad (ghost, object);
 
   return ghost;
 }
@@ -928,8 +877,6 @@ gnl_object_ghost_pad_no_target (GnlObject * object, const gchar * name,
   priv = g_new0 (GnlPadPrivate, 1);
   priv->dir = dir;
   priv->object = object;
-  priv->need_flush = TRUE;
-  priv->flush_hack = FALSE;
   gst_pad_set_element_private (ghost, priv);
 
   return ghost;
@@ -982,11 +929,8 @@ gnl_object_ghost_pad_set_target (GnlObject * object, GstPad * ghost,
   gst_pad_set_query_function (ghost,
       GST_DEBUG_FUNCPTR (ghostpad_query_function));
 
-  /* maybe the ghostpad is already linked */
-  if (GST_PAD_IS_LINKED (ghost)) {
-    GST_LOG_OBJECT (ghost, "ghostpad was already linked");
+  if (!GST_OBJECT_IS_FLOATING (ghost))
     control_internal_pad (ghost, object);
-  }
 
   return TRUE;
 }
@@ -1258,84 +1202,3 @@ beach:
   return ret;
 }
 
-/* THESE ARE HACKS, REMOVE WHEN IT IS FIXED IN CORE (See bug #341029) */
-gboolean
-gnl_pad_set_blocked_async (GstPad * pad, gboolean blocked,
-			   GstPadBlockCallback callback, gpointer user_data)
-{
-  gboolean was_ghost = FALSE;
-  gboolean res;
-
-  GST_LOG_OBJECT (pad, "blocked:%d", blocked);
-
-  while (GST_IS_GHOST_PAD (pad)) {
-    GstPad * tpad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
-    if (!tpad)
-      return FALSE;
-    if (was_ghost)
-      gst_object_unref (pad);
-    was_ghost = TRUE;
-    pad = tpad;
-  }
-
-  if (was_ghost)
-    GST_LOG_OBJECT (pad, "Was ghostpad, using this pad");
-  
-  res = gst_pad_set_blocked_async (pad, blocked, callback, user_data);
-
-  if (was_ghost)
-    gst_object_unref (pad);
-
-  return res;
-}
-
-gulong
-gnl_pad_add_event_probe (GstPad * pad, GCallback callback, gpointer data)
-{
-  gulong res;
-  gboolean was_ghost = FALSE;
-
-  while (GST_IS_GHOST_PAD (pad)) {
-    GstPad * tpad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
-    if (!tpad)
-      return 0;
-    if (was_ghost)
-      gst_object_unref (pad);
-    was_ghost = TRUE;
-    pad = tpad;
-  }
-
-  if (was_ghost)
-    GST_LOG_OBJECT (pad, "Was ghostpad, using this pad");
-  
-  res = gst_pad_add_event_probe (pad, callback, data);
-
-  if (was_ghost)
-    gst_object_unref (pad);
-
-  return res;
-}
-
-void
-gnl_pad_remove_event_probe (GstPad * pad, guint handler_id)
-{
-  gboolean was_ghost = FALSE;
-
-  while (GST_IS_GHOST_PAD (pad)) {
-    GstPad * tpad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
-    if (!tpad)
-      return;
-    if (was_ghost)
-      gst_object_unref (pad);
-    was_ghost = TRUE;
-    pad = tpad;
-  }
-
-  if (was_ghost)
-    GST_LOG_OBJECT (pad, "Was ghostpad, using this pad");
-  
-  gst_pad_remove_event_probe (pad, handler_id);
-
-  if (was_ghost)
-    gst_object_unref (pad);
-}

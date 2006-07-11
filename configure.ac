@@ -37,7 +37,7 @@ AC_SUBST(GST_MAJORMINOR)
 AM_PROG_LIBTOOL
 
 dnl *** required versions of GStreamer stuff ***
-GST_REQ=0.10.4
+GST_REQ=0.10.8.1
 GSTPB_REQ=0.10.4
 
 dnl *** autotools stuff ****
