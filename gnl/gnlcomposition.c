@@ -67,6 +67,8 @@ struct _GnlCompositionPrivate
   /* current stack, list of GnlObject* */
   GList *current;
 
+  GnlObject *defaultobject;
+
   /*
      current segment seek start/stop time. 
      Reconstruct pipeline ONLY if seeking outside of those values
@@ -86,6 +88,12 @@ struct _GnlCompositionPrivate
    */
   GstPadEventFunction gnl_event_pad_func;
 };
+
+#define OBJECT_IN_ACTIVE_SEGMENT(comp,element) \
+  (((GNL_OBJECT (element)->start >= comp->private->segment_start) &&	\
+    (GNL_OBJECT (element)->start < comp->private->segment_stop)) ||	\
+   ((GNL_OBJECT (element)->stop > comp->private->segment_start) &&	\
+    (GNL_OBJECT (element)->stop <= comp->private->segment_stop)))	\
 
 static void gnl_composition_dispose (GObject * object);
 static void gnl_composition_finalize (GObject * object);
@@ -209,18 +217,17 @@ gnl_composition_class_init (GnlCompositionClass * klass)
 
   gst_element_class_add_pad_template (gstelement_class,
       gst_static_pad_template_get (&gnl_composition_src_template));
-
-/*   gnlobject_class->covers	 = gnl_composition_covers_func; */
-
-/*   klass->nearest_cover	 	 = gnl_composition_nearest_cover_func; */
 }
 
 static void
 hash_value_destroy (GnlCompositionEntry * entry)
 {
-  g_signal_handler_disconnect (entry->object, entry->starthandler);
-  g_signal_handler_disconnect (entry->object, entry->stophandler);
-  g_signal_handler_disconnect (entry->object, entry->priorityhandler);
+  if (entry->starthandler)
+    g_signal_handler_disconnect (entry->object, entry->starthandler);
+  if (entry->stophandler)
+    g_signal_handler_disconnect (entry->object, entry->stophandler);
+  if (entry->priorityhandler)
+    g_signal_handler_disconnect (entry->object, entry->priorityhandler);
   g_signal_handler_disconnect (entry->object, entry->activehandler);
   g_signal_handler_disconnect (entry->object, entry->padremovedhandler);
   g_signal_handler_disconnect (entry->object, entry->padaddedhandler);
@@ -246,6 +253,8 @@ gnl_composition_init (GnlComposition * comp, GnlCompositionClass * klass)
   comp->private->pending_idle = 0;
 
   comp->private->segment = gst_segment_new ();
+
+  comp->private->defaultobject = NULL;
 
   comp->private->objects_hash = g_hash_table_new_full
       (g_direct_hash,
@@ -756,6 +765,9 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
     }
   }
 
+  if ((timestamp < GNL_OBJECT(comp)->stop) && comp->private->defaultobject)
+    stack = g_list_append(stack, comp->private->defaultobject);
+
   return stack;
 }
 
@@ -996,6 +1008,11 @@ update_start_stop_duration (GnlComposition * comp)
   if (obj->stop != cobj->stop) {
     GST_LOG_OBJECT (obj, "setting stop from %s to %" GST_TIME_FORMAT,
         GST_OBJECT_NAME (obj), GST_TIME_ARGS (obj->stop));
+    if (comp->private->defaultobject) {
+      g_object_set (comp->private->defaultobject, "duration", obj->stop, NULL);
+      g_object_set (comp->private->defaultobject, "media-duration", obj->stop, NULL);
+    }
+    comp->private->segment->stop = obj->stop;
     cobj->stop = obj->stop;
     g_object_notify (G_OBJECT (cobj), "stop");
   }
@@ -1375,7 +1392,10 @@ object_start_changed (GnlObject * object, GParamSpec * arg,
   comp->private->objects_stop = g_list_sort
       (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
 
-  update_start_stop_duration (comp);
+  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object))
+    update_pipeline (comp, comp->private->segment_start, TRUE, TRUE);
+  else
+    update_start_stop_duration (comp);
 }
 
 static void
@@ -1388,7 +1408,10 @@ object_stop_changed (GnlObject * object, GParamSpec * arg,
   comp->private->objects_start = g_list_sort
       (comp->private->objects_start, (GCompareFunc) objects_start_compare);
 
-  update_start_stop_duration (comp);
+  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object))
+    update_pipeline (comp, comp->private->segment_start, TRUE, TRUE);
+  else
+    update_start_stop_duration (comp);
 }
 
 static void
@@ -1403,7 +1426,10 @@ object_priority_changed (GnlObject * object, GParamSpec * arg,
   comp->private->objects_stop = g_list_sort
       (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
 
-  update_start_stop_duration (comp);
+  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object))
+    update_pipeline (comp, comp->private->segment_start, TRUE, TRUE);
+  else
+    update_start_stop_duration (comp);
 }
 
 static void
@@ -1413,6 +1439,11 @@ object_active_changed (GnlObject * object, GParamSpec * arg,
   GST_DEBUG_OBJECT (object, "...");
 
   update_start_stop_duration (comp);
+
+  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object))
+    update_pipeline (comp, comp->private->segment_start, TRUE, TRUE);
+  else
+    update_start_stop_duration (comp);
 }
 
 static void
@@ -1457,19 +1488,35 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
 
   gst_object_ref (element);
 
+  if ((GNL_OBJECT (element)->priority == G_MAXUINT32) && comp->private->defaultobject) {
+    GST_WARNING_OBJECT (comp, "We already have a default source, remove it before adding new one");
+    ret = FALSE;
+    goto chiringuito;
+  }
+
   ret = GST_BIN_CLASS (parent_class)->add_element (bin, element);
   if (!ret)
-    goto beach;
+    goto chiringuito;
 
   /* wrap it and add it to the hash table */
   entry = g_new0 (GnlCompositionEntry, 1);
   entry->object = GNL_OBJECT (element);
-  entry->starthandler = g_signal_connect (G_OBJECT (element),
-      "notify::start", G_CALLBACK (object_start_changed), comp);
-  entry->stophandler = g_signal_connect (G_OBJECT (element),
-      "notify::stop", G_CALLBACK (object_stop_changed), comp);
-  entry->priorityhandler = g_signal_connect (G_OBJECT (element),
-      "notify::priority", G_CALLBACK (object_priority_changed), comp);
+  if ((GNL_OBJECT (element)->priority != G_MAXUINT32)) {
+    /* Only react on non-default objects properties */
+    entry->starthandler = g_signal_connect (G_OBJECT (element),
+					    "notify::start", G_CALLBACK (object_start_changed), comp);
+    entry->stophandler = g_signal_connect (G_OBJECT (element),
+					   "notify::stop", G_CALLBACK (object_stop_changed), comp);
+    entry->priorityhandler = g_signal_connect (G_OBJECT (element),
+					       "notify::priority", G_CALLBACK (object_priority_changed), comp);
+  } else {
+    /* We set the default source start/stop values to 0 and composition-stop */
+    g_object_set (element,
+		  "duration", (GstClockTimeDiff) GNL_OBJECT (comp)->stop,
+		  "media-duration", (GstClockTimeDiff) GNL_OBJECT (comp)->stop, NULL);
+    g_object_set (element, "start", 0, NULL);
+    g_object_set (element, "media-start", 0, NULL);
+  }
   entry->activehandler = g_signal_connect (G_OBJECT (element),
       "notify::active", G_CALLBACK (object_active_changed), comp);
   entry->padremovedhandler = g_signal_connect (G_OBJECT (element),
@@ -1477,6 +1524,12 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
   entry->padaddedhandler = g_signal_connect (G_OBJECT (element),
 					     "pad-added", G_CALLBACK (object_pad_added), comp);
   g_hash_table_insert (comp->private->objects_hash, element, entry);
+
+  /* Special case for default source */
+  if (GNL_OBJECT(element)->priority == G_MAXUINT32) {
+    comp->private->defaultobject = GNL_OBJECT (element);
+    goto chiringuito;
+  }
 
   /* add it sorted to the objects list */
   comp->private->objects_start = g_list_append
@@ -1505,20 +1558,32 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
         GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_stop->data)->start),
         GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_stop->data)->stop));
 
-  /* update pipeline */
-  update_start_stop_duration (comp);
+  GST_DEBUG_OBJECT (comp, "segment_start:%"GST_TIME_FORMAT" segment_stop:%"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (comp->private->segment_start),
+		    GST_TIME_ARGS (comp->private->segment_stop));
 
+  COMP_OBJECTS_UNLOCK (comp);
+
+  /* If we added within currently configured segment, update pipeline */
+  if (OBJECT_IN_ACTIVE_SEGMENT (comp, element))
+    update_pipeline (comp, comp->private->segment_start, TRUE, TRUE);
+  else
+    update_start_stop_duration (comp);
+  
 beach:
   gst_object_unref (element);
-  COMP_OBJECTS_UNLOCK (comp);
   return ret;
+
+ chiringuito:
+  COMP_OBJECTS_UNLOCK (comp);
+  goto beach;
 }
 
 
 static gboolean
 gnl_composition_remove_object (GstBin * bin, GstElement * element)
 {
-  gboolean ret;
+  gboolean ret = GST_STATE_CHANGE_FAILURE;
   GnlComposition *comp = GNL_COMPOSITION (bin);
 
   GST_DEBUG_OBJECT (bin, "element %s", GST_OBJECT_NAME (element));
@@ -1531,28 +1596,42 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
 
   gst_element_set_locked_state (element, FALSE);
 
-  ret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
-  if (!ret)
-    goto beach;
+  /* handle default source */
+  if (GNL_OBJECT(element)->priority == G_MAXUINT32) {
+    comp->private->defaultobject = NULL;
+  } else {
+    
+    /* remove it from the objects list and resort the lists */
+    comp->private->objects_start = g_list_remove
+      (comp->private->objects_start, element);
+    comp->private->objects_start = g_list_sort
+      (comp->private->objects_start, (GCompareFunc) objects_start_compare);
+    
+    comp->private->objects_stop = g_list_remove
+      (comp->private->objects_stop, element);
+    comp->private->objects_stop = g_list_sort
+      (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
+  }
 
   if (!(g_hash_table_remove (comp->private->objects_hash, element)))
-    goto beach;
+    goto chiringuito;
 
-  /* remove it from the objects list and resort the lists */
-  comp->private->objects_start = g_list_remove
-      (comp->private->objects_start, element);
-  comp->private->objects_start = g_list_sort
-      (comp->private->objects_start, (GCompareFunc) objects_start_compare);
+  COMP_OBJECTS_UNLOCK (comp);
 
-  comp->private->objects_stop = g_list_remove
-      (comp->private->objects_stop, element);
-  comp->private->objects_stop = g_list_sort
-      (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
+  /* If we removed within currently configured segment, or it was the default source, *
+   * update pipeline */
+  if (OBJECT_IN_ACTIVE_SEGMENT (comp, element) || (GNL_OBJECT(element)->priority == G_MAXUINT32))
+    update_pipeline (comp, comp->private->segment_start, TRUE, TRUE);
+  else
+    update_start_stop_duration (comp);
 
-  update_start_stop_duration (comp);
+  ret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
 
 beach:
   gst_object_unref (element);
-  COMP_OBJECTS_UNLOCK (comp);
   return ret;
+
+ chiringuito:
+  COMP_OBJECTS_UNLOCK (comp);
+  goto beach;
 }

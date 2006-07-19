@@ -195,13 +195,13 @@ GST_START_TEST (test_simple_videotestsrc)
   
   /*
     Source 1
-    Start : 0s
+    Start : 1s
     Duration : 1s
     Priority : 1
   */
-  gnlsource = videotest_gnl_src ("source1", 0, 1 * GST_SECOND, 1, 1);
+  gnlsource = videotest_gnl_src ("source1", 1 * GST_SECOND, 1 * GST_SECOND, 1, 1);
   fail_if (gnlsource == NULL);
-  check_start_stop_duration(gnlsource, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration(gnlsource, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
 
   sink = gst_element_factory_make_or_warn ("fakesink", "sink");
   fail_if (sink == NULL);
@@ -216,7 +216,7 @@ GST_START_TEST (test_simple_videotestsrc)
   /* Expected segments */
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   0, 1 * GST_SECOND, 0));
+							   1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND));
   
   g_signal_connect (G_OBJECT (gnlsource), "pad-added",
 		    G_CALLBACK (gnlsource_pad_added_cb),
@@ -294,7 +294,7 @@ GST_START_TEST (test_videotestsrc_in_bin)
   
   /*
     Source 1
-    Start : 0s
+    Start : 1s
     Duration : 1s
     Priority : 1
   */

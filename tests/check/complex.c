@@ -391,7 +391,7 @@ GST_START_TEST (test_one_default_another)
     Priority : 2
   */
   
- defaultsrc = videotest_gnl_src ("defaultsrc", 0, 5 * GST_SECOND, 2, 2);
+ defaultsrc = videotest_gnl_src ("defaultsrc", 0, 5 * GST_SECOND, 2, G_MAXUINT32);
  fail_if (defaultsrc == NULL);
  check_start_stop_duration(defaultsrc, 0, 5 * GST_SECOND, 5 * GST_SECOND);
  
@@ -433,10 +433,19 @@ GST_START_TEST (test_one_default_another)
 
   ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
 
+  /* defaultsrc source */
+
+  gst_bin_add (GST_BIN (comp), defaultsrc);
+  check_start_stop_duration(comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration(defaultsrc, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT(defaultsrc, "defaultsrc", 1);
+ 
   /* Second source */
 
   gst_bin_add (GST_BIN (comp), source2);
   check_start_stop_duration(comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
+  check_start_stop_duration(defaultsrc, 0, 3 * GST_SECOND, 3 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT(source2, "source2", 1);
 
@@ -445,17 +454,11 @@ GST_START_TEST (test_one_default_another)
 
   gst_bin_add (GST_BIN (comp), source3);
   check_start_stop_duration(comp, 0, 4 * GST_SECOND, 4 * GST_SECOND);
+  check_start_stop_duration(defaultsrc, 0, 4 * GST_SECOND, 4 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT(source3, "source3", 1);
 
   
-  /* defaultsrc source */
-
-  gst_bin_add (GST_BIN (comp), defaultsrc);
-  check_start_stop_duration(comp, 0, 5 * GST_SECOND, 5 * GST_SECOND);
-
-  ASSERT_OBJECT_REFCOUNT(defaultsrc, "defaultsrc", 1);
- 
   sink = gst_element_factory_make_or_warn ("fakesink", "sink");
   fail_if (sink == NULL);
 
@@ -482,10 +485,6 @@ GST_START_TEST (test_one_default_another)
 					      segment_new (1.0, GST_FORMAT_TIME,
 							   3 * GST_SECOND, 4 * GST_SECOND,
 							   3 * GST_SECOND));
-  collect->expected_segments = g_list_append (collect->expected_segments,
-					      segment_new (1.0, GST_FORMAT_TIME,
-							   4 * GST_SECOND, 5 * GST_SECOND,
-							   4 * GST_SECOND));
 
   g_signal_connect (G_OBJECT (comp), "pad-added",
 		    G_CALLBACK (composition_pad_added_cb), collect);
@@ -553,10 +552,6 @@ GST_START_TEST (test_one_default_another)
 					      segment_new (1.0, GST_FORMAT_TIME,
 							   3 * GST_SECOND, 4 * GST_SECOND,
 							   3 * GST_SECOND));
-  collect->expected_segments = g_list_append (collect->expected_segments,
-					      segment_new (1.0, GST_FORMAT_TIME,
-							   4 * GST_SECOND, 5 * GST_SECOND,
-							   4 * GST_SECOND));
   collect->gotsegment = FALSE;
 
 

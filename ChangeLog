@@ -1,3 +1,20 @@
+2006-07-19  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_class_init),
+	(hash_value_destroy), (gnl_composition_init), (get_stack_list),
+	(update_start_stop_duration), (object_start_changed),
+	(object_stop_changed), (object_priority_changed),
+	(object_active_changed), (gnl_composition_add_object),
+	(gnl_composition_remove_object):
+	Add default sources properly (sources with prioriy of G_MAXUINT32).
+	Update pipeline when:
+	_ object is added/removed within current playing segment
+	_ object within current playing segment whose start/stop/priority/active
+	property changes.
+	* tests/check/complex.c: (GST_START_TEST):
+	* tests/check/gnlsource.c: (GST_START_TEST):
+	Fixed tests to test more behaviours, including new ones.
+
 2006-07-16  Edward Hervey  <edward@fluendo.com>
 
 	* gnonlin.pc.in: removing file from CVS.
