@@ -80,7 +80,7 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
     segment = (Segment *) collect->expected_segments->data;
 
     if (compare_segments (segment, event)) {
-      collect->expected_segments = g_list_next (collect->expected_segments);
+      collect->expected_segments = g_list_remove (collect->expected_segments, segment);
       g_free (segment);
     }
     collect->gotsegment = TRUE;
@@ -428,6 +428,8 @@ GST_START_TEST (test_one_after_other)
   gst_object_unref (pipeline);
   ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);
   gst_object_unref (bus);
+
+  g_free (collect);
 }
 
 GST_END_TEST;
@@ -553,6 +555,8 @@ GST_START_TEST (test_one_under_another)
   gst_object_unref (pipeline);
   ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);
   gst_object_unref (bus);
+
+  g_free (collect);
 }
 
 GST_END_TEST;
@@ -737,6 +741,8 @@ GST_START_TEST (test_one_bin_after_other)
   gst_object_unref (pipeline);
   ASSERT_OBJECT_REFCOUNT_BETWEEN(bus, "main bus", 1, 2);
   gst_object_unref (bus);
+
+  g_free (collect);
 }
 
 GST_END_TEST;

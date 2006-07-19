@@ -1293,7 +1293,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         if (change_state)
           gst_element_set_state (GST_ELEMENT (deactivate->data), state);
         gst_element_set_locked_state (GST_ELEMENT (deactivate->data), TRUE);
-        deactivate = g_list_next (deactivate);
+        deactivate = g_list_delete_link (deactivate, deactivate);
       }
 
       GST_DEBUG_OBJECT (comp, "Finished de-activating objects no longer used");
@@ -1308,7 +1308,10 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         gst_element_state_get_name (nextstate));
 
     /* activate new stack */
+    if (comp->private->current)
+      g_list_free (comp->private->current);
     comp->private->current = stack;
+
     while (stack) {
       gst_element_set_locked_state (GST_ELEMENT (stack->data), FALSE);
       if (change_state)

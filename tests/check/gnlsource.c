@@ -83,7 +83,7 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
     segment = (Segment *) collect->expected_segments->data;
 
     if (compare_segments (segment, event)) {
-      collect->expected_segments = g_list_next (collect->expected_segments);
+      collect->expected_segments = g_list_remove (collect->expected_segments, segment);
       g_free (segment);
     }
     collect->gotsegment = TRUE;
@@ -274,6 +274,8 @@ GST_START_TEST (test_simple_videotestsrc)
   gst_object_unref (GST_OBJECT (sinkpad));
 
   GST_DEBUG ("Resetted pipeline to READY");  
+
+  g_free (collect);
 }
 
 GST_END_TEST;
@@ -373,6 +375,8 @@ GST_START_TEST (test_videotestsrc_in_bin)
   fail_if (collect->expected_segments != NULL);
 
   GST_DEBUG ("Resetted pipeline to READY");  
+
+  g_free (collect);
 }
 
 GST_END_TEST;

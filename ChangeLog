@@ -1,5 +1,13 @@
 2006-07-19  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (update_pipeline):
+	* tests/check/complex.c: (sinkpad_event_probe), (GST_START_TEST):
+	* tests/check/gnlsource.c: (sinkpad_event_probe), (GST_START_TEST):
+	* tests/check/simple.c: (sinkpad_event_probe), (GST_START_TEST):
+	Memleak fixes in composition and tests.
+
+2006-07-19  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlsource.c: (ghost_seek_pad):
 	Try to send pending event before emitting no-more-pads and unblocking
 	controlled src pad.
