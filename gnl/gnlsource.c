@@ -301,12 +301,7 @@ ghost_seek_pad (GnlSource * source)
       (GNL_OBJECT (source), GST_PAD_NAME (pad), pad, TRUE);
   GST_DEBUG_OBJECT (source, "emitting no more pads");
   gst_pad_set_active (source->priv->ghostpad, TRUE);
-  gst_element_no_more_pads (GST_ELEMENT (source));
 
-  GST_DEBUG_OBJECT (source, "about to unblock %s:%s", GST_DEBUG_PAD_NAME (pad));
-  gst_pad_set_blocked_async (pad, FALSE,
-			     (GstPadBlockCallback) pad_blocked_cb, source);
-  
   if (source->priv->event) {
     GST_DEBUG_OBJECT (source, "sending queued seek event");
     if (!(gst_pad_send_event (source->priv->ghostpad, source->priv->event)))
@@ -317,6 +312,11 @@ ghost_seek_pad (GnlSource * source)
     source->priv->event = NULL;
   }
 
+  gst_element_no_more_pads (GST_ELEMENT (source));
+  GST_DEBUG_OBJECT (source, "about to unblock %s:%s", GST_DEBUG_PAD_NAME (pad));
+  gst_pad_set_blocked_async (pad, FALSE,
+			     (GstPadBlockCallback) pad_blocked_cb, source);
+  
   source->priv->pendingblock = FALSE;
 
   gst_object_unref (pad);
