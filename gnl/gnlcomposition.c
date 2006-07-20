@@ -146,7 +146,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     GST_LOG_OBJECT (comp, "locking flushing_lock from thread %p",		\
       g_thread_self());							\
     g_mutex_lock (comp->private->flushing_lock);				\
-    GST_LOG_OBJECT (comp, "locked object_lock from thread %p",		\
+    GST_LOG_OBJECT (comp, "locked flushing_lock from thread %p",		\
 		    g_thread_self());					\
   } G_STMT_END
 
