@@ -1,4 +1,5 @@
-This is GNonLin 0.10.4, "Solomillo de Ternera"
+This is GNonLin 0.10.5, "Beavis and Zidane"
 
-GnlSource and GnlFileSource were refactored to work in all conditions.
-GnlComposition now handles gaps between sources.
+More complex compositions are now possible, along with use of default sources in GnlComposition.
+Thread-safety improved.
+Memory leaks fixed.
