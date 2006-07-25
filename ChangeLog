@@ -1,3 +1,9 @@
+2006-07-25  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlfilesource.c: (gnl_filesource_init): 
+	Typo error. There's no filesource element, it's filesrc.
+	Patch from cascardo at holoscopio dot com
+
 2006-07-20  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:

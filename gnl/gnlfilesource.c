@@ -113,7 +113,7 @@ gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
   if (!(filesrc =
           gst_element_factory_make ("gnomevfssrc", "internal-filesource")))
     if (!(filesrc =
-            gst_element_factory_make ("filesource", "internal-filesource")))
+            gst_element_factory_make ("filesrc", "internal-filesource")))
       g_warning
           ("Could not create a gnomevfssrc or filesource element, are you sure you have any of them installed ?");
   if (!(decodebin =
