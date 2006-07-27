@@ -33,6 +33,18 @@ GST_ELEMENT_DETAILS ("GNonLin Operation",
     "Encapsulates filters/effects for use with GNL Objects",
     "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>");
 
+static GstStaticPadTemplate gnl_operation_src_template =
+GST_STATIC_PAD_TEMPLATE ("src",
+    GST_PAD_SRC,
+    GST_PAD_SOMETIMES,
+    GST_STATIC_CAPS_ANY);
+
+static GstStaticPadTemplate gnl_operation_sink_template =
+GST_STATIC_PAD_TEMPLATE ("sink%d",
+    GST_PAD_SINK,
+    GST_PAD_REQUEST,
+    GST_STATIC_CAPS_ANY);
+
 GST_DEBUG_CATEGORY_STATIC (gnloperation);
 #define GST_CAT_DEFAULT gnloperation
 
@@ -50,7 +62,8 @@ static void gnl_operation_get_property (GObject * object, guint prop_id,
 static gboolean gnl_operation_prepare (GnlObject * object);
 
 static gboolean gnl_operation_add_element (GstBin * bin, GstElement * element);
-static gboolean gnl_operation_remove_element (GstBin * bin, GstElement * element);
+static gboolean gnl_operation_remove_element (GstBin * bin,
+    GstElement * element);
 
 static void
 gnl_operation_base_init (gpointer g_class)
@@ -65,7 +78,8 @@ gnl_operation_class_init (GnlOperationClass * klass)
 {
   GObjectClass *gobject_class = (GObjectClass *) klass;
   GstBinClass *gstbin_class = (GstBinClass *) klass;
-/*   GstElementClass *gstelement_class = (GstElementClass *) klass; */
+
+  GstElementClass *gstelement_class = (GstElementClass *) klass;
   GnlObjectClass *gnlobject_class = (GnlObjectClass *) klass;
 
   GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation",
@@ -77,87 +91,147 @@ gnl_operation_class_init (GnlOperationClass * klass)
   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_operation_prepare);
 
   gstbin_class->add_element = GST_DEBUG_FUNCPTR (gnl_operation_add_element);
-  gstbin_class->remove_element = GST_DEBUG_FUNCPTR (gnl_operation_remove_element);
+  gstbin_class->remove_element =
+      GST_DEBUG_FUNCPTR (gnl_operation_remove_element);
 
   g_object_class_install_property (gobject_class, ARG_SINKS,
-      g_param_spec_uint ("sinks", "Sinks", "Number of input sinks",
-          1, G_MAXUINT, 1, G_PARAM_READWRITE));
+      g_param_spec_int ("sinks", "Sinks",
+          "Number of input sinks (-1 for automatic handling)", -1, G_MAXINT, -1,
+          G_PARAM_READWRITE));
 
+  gst_element_class_add_pad_template (gstelement_class,
+      gst_static_pad_template_get (&gnl_operation_src_template));
+
+  gst_element_class_add_pad_template (gstelement_class,
+      gst_static_pad_template_get (&gnl_operation_sink_template));
+
+}
+
+static void
+gnl_operation_reset (GnlOperation * operation)
+{
+  operation->num_sinks = 1;
+  operation->realsinks = 0;
 }
 
 static void
 gnl_operation_init (GnlOperation * operation, GnlOperationClass * klass)
 {
-  operation->num_sinks = 1;
-  operation->realsinks = 0;
+  gnl_operation_reset (operation);
+  operation->ghostpad = NULL;
   operation->element = NULL;
 }
 
 static gboolean
 element_is_valid_filter (GstElement * element)
 {
-  GstElementFactory * factory;
-  const GList * templates;
+  GstElementFactory *factory;
+  const GList *templates;
   gboolean havesink = FALSE;
   gboolean havesrc = FALSE;
   gboolean done = FALSE;
   GstIterator *pads;
   gpointer res;
-  GstPad * pad;
+  GstPad *pad;
 
   pads = gst_element_iterate_pads (element);
 
   while (!done) {
     switch (gst_iterator_next (pads, &res)) {
-    case GST_ITERATOR_OK:
-      pad = (GstPad *) res;
-      if (gst_pad_get_direction (pad) == GST_PAD_SRC)
-	havesrc = TRUE;
-      else if (gst_pad_get_direction (pad) == GST_PAD_SINK)
-	havesink = TRUE;
-      break;
-    case GST_ITERATOR_RESYNC:
-      havesrc = FALSE;
-      havesink = FALSE;
-      break;
-    case GST_ITERATOR_DONE:
-    case GST_ITERATOR_ERROR:
-      done = TRUE;
+      case GST_ITERATOR_OK:
+        pad = (GstPad *) res;
+        if (gst_pad_get_direction (pad) == GST_PAD_SRC)
+          havesrc = TRUE;
+        else if (gst_pad_get_direction (pad) == GST_PAD_SINK)
+          havesink = TRUE;
+        break;
+      case GST_ITERATOR_RESYNC:
+        havesrc = FALSE;
+        havesink = FALSE;
+        break;
+      case GST_ITERATOR_DONE:
+      case GST_ITERATOR_ERROR:
+        done = TRUE;
     }
   }
 
   if (havesrc && havesink)
     return TRUE;
-  
+
   factory = gst_element_get_factory (element);
-  
+
   for (templates = gst_element_factory_get_static_pad_templates (factory);
-       templates; templates = g_list_next (templates)) {
-    GstStaticPadTemplate * template = (GstStaticPadTemplate*) templates->data;
-    
+      templates; templates = g_list_next (templates)) {
+    GstStaticPadTemplate *template = (GstStaticPadTemplate *) templates->data;
+
     if (template->direction == GST_PAD_SRC)
       havesrc = TRUE;
     else if (template->direction == GST_PAD_SINK)
       havesink = TRUE;
   }
-  
+
   return (havesink && havesrc);
+}
+
+/**
+ * get_src_pad:
+ * #element: a #GstElement
+ *
+ * Returns: The src pad for the given element. A reference was added to the
+ * returned pad, remove it when you don't need that pad anymore.
+ * Returns NULL if there's no source pad.
+ */
+
+static GstPad *
+get_src_pad (GstElement * element)
+{
+  GstIterator *it;
+  GstIteratorResult itres;
+  GstPad *srcpad;
+
+  it = gst_element_iterate_src_pads (element);
+  itres = gst_iterator_next (it, (gpointer) & srcpad);
+  if (itres != GST_ITERATOR_OK) {
+    GST_DEBUG ("%s doesn't have a src pad !", GST_ELEMENT_NAME (element));
+    srcpad = NULL;
+  }
+  gst_iterator_free (it);
+  return srcpad;
 }
 
 static gboolean
 gnl_operation_add_element (GstBin * bin, GstElement * element)
 {
-  GnlOperation * operation = GNL_OPERATION (bin);
+  GnlOperation *operation = GNL_OPERATION (bin);
   gboolean res = FALSE;
 
+  GST_DEBUG_OBJECT (bin, "element:%s", GST_ELEMENT_NAME (element));
+
   if (operation->element) {
-    GST_WARNING_OBJECT (operation, "We already control an element : %s",
-			GST_OBJECT_NAME (operation->element));
+    GST_WARNING_OBJECT (operation,
+        "We already control an element : %s , remove it first",
+        GST_OBJECT_NAME (operation->element));
   } else {
     if (!element_is_valid_filter (element)) {
-      GST_WARNING_OBJECT (operation, "Element %s is not a valid filter element");
+      GST_WARNING_OBJECT (operation,
+          "Element %s is not a valid filter element");
     } else {
-      res = GST_BIN_CLASS (parent_class)->add_element (bin, element);
+      if ((res = GST_BIN_CLASS (parent_class)->add_element (bin, element))) {
+        GstPad *srcpad;
+
+        srcpad = get_src_pad (element);
+        if (!srcpad)
+          return FALSE;
+
+        if (!operation->ghostpad) {
+          operation->ghostpad =
+              gst_ghost_pad_new_no_target ("src", GST_PAD_SRC);
+          gst_element_add_pad ((GstElement *) bin, operation->ghostpad);
+        }
+        gst_ghost_pad_set_target ((GstGhostPad *) operation->ghostpad, srcpad);
+
+        gst_object_unref (srcpad);
+      }
     }
   }
 
@@ -167,13 +241,16 @@ gnl_operation_add_element (GstBin * bin, GstElement * element)
 static gboolean
 gnl_operation_remove_element (GstBin * bin, GstElement * element)
 {
-  GnlOperation * operation = GNL_OPERATION (bin);
+  GnlOperation *operation = GNL_OPERATION (bin);
   gboolean res = FALSE;
 
   if (operation->element) {
     if ((res = GST_BIN_CLASS (parent_class)->remove_element (bin, element)))
       operation->element = NULL;
-    
+  } else {
+    GST_WARNING_OBJECT (bin,
+        "Element %s is not the one controlled by this operation",
+        GST_ELEMENT_NAME (element));
   }
   return res;
 }
@@ -187,8 +264,8 @@ gnl_operation_set_sinks (GnlOperation * operation, guint sinks)
 }
 
 static void
-gnl_operation_set_property (GObject *object, guint prop_id,
-			    const GValue *value, GParamSpec *pspec)
+gnl_operation_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec)
 {
   GnlOperation *operation;
 
@@ -198,7 +275,7 @@ gnl_operation_set_property (GObject *object, guint prop_id,
 
   switch (prop_id) {
     case ARG_SINKS:
-      gnl_operation_set_sinks (operation, g_value_get_uint (value));
+      gnl_operation_set_sinks (operation, g_value_get_int (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -207,8 +284,8 @@ gnl_operation_set_property (GObject *object, guint prop_id,
 }
 
 static void
-gnl_operation_get_property (GObject *object, guint prop_id,
-			    GValue *value, GParamSpec *pspec)
+gnl_operation_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec)
 {
   GnlOperation *operation;
 
@@ -218,7 +295,7 @@ gnl_operation_get_property (GObject *object, guint prop_id,
 
   switch (prop_id) {
     case ARG_SINKS:
-      g_value_set_uint (value, operation->num_sinks);
+      g_value_set_int (value, operation->num_sinks);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -229,26 +306,43 @@ gnl_operation_get_property (GObject *object, guint prop_id,
 static gboolean
 add_sink_pad (GnlOperation * operation)
 {
+  /* FIXME : implement */
+
+  operation->realsinks++;
+
   return TRUE;
 }
 
 static gboolean
 remove_sink_pad (GnlOperation * operation)
 {
+  /* FIXME : implement */
+
+  /*
+     We can't remove any random pad.
+     We should remove an unused pad ... which is hard to figure out in a
+     thread-safe way.
+   */
+
   return TRUE;
 }
 
 static void
 synchronize_sinks (GnlOperation * operation)
 {
-  if (operation->num_sinks == operation->realsinks)
+
+  GST_DEBUG_OBJECT (operation, "num_sinks:%d , realsinks:%d",
+      operation->num_sinks, operation->realsinks);
+  if ((operation->num_sinks == -1) ||
+      (operation->num_sinks == operation->realsinks))
     return;
 
   if (operation->num_sinks > operation->realsinks) {
-    /* Add pad */
-    add_sink_pad (operation);
+    while (operation->num_sinks > operation->realsinks) /* Add pad */
+      add_sink_pad (operation);
   } else {
     /* Remove pad */
+    /* FIXME, which one do we remove ? :) */
     remove_sink_pad (operation);
   }
 }

@@ -540,7 +540,7 @@ internalpad_event_function (GstPad * internal, GstEvent * event)
 {
   GnlPadPrivate *priv = gst_pad_get_element_private (internal);
   GnlObject *object = priv->object;
-  GstMessage * message = NULL;
+  GstMessage *message = NULL;
   gboolean res;
 
   GST_DEBUG_OBJECT (internal, "event:%s", GST_EVENT_TYPE_NAME (event));
@@ -555,9 +555,8 @@ internalpad_event_function (GstPad * internal, GstEvent * event)
     case GST_PAD_SRC:
       if (GST_EVENT_TYPE (event) == GST_EVENT_NEWSEGMENT) {
         event = translate_outgoing_new_segment (object, event);
-	message = gst_message_new_segment_start (GST_OBJECT (object),
-						 GST_FORMAT_TIME,
-						 (gint64) object->start);
+        message = gst_message_new_segment_start (GST_OBJECT (object),
+            GST_FORMAT_TIME, (gint64) object->start);
       }
 
       break;
@@ -657,6 +656,7 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
 {
   GnlPadPrivate *priv;
   GnlObject *object;
+  gboolean ret = FALSE;
 
   priv = gst_pad_get_element_private (ghostpad);
   object = priv->object;
@@ -677,8 +677,12 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
       break;
   }
 
-  GST_DEBUG_OBJECT (ghostpad, "Calling priv->eventfunc %p", priv->eventfunc);
-  return priv->eventfunc (ghostpad, event);
+  GST_DEBUG_OBJECT (ghostpad, "Calling priv->eventfunc");
+  ret = priv->eventfunc (ghostpad, event);
+  GST_DEBUG_OBJECT (ghostpad, "Returned from calling priv->eventfunc : %d",
+      ret);
+
+  return ret;
 
   /* ERRORS */
 no_function:
@@ -838,7 +842,7 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
   }
 
 
- /* add it to element */
+  /* add it to element */
   if (!(gst_element_add_pad (GST_ELEMENT (object), ghost))) {
     GST_WARNING ("couldn't add newly created ghostpad");
     return NULL;
@@ -1201,4 +1205,3 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
 beach:
   return ret;
 }
-

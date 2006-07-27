@@ -1,3 +1,40 @@
+2006-07-27  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnl.c:
+	Let's welcome GnlOperation back in the game.
+	* gnl/gnlcomposition.c: (gnl_composition_init),
+	(gnl_composition_dispose), (gnl_composition_finalize),
+	(gnl_composition_reset), (segment_done_main_thread),
+	(gnl_composition_handle_message), (get_new_seek_event),
+	(seek_handling), (pad_blocked),
+	(gnl_composition_ghost_pad_set_target),
+	(next_stop_in_region_above_priority), (convert_list_to_tree),
+	(get_stack_list), (get_clean_toplevel_stack),
+	(gnl_composition_change_state), (update_start_stop_duration),
+	(no_more_pads_object_cb), (compare_relink_single_node),
+	(compare_deactivate_single_node), (compare_relink_stack),
+	(unlock_activate_stack), (update_pipeline), (object_pad_added),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	* gnl/gnloperation.h:
+	Switch to using a tree of GNode for the current stack.
+	It's faster (since it does more checks in one go) and has more
+	potential for speed improvements when updating the
+	pipeline.
+	* gnl/gnloperation.c: (gnl_operation_class_init),
+	(gnl_operation_reset), (gnl_operation_init),
+	(element_is_valid_filter), (get_src_pad),
+	(gnl_operation_add_element), (gnl_operation_remove_element),
+	(gnl_operation_set_property), (gnl_operation_get_property),
+	(add_sink_pad), (remove_sink_pad), (synchronize_sinks):
+	Added more comments and fixme's.
+	* gnl/gnlobject.c: (internalpad_event_function),
+	(ghostpad_event_function), (gnl_object_ghost_pad_full),
+	(gnl_object_change_state):
+	* gnl/gnlsource.c: (gnl_source_prepare), (element_pad_added_cb),
+	(element_pad_removed_cb), (ghost_seek_pad),
+	(gnl_source_change_state):
+	gst-indent fixups.
+
 2006-07-25  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlfilesource.c: (gnl_filesource_init): 
