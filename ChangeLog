@@ -1,3 +1,21 @@
+2006-08-09  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlobject.c:
+	Remove useless linkfunc/unlinkfunc from GnlPadPrivate structure.
+	(control_internal_pad),
+	Remove call to useless functions. 
+	(gnl_object_ghost_pad_no_target),
+	(gnl_object_ghost_pad_set_target):
+	* gnl/gnloperation.c: (gnl_operation_class_init),
+	(element_is_valid_filter), (gnl_operation_add_element),
+	(gnl_operation_set_sinks), (get_unused_static_sink_pad),
+	(add_sink_pad), (gnl_operation_request_new_pad),
+	(gnl_operation_release_pad):
+	Implemented GstElement::request_new_pad virtual method.
+	Improved sink ghost pads synchronisation with the nbsinks property.
+	* gnl/gnloperation.h:
+	Added comments.
+
 2006-07-27  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnl.c:

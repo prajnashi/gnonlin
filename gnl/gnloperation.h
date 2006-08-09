@@ -47,11 +47,13 @@ G_BEGIN_DECLS
   /* <private> */
   gboolean dynamicsinks;        /* TRUE if element has request pads */
   gint realsinks;               /* Number of real sink pads. */
-  GList *sinks;                 /* Sinkpads */
 
-  GstPad *ghostpad;
+  /* FIXME : We might need to use a lock to access this list */
+  GList * sinks;		/* The sink ghostpads */
+  
+  GstPad *ghostpad;		/* src ghostpad */
 
-  GstElement *element;
+  GstElement *element;		/* controlled element */
 };
 
 struct _GnlOperationClass
