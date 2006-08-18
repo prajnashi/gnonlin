@@ -1,3 +1,15 @@
+2006-08-18  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c:
+	(gnl_composition_ghost_pad_set_target):
+	Properly handle ghostpads without targets.
+	(convert_list_to_tree), (compare_relink_single_node),
+	(compare_deactivate_single_node), (update_pipeline):
+	First integration of support for GnlOperations.
+	(gnl_composition_add_object):
+	If composition was empty and initialized, update pipeline.
+
+
 2006-08-09  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlobject.c:

@@ -646,34 +646,15 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
 {
   gboolean hadghost = (comp->private->ghostpad) ? TRUE : FALSE;
 
-  GST_DEBUG_OBJECT (comp, "%s:%s , hadghost:%d",
-      GST_DEBUG_PAD_NAME (target), hadghost);
+  if (target)
+    GST_DEBUG_OBJECT (comp, "%s:%s , hadghost:%d",
+		      GST_DEBUG_PAD_NAME (target), hadghost);
+  else
+    GST_DEBUG_OBJECT (comp, "Removing target, hadghost:%d", hadghost);
 
   if (!(hadghost)) {
     comp->private->ghostpad = gnl_object_ghost_pad_no_target (GNL_OBJECT (comp),
         "src", GST_PAD_SRC);
-  } else {
-    GstPad *ptarget =
-        gst_ghost_pad_get_target (GST_GHOST_PAD (comp->private->ghostpad));
-
-    if (ptarget == target) {
-      GST_DEBUG_OBJECT (comp,
-          "Target of ghostpad is the same as existing one, not changing");
-      gst_object_unref (ptarget);
-      return;
-    }
-
-    GST_DEBUG_OBJECT (comp, "Previous target was %s:%s, blocking that pad",
-        GST_DEBUG_PAD_NAME (ptarget));
-    gst_pad_set_blocked_async (ptarget, TRUE, (GstPadBlockCallback) pad_blocked,
-        comp);
-
-    gst_object_unref (ptarget);
-  }
-
-  gnl_object_ghost_pad_set_target (GNL_OBJECT (comp),
-      comp->private->ghostpad, target);
-  if (!(hadghost)) {
     GST_DEBUG_OBJECT (comp->private->ghostpad,
         "About to replace event_pad_func");
     comp->private->gnl_event_pad_func =
@@ -681,7 +662,30 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
     gst_pad_set_event_function (comp->private->ghostpad,
         GST_DEBUG_FUNCPTR (gnl_composition_event_handler));
     GST_DEBUG_OBJECT (comp->private->ghostpad, "eventfunc is now %s",
-        GST_DEBUG_FUNCPTR_NAME (GST_PAD_EVENTFUNC (comp->private->ghostpad)));
+        GST_DEBUG_FUNCPTR_NAME (GST_PAD_EVENTFUNC (comp->private->ghostpad)));    
+  } else {
+    GstPad *ptarget =
+        gst_ghost_pad_get_target (GST_GHOST_PAD (comp->private->ghostpad));
+
+    if (ptarget && ptarget == target) {
+      GST_DEBUG_OBJECT (comp,
+          "Target of ghostpad is the same as existing one, not changing");
+      gst_object_unref (ptarget);
+      return;
+    }
+
+    if (ptarget) {
+      GST_DEBUG_OBJECT (comp, "Previous target was %s:%s, blocking that pad",
+			GST_DEBUG_PAD_NAME (ptarget));
+      gst_pad_set_blocked_async (ptarget, TRUE, (GstPadBlockCallback) pad_blocked,
+				 comp);
+      gst_object_unref (ptarget);
+    }
+  }
+
+  gnl_object_ghost_pad_set_target (GNL_OBJECT (comp),
+      comp->private->ghostpad, target);
+  if (!(hadghost)) {
     if (!(gst_element_add_pad (GST_ELEMENT (comp), comp->private->ghostpad)))
       GST_WARNING ("Couldn't add the ghostpad");
     else
@@ -747,8 +751,7 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop)
 
   object = (GnlObject *) (*stack)->data;
 
-  GST_DEBUG ("object:%s, *stop:%" GST_TIME_FORMAT,
-      GST_ELEMENT_NAME (object), GST_TIME_ARGS (*stop));
+  GST_DEBUG ("object:%s", GST_ELEMENT_NAME (object));
 
   /* update earliest stop */
   if (GST_CLOCK_TIME_IS_VALID (*stop)) {
@@ -757,16 +760,25 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop)
   } else {
     *stop = object->stop;
   }
+
+  GST_DEBUG_OBJECT (object, "*stop:%"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (*stop));
+
   if (GNL_IS_SOURCE (object)) {
     *stack = g_list_next (*stack);
     return g_node_new (object);
   } else {                      /* GnlOperation */
     GnlOperation *oper = (GnlOperation *) object;
 
+    GST_LOG_OBJECT (oper, "operation, num_sinks:%d",
+		    oper->num_sinks);
     ret = g_node_new (object);
     limit = (oper->num_sinks != -1);
     nbsinks = oper->num_sinks;
-    for (tmp = g_list_next (stack); tmp && (!limit || nbsinks);) {
+
+    /* FIXME : if num_sinks == -1 : request the proper number of pads */
+
+    for (tmp = g_list_next (*stack); tmp && (!limit || nbsinks);) {
       g_node_append (ret, convert_list_to_tree (&tmp, stop));
 
       if (limit)
@@ -1176,7 +1188,13 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
 
   srcpad = get_src_pad ((GstElement *) newobj);
 
+  if (srcpad) {
+    gst_pad_set_blocked_async (srcpad, TRUE, (GstPadBlockCallback) pad_blocked,
+			       comp);
+  }
+
   if (GNL_IS_OPERATION (newobj)) {
+    GST_LOG_OBJECT (newobj, "is operation, analyzing the childs");
     for (child = node->children; child; child = child->next)
       compare_relink_single_node (comp, child, oldstack);
   } else {
@@ -1194,7 +1212,10 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
     /* relink to new parent in required order */
     if (newparent) {
       /* FIXME : do it in required order */
-      gst_element_link ((GstElement *) newobj, (GstElement *) newparent);
+      if (!(gst_element_link ((GstElement *) newobj, (GstElement *) newparent)))
+	GST_ERROR_OBJECT (comp, "Couldn't link %s to %s",
+			  GST_ELEMENT_NAME (newobj),
+			  GST_ELEMENT_NAME (newparent));
     }
   } else
     GST_LOG_OBJECT (newobj, "Same parent and same position in the new stack");
@@ -1247,6 +1268,12 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
   GST_DEBUG_OBJECT (comp, "oldobj:%s",
       GST_ELEMENT_NAME ((GstElement *) oldobj));
 
+  if ((!oldparent) && comp->private->ghostpad) {
+    /* previous root of the tree, remove the target of the ghostpad */
+    GST_DEBUG_OBJECT (comp, "Setting ghostpad target to NULL so oldobj srcpad is no longer linked");
+    gnl_composition_ghost_pad_set_target (comp, NULL);
+  }
+
   srcpad = get_src_pad ((GstElement *) oldobj);
 
   /* PRE PROCESSING */
@@ -1258,8 +1285,10 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
   /* Optionnal OPERATION PROCESSING */
   if (GNL_IS_OPERATION (oldobj)) {
     for (child = node->children; child; child = child->next) {
-      deactivate = g_list_append (deactivate,
-          compare_deactivate_single_node (comp, child, newstack));
+      GList * newdeac = compare_deactivate_single_node (comp, child, newstack);
+
+      if (newdeac)
+	deactivate = g_list_concat (deactivate, newdeac);
     }
   } else {
     /* FIXME : do we need to do something specific for sources ? */
@@ -1290,7 +1319,8 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
 
   } else {
     /* no longer used in new stack */
-    GST_LOG_OBJECT (comp, "not used anymore");
+    GST_LOG_OBJECT (comp, "%s not used anymore",
+		    GST_ELEMENT_NAME (oldobj));
 
     if (oldparent) {
       /* unlink from oldparent */
@@ -1298,7 +1328,8 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
       gst_element_unlink ((GstElement *) oldobj, (GstElement *) oldparent);
     }
 
-    GST_LOG_OBJECT (comp, "adding to deactivate list");
+    GST_LOG_OBJECT (comp, "adding %s to deactivate list",
+		    GST_ELEMENT_NAME (oldobj));
     deactivate = g_list_append (deactivate, oldobj);
   }
   /* only unblock if it's not the ROOT */
@@ -1393,7 +1424,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         "now really updating the pipeline, current-state:%s",
         gst_element_state_get_name (state));
 
-    /* rebuild the stack and relink new elements */
+    /* (re)build the stack and relink new elements */
     stack = get_clean_toplevel_stack (comp, &currenttime, &new_stop);
     deactivate = compare_relink_stack (comp, stack);
 
@@ -1410,15 +1441,18 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     COMP_OBJECTS_UNLOCK (comp);
 
     if (deactivate) {
+      GList * tmp;
       GST_DEBUG_OBJECT (comp, "De-activating objects no longer used");
 
       /* state-lock elements no more used */
-      while (deactivate) {
+      for (tmp = deactivate;tmp; tmp = g_list_next(tmp)) {
+	GST_LOG ("%p", tmp->data);
+
         if (change_state)
-          gst_element_set_state (GST_ELEMENT (deactivate->data), state);
-        gst_element_set_locked_state (GST_ELEMENT (deactivate->data), TRUE);
-        deactivate = g_list_delete_link (deactivate, deactivate);
+          gst_element_set_state (GST_ELEMENT (tmp->data), state);
+        gst_element_set_locked_state (GST_ELEMENT (tmp->data), TRUE);
       }
+      g_list_free(deactivate);
 
       GST_DEBUG_OBJECT (comp, "Finished de-activating objects no longer used");
     }
@@ -1463,10 +1497,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
             else {
               GST_LOG_OBJECT (comp, "seek event sent successfully to %s:%s",
                   GST_DEBUG_PAD_NAME (pad));
-              GST_LOG_OBJECT (comp,
-                  "Setting the composition's ghostpad target to %s:%s",
-                  GST_DEBUG_PAD_NAME (pad));
-              gnl_composition_ghost_pad_set_target (comp, pad);
             }
 
           } else {
@@ -1487,6 +1517,11 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
           GST_LOG_OBJECT (comp, "seek event sent successfully to %s:%s",
               GST_DEBUG_PAD_NAME (pad));
         }
+	
+	GST_LOG_OBJECT (comp,
+			"Setting the composition's ghostpad target to %s:%s",
+			GST_DEBUG_PAD_NAME (pad));
+	gnl_composition_ghost_pad_set_target (comp, pad);
         GST_LOG_OBJECT (comp, "About to unblock top-level srcpad");
         gst_pad_set_blocked_async (pad, FALSE,
             (GstPadBlockCallback) pad_blocked, comp);
@@ -1696,8 +1731,9 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
 
   COMP_OBJECTS_UNLOCK (comp);
 
-  /* If we added within currently configured segment, update pipeline */
-  if (OBJECT_IN_ACTIVE_SEGMENT (comp, element))
+  /* If we added within currently configured segment OR the pipeline was *
+   * previously empty, THEN update pipeline */
+  if (OBJECT_IN_ACTIVE_SEGMENT (comp, element) || (!comp->private->current))
     update_pipeline (comp, comp->private->segment_start, TRUE, TRUE);
   else
     update_start_stop_duration (comp);
