@@ -700,6 +700,13 @@ ghostpad_query_function (GstPad * ghostpad, GstQuery * query)
   return pret;
 }
 
+/* internal pad going away */
+static void
+internal_pad_finalizing (GnlPadPrivate * priv, GObject * pad)
+{
+  g_free (priv);
+}
+
 static void
 control_internal_pad (GstPad * ghostpad, GnlObject * object)
 {
@@ -726,6 +733,8 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
     priv->eventfunc = GST_PAD_EVENTFUNC (internal);
     priv->queryfunc = GST_PAD_QUERYFUNC (internal);
     gst_pad_set_element_private (internal, priv);
+
+    g_object_weak_ref ((GObject*) internal, (GWeakNotify) internal_pad_finalizing, priv);
 
     /* add query/event function overrides on internal pad */
     gst_pad_set_event_function (internal,

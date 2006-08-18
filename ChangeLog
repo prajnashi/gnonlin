@@ -1,5 +1,12 @@
 2006-08-18  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlobject.c: (internal_pad_finalizing),
+	(control_internal_pad):
+	Free internal pad private data when the pad is being finalized, else
+	we leak that structure.
+
+2006-08-18  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c:
 	(gnl_composition_ghost_pad_set_target):
 	Properly handle ghostpads without targets.
