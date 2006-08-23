@@ -1,5 +1,11 @@
 2006-08-23  Wim Taymans  <wim@fluendo.com>
 
+	* gnl/gnlobject.c: (gnl_object_class_init), (control_internal_pad),
+	(gnl_object_ghost_pad_no_target):
+	Add extra explanation for priority property, Fixes #352382.
+
+2006-08-23  Wim Taymans  <wim@fluendo.com>
+
 	* gnl/gnloperation.c: (gnl_operation_class_init),
 	(element_is_valid_filter), (gnl_operation_add_element),
 	(gnl_operation_set_sinks), (get_unused_static_sink_pad),

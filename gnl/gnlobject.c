@@ -144,10 +144,11 @@ gnl_object_class_init (GnlObjectClass * klass)
 
   g_object_class_install_property (gobject_class, ARG_PRIORITY,
       g_param_spec_uint ("priority", "Priority",
-          "The priority of the object", 0, G_MAXUINT, 0, G_PARAM_READWRITE));
+          "The priority of the object (0 = highest priority)", 0, G_MAXUINT, 0,
+          G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, ARG_ACTIVE,
-      g_param_spec_boolean ("active", "Active",
-          "Render this object", TRUE, G_PARAM_READWRITE));
+      g_param_spec_boolean ("active", "Active", "Render this object", TRUE,
+          G_PARAM_READWRITE));
 
   g_object_class_install_property (gobject_class, ARG_CAPS,
       g_param_spec_boxed ("caps", "Caps",
@@ -716,7 +717,8 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
   GstPad *internal;
 
   if (!target) {
-    GST_DEBUG_OBJECT (ghostpad, "ghostpad doesn't have a target, no need to control the internal pad");
+    GST_DEBUG_OBJECT (ghostpad,
+        "ghostpad doesn't have a target, no need to control the internal pad");
     return;
   }
 
@@ -734,7 +736,8 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
     priv->queryfunc = GST_PAD_QUERYFUNC (internal);
     gst_pad_set_element_private (internal, priv);
 
-    g_object_weak_ref ((GObject*) internal, (GWeakNotify) internal_pad_finalizing, priv);
+    g_object_weak_ref ((GObject *) internal,
+        (GWeakNotify) internal_pad_finalizing, priv);
 
     /* add query/event function overrides on internal pad */
     gst_pad_set_event_function (internal,
@@ -842,7 +845,7 @@ gnl_object_ghost_pad_no_target (GnlObject * object, const gchar * name,
       GST_DEBUG_FUNCPTR (ghostpad_event_function));
   gst_pad_set_query_function (ghost,
       GST_DEBUG_FUNCPTR (ghostpad_query_function));
-  
+
   gst_pad_set_element_private (ghost, priv);
 
   return ghost;
