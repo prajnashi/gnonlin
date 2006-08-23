@@ -1,3 +1,12 @@
+2006-08-23  Wim Taymans  <wim@fluendo.com>
+
+	* gnl/gnloperation.c: (gnl_operation_class_init),
+	(element_is_valid_filter), (gnl_operation_add_element),
+	(gnl_operation_set_sinks), (get_unused_static_sink_pad),
+	(add_sink_pad), (gnl_operation_request_new_pad):
+	Fix leaks in iterators.
+	Correctly resync iterators too.
+
 2006-08-18  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlobject.c: (internal_pad_finalizing),

@@ -65,7 +65,8 @@ static gboolean gnl_operation_add_element (GstBin * bin, GstElement * element);
 static gboolean gnl_operation_remove_element (GstBin * bin,
     GstElement * element);
 
-static GstPad * gnl_operation_request_new_pad (GstElement * element, GstPadTemplate * templ, const gchar * name);
+static GstPad *gnl_operation_request_new_pad (GstElement * element,
+    GstPadTemplate * templ, const gchar * name);
 static void gnl_operation_release_pad (GstElement * element, GstPad * pad);
 
 static void synchronize_sinks (GnlOperation * operation);
@@ -98,7 +99,8 @@ gnl_operation_class_init (GnlOperationClass * klass)
           "Number of input sinks (-1 for automatic handling)", -1, G_MAXINT, -1,
           G_PARAM_READWRITE));
 
-  gstelement_class->request_new_pad = GST_DEBUG_FUNCPTR (gnl_operation_request_new_pad);
+  gstelement_class->request_new_pad =
+      GST_DEBUG_FUNCPTR (gnl_operation_request_new_pad);
   gstelement_class->release_pad = GST_DEBUG_FUNCPTR (gnl_operation_release_pad);
 
   gstbin_class->add_element = GST_DEBUG_FUNCPTR (gnl_operation_add_element);
@@ -140,31 +142,38 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
   gboolean done = FALSE;
   GstIterator *pads;
   gpointer res;
-  GstPad *pad;
-
-  pads = gst_element_iterate_pads (element);
 
   if (isdynamic)
     *isdynamic = FALSE;
 
+  pads = gst_element_iterate_pads (element);
+
   while (!done) {
     switch (gst_iterator_next (pads, &res)) {
       case GST_ITERATOR_OK:
-        pad = (GstPad *) res;
+      {
+        GstPad *pad = (GstPad *) res;
+
         if (gst_pad_get_direction (pad) == GST_PAD_SRC)
           havesrc = TRUE;
         else if (gst_pad_get_direction (pad) == GST_PAD_SINK)
           havesink = TRUE;
+
+        gst_object_unref (pad);
         break;
+      }
       case GST_ITERATOR_RESYNC:
+        gst_iterator_resync (pads);
         havesrc = FALSE;
         havesink = FALSE;
         break;
-      case GST_ITERATOR_DONE:
-      case GST_ITERATOR_ERROR:
+      default:
+        /* ERROR and DONE */
         done = TRUE;
+        break;
     }
   }
+  gst_iterator_free (pads);
 
   if (havesrc && havesink)
     return TRUE;
@@ -178,8 +187,9 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
     if (template->direction == GST_PAD_SRC)
       havesrc = TRUE;
     else if (template->direction == GST_PAD_SINK) {
-      if (isdynamic && (GST_PAD_TEMPLATE_PRESENCE (template) == GST_PAD_REQUEST))
-	*isdynamic = TRUE;
+      if (isdynamic
+          && (GST_PAD_TEMPLATE_PRESENCE (template) == GST_PAD_REQUEST))
+        *isdynamic = TRUE;
       havesink = TRUE;
     }
   }
@@ -238,8 +248,8 @@ gnl_operation_add_element (GstBin * bin, GstElement * element)
         if (!srcpad)
           return FALSE;
 
-	operation->element = element;
-	operation->dynamicsinks = isdynamic;
+        operation->element = element;
+        operation->dynamicsinks = isdynamic;
 
         if (!operation->ghostpad) {
           operation->ghostpad =
@@ -250,7 +260,7 @@ gnl_operation_add_element (GstBin * bin, GstElement * element)
 
         gst_object_unref (srcpad);
 
-	synchronize_sinks(operation);
+        synchronize_sinks (operation);
       }
     }
   }
@@ -281,7 +291,7 @@ gnl_operation_set_sinks (GnlOperation * operation, guint sinks)
   /* FIXME : Check if sinkpad of element is on-demand .... */
 
   operation->num_sinks = sinks;
-  synchronize_sinks(operation);
+  synchronize_sinks (operation);
 }
 
 static void
@@ -327,18 +337,16 @@ gnl_operation_get_property (GObject * object, guint prop_id,
 
 /*
  * Returns the first unused sink pad of the controlled element.
- * Only use with static element.
+ * Only use with static element. Unref after usage.
  * Returns NULL if there's no more unused sink pads.
  */
-
 static GstPad *
 get_unused_static_sink_pad (GnlOperation * operation)
 {
   GstIterator *pads;
   gboolean done = FALSE;
   gpointer val;
-  GstPad * pad;
-  GstPad * ret = NULL;
+  GstPad *ret = NULL;
 
   if (!operation->element)
     return NULL;
@@ -347,41 +355,52 @@ get_unused_static_sink_pad (GnlOperation * operation)
 
   while (!done) {
     switch (gst_iterator_next (pads, &val)) {
-    case GST_ITERATOR_OK:
-      pad = (GstPad*) val;
-      if (gst_pad_get_direction (pad) == GST_PAD_SINK) {
-	GList * tmp = operation->sinks;
-	gboolean istaken = FALSE;
+      case GST_ITERATOR_OK:
+      {
+        GstPad *pad = (GstPad *) val;
 
-	/* figure out if one of our sink ghostpads has this pad as target */
-	for (; tmp; tmp = g_list_next (tmp)) {
-	  GstGhostPad * gpad = (GstGhostPad *) tmp->data;
-	  GstPad * target = gst_ghost_pad_get_target (gpad);
+        if (gst_pad_get_direction (pad) == GST_PAD_SINK) {
+          GList *tmp = operation->sinks;
+          gboolean istaken = FALSE;
 
-	  if (target) {
-	    if (target == pad)
-	      istaken = TRUE;
-	    gst_object_unref (target);
+          /* figure out if one of our sink ghostpads has this pad as target */
+          for (; tmp; tmp = g_list_next (tmp)) {
+            GstGhostPad *gpad = (GstGhostPad *) tmp->data;
+            GstPad *target = gst_ghost_pad_get_target (gpad);
+
+            if (target) {
+              if (target == pad)
+                istaken = TRUE;
+              gst_object_unref (target);
+            }
+          }
+          if (!istaken) {
+            ret = pad;
+            done = TRUE;
+          }
+	  else {
+            gst_object_unref (pad);
 	  }
-	}
-	if (!istaken) {
-	  ret = pad;
-	  done = TRUE;
-	}
+        }
+        break;
       }
-      break;
-    case GST_ITERATOR_RESYNC:
-      ret = NULL;
-      break;
-    default:
-      /* ERROR and DONE */
-      done = TRUE;
+      case GST_ITERATOR_RESYNC:
+        if (ret)
+          gst_object_unref (ret);
+        ret = NULL;
+        gst_iterator_resync (pads);
+        break;
+      default:
+        /* ERROR and DONE */
+        done = TRUE;
+        break;
     }
   }
-  
+  gst_iterator_free (pads);
+
   if (ret)
     GST_DEBUG_OBJECT (operation, "found free sink pad %s:%s",
-		      GST_DEBUG_PAD_NAME (ret));
+        GST_DEBUG_PAD_NAME (ret));
   else
     GST_DEBUG_OBJECT (operation, "Couldn't find an unused sink pad");
 
@@ -391,12 +410,12 @@ get_unused_static_sink_pad (GnlOperation * operation)
 static GstPad *
 add_sink_pad (GnlOperation * operation)
 {
-  GstPad * gpad = NULL;
+  GstPad *gpad = NULL;
 
   /* FIXME : implement */
 
   if (!operation->dynamicsinks) {
-    GstPad * ret;
+    GstPad *ret;
 
     ret = get_unused_static_sink_pad (operation);
     if (ret)
@@ -404,7 +423,7 @@ add_sink_pad (GnlOperation * operation)
   }
 
   if (gpad) {
-    gst_element_add_pad ((GstElement*) operation, gpad);
+    gst_element_add_pad ((GstElement *) operation, gpad);
     operation->realsinks++;
   }
 
@@ -459,18 +478,19 @@ gnl_operation_prepare (GnlObject * object)
 
 static GstPad *
 gnl_operation_request_new_pad (GstElement * element, GstPadTemplate * templ,
-			       const gchar * name)
+    const gchar * name)
 {
-  GnlOperation * operation = (GnlOperation*) element;
-  GstPad * ret;
+  GnlOperation *operation = (GnlOperation *) element;
+  GstPad *ret;
 
   if (operation->num_sinks == operation->realsinks) {
-    GST_WARNING_OBJECT (element, "We already have the maximum number of pads : %d",
-			operation->num_sinks);
+    GST_WARNING_OBJECT (element,
+        "We already have the maximum number of pads : %d",
+        operation->num_sinks);
     return NULL;
   }
 
-  ret = add_sink_pad ((GnlOperation*) element);
+  ret = add_sink_pad ((GnlOperation *) element);
 
   return ret;
 }
