@@ -6,6 +6,7 @@
 	(compare_relink_stack), (update_pipeline):
 	Only set ghostpad target and/or send seek event once all the objects of
 	the stack are linked.
+	Fixes #352389
 	This is done through the use of comp->private->waitingpads.
 	Simplified update_pipeline accordingly.
 	Added more comments.
