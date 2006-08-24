@@ -57,11 +57,17 @@ struct _GnlCompositionPrivate
   GHashTable *objects_hash;
   GMutex *objects_lock;
 
+  /*
+    thread-safe Seek handling.
+    flushing_lock : mutex to access flushing and pending_idle
+    flushing : 
+    pending_idle :
+  */
   GMutex *flushing_lock;
   gboolean flushing;
   guint pending_idle;
 
-  /* source ghostpad */
+  /* source top-level ghostpad */
   GstPad *ghostpad;
 
   /* current stack, list of GnlObject* */
@@ -72,7 +78,9 @@ struct _GnlCompositionPrivate
   /*
      current segment seek start/stop time. 
      Reconstruct pipeline ONLY if seeking outside of those values
-   */
+     FIXME : segment_start isn't always the earliest time before which the
+		timeline doesn't need to be modified
+  */
   GstClockTime segment_start;
   GstClockTime segment_stop;
 
@@ -81,6 +89,9 @@ struct _GnlCompositionPrivate
 
   /* Seek segment handler */
   GstSegment *segment;
+
+  /* number of pads we are waiting to appear so be can do proper linking */
+  guint	waitingpads;
 
   /*
      OUR sync_handler on the child_bus 
@@ -253,6 +264,8 @@ gnl_composition_init (GnlComposition * comp, GnlCompositionClass * klass)
 
   comp->private->segment = gst_segment_new ();
 
+  comp->private->waitingpads = 0;
+
   comp->private->defaultobject = NULL;
 
   comp->private->objects_hash = g_hash_table_new_full
@@ -370,6 +383,8 @@ gnl_composition_reset (GnlComposition * comp)
     gst_event_unref (comp->private->childseek);
     comp->private->childseek = NULL;
   }
+  
+  comp->private->waitingpads = 0;
 
   unlock_childs (comp);
 
@@ -618,6 +633,9 @@ gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
     default:
       break;
   }
+
+  /* FIXME : What should we do here if waitingpads != 0 ?? */
+  /*		Delay ? Ignore ? Refuse ?*/
 
   if (res) {
     GST_DEBUG_OBJECT (comp, "About to call gnl_event_pad_func()");
@@ -1114,8 +1132,6 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
   if (!(pad = get_src_pad (element)))
     return;
 
-  /* FIXME : ADD CASE FOR OPERATIONS */
-
   COMP_OBJECTS_LOCK (comp);
 
   tmp =
@@ -1124,29 +1140,55 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
   if (tmp) {
     GnlCompositionEntry *entry = COMP_ENTRY (comp, object);
 
+    comp->private->waitingpads--;
+    GST_LOG_OBJECT (comp, "Number of waiting pads is now %d",
+		    comp->private->waitingpads);
+
     if (tmp->parent) {
       /* child, link to parent */
       /* FIXME, shouldn't we check the order in which we link to the parent ? */
-      gst_element_link (element, GST_ELEMENT (tmp->parent->data));
-    } else {
-      /* toplevel element */
-      gnl_composition_ghost_pad_set_target (comp, pad);
+      if (!(gst_element_link (element, GST_ELEMENT (tmp->parent->data)))) {
+	GST_WARNING_OBJECT (comp, "Couldn't link %s to %s",
+			    GST_ELEMENT_NAME (element),
+			    GST_ELEMENT_NAME (GST_ELEMENT (tmp->parent->data)));
+	goto done;
+      }
+      gst_pad_set_blocked_async(pad, FALSE, (GstPadBlockCallback) pad_blocked, comp);
+    }
+
+    if (comp->private->current && comp->private->waitingpads == 0) {
+      GstPad *tpad = get_src_pad (GST_ELEMENT (comp->private->current->data));
+
+      /* There are no more waiting pads for the currently configured timeline */
+      /* stack. */
+
+      /* 1. set target of ghostpad to toplevel element src pad */
+      gnl_composition_ghost_pad_set_target (comp, tpad);
+
+      /* 2. send pending seek */
       if (comp->private->childseek) {
         GST_INFO_OBJECT (comp, "Sending pending seek for %s",
             GST_OBJECT_NAME (object));
-        if (!(gst_pad_send_event (pad, comp->private->childseek)))
+        if (!(gst_pad_send_event (tpad, comp->private->childseek)))
           GST_ERROR_OBJECT (comp, "Sending seek event failed!");
       }
       comp->private->childseek = NULL;
+
+      /* 3. unblock ghostpad */
       GST_LOG_OBJECT (comp, "About to unblock top-level pad");
-      gst_pad_set_blocked_async (pad, FALSE, (GstPadBlockCallback) pad_blocked,
+      gst_pad_set_blocked_async (tpad, FALSE, (GstPadBlockCallback) pad_blocked,
           comp);
     }
 
+    /* deactivate nomorepads handler */
     g_signal_handler_disconnect (object, entry->nomorepadshandler);
     entry->nomorepadshandler = 0;
+  } else {
+    GST_LOG_OBJECT (comp, "The following object is not in currently configured stack : %s",
+		    GST_ELEMENT_NAME (object));
   }
 
+ done:
   COMP_OBJECTS_UNLOCK (comp);
 
 
@@ -1159,6 +1201,8 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
  * _ relink nodes with changed parent/order
  * _ links new nodes with parents
  * _ unblocks available source pads (except for toplevel)
+ *
+ * WITH OBJECTS LOCK TAKEN
  */
 
 static void
@@ -1201,34 +1245,36 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
     /* FIXME : do we need to do something specific for sources ? */
   }
 
-  /* POST PROCESSING */
-  if ((oldparent != newparent) ||
-      (oldparent && newparent &&
-          (g_node_child_index (node, newobj) != g_node_child_index (oldnode,
-                  newobj)))) {
-    GST_LOG_OBJECT (newobj,
-        "not same parent, or same parent but in different order");
-
-    /* relink to new parent in required order */
-    if (newparent) {
-      /* FIXME : do it in required order */
-      if (!(gst_element_link ((GstElement *) newobj, (GstElement *) newparent)))
-	GST_ERROR_OBJECT (comp, "Couldn't link %s to %s",
-			  GST_ELEMENT_NAME (newobj),
-			  GST_ELEMENT_NAME (newparent));
-    }
-  } else
-    GST_LOG_OBJECT (newobj, "Same parent and same position in the new stack");
-
-  /* the new root handling is taken care of in the global compare_relink_stack() */
-  if (!G_NODE_IS_ROOT (node) && srcpad)
-    gst_pad_set_blocked_async (srcpad, FALSE, (GstPadBlockCallback) pad_blocked,
-        comp);
-
-  if (!srcpad) {
+  if (srcpad) {
+    GST_LOG_OBJECT (newobj, "has a valid source pad");
+    /* POST PROCESSING */
+    if ((oldparent != newparent) ||
+	(oldparent && newparent &&
+	 (g_node_child_index (node, newobj) != g_node_child_index (oldnode,
+								   newobj)))) {
+      GST_LOG_OBJECT (newobj,
+		      "not same parent, or same parent but in different order");
+      
+      /* relink to new parent in required order */
+      if (newparent) {
+	/* FIXME : do it in required order */
+	if (!(gst_element_link ((GstElement *) newobj, (GstElement *) newparent)))
+	  GST_ERROR_OBJECT (comp, "Couldn't link %s to %s",
+			    GST_ELEMENT_NAME (newobj),
+			    GST_ELEMENT_NAME (newparent));
+      }
+    } else
+      GST_LOG_OBJECT (newobj, "Same parent and same position in the new stack");
+    
+    /* the new root handling is taken care of in the global compare_relink_stack() */
+    if (!G_NODE_IS_ROOT (node))
+      gst_pad_set_blocked_async (srcpad, FALSE, (GstPadBlockCallback) pad_blocked,
+				 comp);
+  } else {
     GnlCompositionEntry *entry = COMP_ENTRY (comp, newobj);
 
     GST_LOG_OBJECT (newobj, "no existing pad, connecting to 'no-more-pads'");
+    comp->private->waitingpads++;
     if (!(entry->nomorepadshandler))
       entry->nomorepadshandler = g_signal_connect
           (G_OBJECT (newobj), "no-more-pads",
@@ -1244,6 +1290,8 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
  * _ Add no-longer used objects to the deactivate list
  * _ unlink child-parent relations that have changed (not same parent, or not same order)
  * _ blocks available source pads
+ *
+ * WITH OBJECTS LOCK TAKEN
  */
 
 static GList *
@@ -1345,7 +1393,9 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
  * @comp: The #GnlComposition
  * @stack: The new stack
  *
- * Compares the given stack to the current one and relinks it if needed
+ * Compares the given stack to the current one and relinks it if needed.
+ *
+ * WITH OBJECTS LOCK TAKEN
  *
  * Returns: The #GList of #GnlObject no longer used
  */
@@ -1355,12 +1405,15 @@ compare_relink_stack (GnlComposition * comp, GNode * stack)
 {
   GList *deactivate = NULL;
 
-  /* FIRST STEP : Traverse old stack to deactivate no longer used objects */
+  /* 1. reset waiting pads for new stack */
+  comp->private->waitingpads = 0;
+  
+  /* 2. Traverse old stack to deactivate no longer used objects */
 
   deactivate =
       compare_deactivate_single_node (comp, comp->private->current, stack);
 
-  /* SECOND STEP : Traverse new stack to do needed (re)links */
+  /* 3. Traverse new stack to do needed (re)links */
 
   compare_relink_single_node (comp, stack, comp->private->current);
 
@@ -1416,7 +1469,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         GST_STATE_VOID_PENDING) ? GST_STATE (comp) : GST_STATE_NEXT (comp);
     GNode *stack = NULL;
     GList *deactivate;
-    GstPad *pad = NULL;
     GstClockTime new_stop;
     gboolean switchtarget = FALSE;
 
@@ -1477,62 +1529,53 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     if (comp->private->current) {
       GstEvent *event;
 
+      /* There is a valid timeline stack */
+
       COMP_OBJECTS_LOCK (comp);
 
+      /* 1. Create new seek event for newly configured timeline stack */
       event = get_new_seek_event (comp, initial);
 
-      pad = get_src_pad (GST_ELEMENT (comp->private->current->data));
+      /* 2. Is the stack entirely ready ? */
+      if (comp->private->waitingpads == 0) {
+	GstPad *pad = NULL;
+	/* 2.a. Stack is entirely ready */
 
-      if (pad) {
-        GST_DEBUG_OBJECT (comp, "We have a valid toplevel element pad %s:%s",
-            GST_DEBUG_PAD_NAME (pad));
+	/* 3. Get toplevel object source pad */
+	if ((pad = get_src_pad (GST_ELEMENT (comp->private->current->data)))) {
+	  
+	  GST_DEBUG_OBJECT (comp, "We have a valid toplevel element pad %s:%s",
+			    GST_DEBUG_PAD_NAME (pad));
 
-        if (switchtarget) {
-          GST_DEBUG_OBJECT (comp,
-              "Top stack object has changed, switching pad");
-          if (pad) {
-            GST_LOG_OBJECT (comp, "sending seek event");
-            if (!(gst_pad_send_event (pad, event)))
-              ret = FALSE;
-            else {
-              GST_LOG_OBJECT (comp, "seek event sent successfully to %s:%s",
-                  GST_DEBUG_PAD_NAME (pad));
-            }
-
-          } else {
-            GST_LOG_OBJECT (comp,
-                "No srcpad was available on stack's toplevel element");
-            /* The pad might be created dynamically */
-          }
-        } else {
-          GST_DEBUG_OBJECT (comp,
-              "Top stack object is still the same, keeping existing pad");
-        }
-
-        if (!switchtarget) {
-          if (!(gst_pad_send_event (pad, event))) {
-            GST_ERROR_OBJECT (comp, "Couldn't send seek");
-            ret = FALSE;
-          }
-          GST_LOG_OBJECT (comp, "seek event sent successfully to %s:%s",
-              GST_DEBUG_PAD_NAME (pad));
-        }
-	
-	GST_LOG_OBJECT (comp,
-			"Setting the composition's ghostpad target to %s:%s",
-			GST_DEBUG_PAD_NAME (pad));
-	gnl_composition_ghost_pad_set_target (comp, pad);
-        GST_LOG_OBJECT (comp, "About to unblock top-level srcpad");
-        gst_pad_set_blocked_async (pad, FALSE,
-            (GstPadBlockCallback) pad_blocked, comp);
-        gst_object_unref (pad);
+	  /* 4. Unconditionnaly set the ghostpad target to pad */
+	  GST_LOG_OBJECT (comp,
+			  "Setting the composition's ghostpad target to %s:%s",
+			  GST_DEBUG_PAD_NAME (pad));
+	  gnl_composition_ghost_pad_set_target (comp, pad);
+	  
+	  /* 5. send seek event */
+	  GST_LOG_OBJECT (comp, "sending seek event");
+	  if (!(gst_pad_send_event (pad, event))) {
+	    ret = FALSE;
+	  } else {
+	    /* 6. unblock top-level pad */
+	    GST_LOG_OBJECT (comp, "About to unblock top-level srcpad");
+	    gst_pad_set_blocked_async (pad, FALSE,
+				       (GstPadBlockCallback) pad_blocked, comp);
+	    gst_object_unref (pad);
+	  }
+	  
+	} else {
+	  GST_WARNING_OBJECT (comp,
+			      "Timeline is entirely linked, but couldn't get top-level element's source pad");
+	  ret = FALSE;
+	}
       } else {
-        GST_DEBUG_OBJECT (comp,
-            "Couldn't get the source pad.. storing the pending child seek");
-        comp->private->childseek = event;
-        ret = TRUE;
+	/* 2.b. Stack isn't entirely ready, save seek event for later on */
+	GST_LOG_OBJECT (comp, "The timeline stack isn't entirely linked, delaying sending seek event");
+	comp->private->childseek = event;
+	ret = TRUE;
       }
-
       COMP_OBJECTS_UNLOCK (comp);
 
     }

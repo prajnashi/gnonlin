@@ -1,3 +1,15 @@
+2006-08-24  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_init),
+	(gnl_composition_reset), (gnl_composition_event_handler),
+	(no_more_pads_object_cb), (compare_relink_single_node),
+	(compare_relink_stack), (update_pipeline):
+	Only set ghostpad target and/or send seek event once all the objects of
+	the stack are linked.
+	This is done through the use of comp->private->waitingpads.
+	Simplified update_pipeline accordingly.
+	Added more comments.
+
 2006-08-23  Wim Taymans  <wim@fluendo.com>
 
 	* gnl/gnlobject.c: (gnl_object_class_init), (control_internal_pad),
