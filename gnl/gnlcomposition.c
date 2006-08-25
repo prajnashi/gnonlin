@@ -1578,6 +1578,12 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
       }
       COMP_OBJECTS_UNLOCK (comp);
 
+    } else {
+      if ((!comp->private->objects_start) && comp->private->ghostpad) {
+	GST_DEBUG_OBJECT (comp, "composition is now empty, removing ghostpad");
+	gnl_object_remove_ghost_pad (GNL_OBJECT (comp), comp->private->ghostpad);
+	comp->private->ghostpad = NULL;
+      }
     }
   } else {
     COMP_OBJECTS_UNLOCK (comp);

@@ -1,3 +1,8 @@
+2006-08-25  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (update_pipeline):
+	Remove the ghostpad if the composition becomes empty.
+
 2006-08-24  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_init),
