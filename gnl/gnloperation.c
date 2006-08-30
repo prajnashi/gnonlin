@@ -175,9 +175,6 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
   }
   gst_iterator_free (pads);
 
-  if (havesrc && havesink)
-    return TRUE;
-
   factory = gst_element_get_factory (element);
 
   for (templates = gst_element_factory_get_static_pad_templates (factory);
@@ -363,10 +360,13 @@ get_unused_static_sink_pad (GnlOperation * operation)
           GList *tmp = operation->sinks;
           gboolean istaken = FALSE;
 
-          /* figure out if one of our sink ghostpads has this pad as target */
+          /* 1. figure out if one of our sink ghostpads has this pad as target */
           for (; tmp; tmp = g_list_next (tmp)) {
             GstGhostPad *gpad = (GstGhostPad *) tmp->data;
             GstPad *target = gst_ghost_pad_get_target (gpad);
+
+	    GST_LOG ("found ghostpad with target %s:%s",
+		     GST_DEBUG_PAD_NAME (target));
 
             if (target) {
               if (target == pad)
@@ -374,11 +374,12 @@ get_unused_static_sink_pad (GnlOperation * operation)
               gst_object_unref (target);
             }
           }
+
+	  /* 2. if not taken, return that pad */
           if (!istaken) {
             ret = pad;
             done = TRUE;
-          }
-	  else {
+          } else {
             gst_object_unref (pad);
 	  }
         }
@@ -408,22 +409,69 @@ get_unused_static_sink_pad (GnlOperation * operation)
 }
 
 static GstPad *
+get_request_sink_pad (GnlOperation * operation)
+{
+  GstPad * pad = NULL;
+  GList * templates;
+  
+  if (!operation->element)
+    return NULL;
+
+  templates = gst_element_class_get_pad_template_list
+    (GST_ELEMENT_GET_CLASS (operation->element));
+
+  for ( ; templates; templates = g_list_next(templates)) {
+    GstPadTemplate * templ = (GstPadTemplate*) templates->data;
+
+    GST_LOG_OBJECT (operation->element, "Trying template %s",
+		    GST_PAD_TEMPLATE_NAME_TEMPLATE (templ));
+
+    if ( (GST_PAD_TEMPLATE_DIRECTION(templ) == GST_PAD_SINK) &&
+	 (GST_PAD_TEMPLATE_PRESENCE(templ) == GST_PAD_REQUEST) ) {
+      pad = gst_element_get_request_pad (operation->element, GST_PAD_TEMPLATE_NAME_TEMPLATE(templ));
+      if (pad)
+	break;
+    }
+  }
+
+  return pad;
+}
+
+static GstPad *
 add_sink_pad (GnlOperation * operation)
 {
   GstPad *gpad = NULL;
 
+  if (!operation->element)
+    return NULL;
+  
   /* FIXME : implement */
+  GST_LOG_OBJECT (operation, "element:%s , dynamicsinks:%d",
+		  GST_ELEMENT_NAME (operation->element),
+		  operation->dynamicsinks);
+
 
   if (!operation->dynamicsinks) {
     GstPad *ret;
 
+    /* static sink pads */
     ret = get_unused_static_sink_pad (operation);
+    if (ret)
+      gpad = gst_ghost_pad_new (GST_PAD_NAME (ret), ret);
+  }
+  
+  if (!gpad) {
+    GstPad * ret;
+    /* request sink pads */
+
+    ret = get_request_sink_pad (operation);
     if (ret)
       gpad = gst_ghost_pad_new (GST_PAD_NAME (ret), ret);
   }
 
   if (gpad) {
     gst_element_add_pad ((GstElement *) operation, gpad);
+    operation->sinks = g_list_append(operation->sinks, gpad);
     operation->realsinks++;
   }
 
@@ -456,7 +504,9 @@ synchronize_sinks (GnlOperation * operation)
 
   if (operation->num_sinks > operation->realsinks) {
     while (operation->num_sinks > operation->realsinks) /* Add pad */
-      add_sink_pad (operation);
+      if (!(add_sink_pad (operation))) {
+	break;
+      }
   } else {
     /* Remove pad */
     /* FIXME, which one do we remove ? :) */

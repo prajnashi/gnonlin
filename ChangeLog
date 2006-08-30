@@ -1,3 +1,26 @@
+2006-08-30  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c:
+	(compare_deactivate_single_node):
+	When unlinking source/operations , flush the parent's sink pad, so any
+	stream locks are released.
+	* gnl/gnloperation.c:
+	(element_is_valid_filter): Scan pads AND templates to figure out if the
+	element is a valid filter, and properly establish if it has dynamic
+	pads,
+	(get_unused_static_sink_pad):
+	comments,
+	(get_request_sink_pad):
+	New function for getting request sink pads.
+	(add_sink_pad):
+	Add support for request sink pads,
+	(synchronize_sinks):
+	Don't try to add pads if it fails.
+	* gnl/gnlsource.c:
+	(ghost_seek_pad):
+	Emit 'no-more-pads' after unblocking the controlled source pad. Not
+	doing this would cause deadlocks in compositions with operations.
+
 2006-08-25  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (update_pipeline):

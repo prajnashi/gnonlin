@@ -312,10 +312,10 @@ ghost_seek_pad (GnlSource * source)
     source->priv->event = NULL;
   }
 
-  gst_element_no_more_pads (GST_ELEMENT (source));
   GST_DEBUG_OBJECT (source, "about to unblock %s:%s", GST_DEBUG_PAD_NAME (pad));
   gst_pad_set_blocked_async (pad, FALSE,
       (GstPadBlockCallback) pad_blocked_cb, source);
+  gst_element_no_more_pads (GST_ELEMENT (source));
 
   source->priv->pendingblock = FALSE;
 

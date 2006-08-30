@@ -1358,7 +1358,18 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
 
       /* unlink */
       if (oldparent) {
+	GstPad * peerpad = NULL;
+
+	if (srcpad)
+	  peerpad = gst_pad_get_peer (srcpad);
         gst_element_unlink ((GstElement *) oldobj, (GstElement *) oldparent);
+	/* send flush start / flush stop */
+	if (peerpad) {
+	  GST_LOG_OBJECT (peerpad, "Sending flush start/stop");
+	  gst_pad_send_event (peerpad, gst_event_new_flush_start());
+	  gst_pad_send_event (peerpad, gst_event_new_flush_stop());
+	  gst_object_unref (peerpad);
+	}
       }
 
     } else {
@@ -1371,9 +1382,17 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
 		    GST_ELEMENT_NAME (oldobj));
 
     if (oldparent) {
+      GstPad * peerpad = NULL;
+
       /* unlink from oldparent */
       GST_LOG_OBJECT (comp, "unlinking from previous parent");
       gst_element_unlink ((GstElement *) oldobj, (GstElement *) oldparent);
+      if (srcpad && (peerpad = gst_pad_get_peer (srcpad))) {
+	GST_LOG_OBJECT (peerpad, "Sending flush start/stop");
+	gst_pad_send_event (peerpad, gst_event_new_flush_start());
+	gst_pad_send_event (peerpad, gst_event_new_flush_stop());
+	gst_object_unref (peerpad);
+      }
     }
 
     GST_LOG_OBJECT (comp, "adding %s to deactivate list",
