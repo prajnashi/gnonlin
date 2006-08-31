@@ -1745,11 +1745,12 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
         "notify::priority", G_CALLBACK (object_priority_changed), comp);
   } else {
     /* We set the default source start/stop values to 0 and composition-stop */
-    g_object_set (element,
-        "duration", (GstClockTimeDiff) GNL_OBJECT (comp)->stop,
-        "media-duration", (GstClockTimeDiff) GNL_OBJECT (comp)->stop, NULL);
-    g_object_set (element, "start", 0, NULL);
-    g_object_set (element, "media-start", 0, NULL);
+    g_object_set (element, 
+		  "start", (GstClockTime)0,
+		  "media-start", (GstClockTime) 0,
+		  "duration", (GstClockTimeDiff) GNL_OBJECT (comp)->stop,
+		  "media-duration", (GstClockTimeDiff) GNL_OBJECT (comp)->stop,
+		  NULL);
   }
   entry->activehandler = g_signal_connect (G_OBJECT (element),
       "notify::active", G_CALLBACK (object_active_changed), comp);
