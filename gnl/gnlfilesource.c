@@ -24,6 +24,12 @@
 
 #include "gnl.h"
 
+static GstStaticPadTemplate gnl_filesource_src_template =
+GST_STATIC_PAD_TEMPLATE ("src",
+    GST_PAD_SRC,
+    GST_PAD_SOMETIMES,
+    GST_STATIC_CAPS_ANY);
+
 GST_DEBUG_CATEGORY_STATIC (gnlfilesource);
 #define GST_CAT_DEFAULT gnlfilesource
 
@@ -97,7 +103,8 @@ gnl_filesource_class_init (GnlFileSourceClass * klass)
   gst_element_class_install_std_props (GST_ELEMENT_CLASS (klass),
       "location", ARG_LOCATION, G_PARAM_READWRITE, NULL);
 
-
+  gst_element_class_add_pad_template (gstelement_class,
+      gst_static_pad_template_get (&gnl_filesource_src_template));
 }
 
 static void

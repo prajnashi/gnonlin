@@ -1,3 +1,9 @@
+2006-09-07  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlfilesource.c: (gnl_filesource_class_init):
+	Add pad templates to GnlFileSource so we can use it properly
+	with gst-launch.
+
 2006-08-31  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (gnl_composition_add_object):
