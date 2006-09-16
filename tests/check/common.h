@@ -154,6 +154,39 @@ videotest_in_bin_gnl_src (const gchar * name, guint64 start, gint64 duration, gi
 }
 
 static GstElement *
+audiotest_bin_src (const gchar * name, guint64 start,
+		   gint64 duration, guint priority, gboolean intaudio)
+{
+  GstElement * source = NULL;
+  GstElement * identity = NULL;
+  GstElement * audiotestsrc = NULL;
+  GstElement * audioconvert = NULL;
+  GstElement * bin = NULL;
+  GstCaps * caps;
+
+  audiotestsrc = gst_element_factory_make_or_warn ("audiotestsrc", NULL);
+  identity = gst_element_factory_make_or_warn ("identity", NULL);
+  bin = gst_bin_new (NULL);
+  source = new_gnl_src (name, start, duration, priority);
+  audioconvert = gst_element_factory_make_or_warn ("audioconvert", NULL);
+  
+  if (intaudio)
+    caps = gst_caps_from_string ("audio/x-raw-int");
+  else
+    caps = gst_caps_from_string ("audio/x-raw-float");
+
+  gst_bin_add_many (GST_BIN (bin), audiotestsrc, audioconvert, identity, NULL);
+  gst_element_link (audiotestsrc, audioconvert);
+  gst_element_link_filtered (audioconvert, identity, caps);
+
+  gst_bin_add (GST_BIN (source), bin);
+
+  gst_element_add_pad (bin, gst_ghost_pad_new ("src", gst_element_get_pad (identity, "src")));
+
+  return source;
+}
+
+static GstElement *
 new_operation (const gchar * name, const gchar * factory, guint64 start, gint64 duration, guint priority)
 {
   GstElement * gnloperation = NULL;
