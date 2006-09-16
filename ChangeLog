@@ -1,6 +1,11 @@
 2006-09-16  Edward Hervey  <edward@fluendo.com>
 
 	* tests/check/Makefile.am:
+	add common.h
+
+2006-09-16  Edward Hervey  <edward@fluendo.com>
+
+	* tests/check/Makefile.am:
 	* tests/check/common.h:
 	Single header file that contains all the common functions and structures
 	for the gnonlin tests.

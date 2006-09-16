@@ -27,6 +27,8 @@ check_PROGRAMS =	\
 	./gnlsource	\
 	./gnloperation
 
+noinst_HEADERS = \
+	common.h
 # these tests don't even pass
 noinst_PROGRAMS =
 
