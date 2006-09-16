@@ -24,7 +24,8 @@ TESTS = $(check_PROGRAMS)
 check_PROGRAMS =	\
 	./simple	\
 	./complex	\
-	./gnlsource
+	./gnlsource	\
+	./gnloperation
 
 # these tests don't even pass
 noinst_PROGRAMS =

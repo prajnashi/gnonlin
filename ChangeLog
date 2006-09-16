@@ -1,3 +1,19 @@
+2006-09-16  Edward Hervey  <edward@fluendo.com>
+
+	* tests/check/Makefile.am:
+	* tests/check/common.h:
+	Single header file that contains all the common functions and structures
+	for the gnonlin tests.
+	* tests/check/complex.c:
+	* tests/check/gnlsource.c: (GST_START_TEST):
+	* tests/check/simple.c:
+	Switch to using common.h , makes test files smaller.
+	* tests/check/gnloperation.c: (GST_START_TEST), (gnonlin_suite),
+	(main):
+	Created new test for gnloperations, starting with one that tests adding
+	and removing operations, and checking that the outputted segments are
+	correct.
+
 2006-09-07  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlfilesource.c: (gnl_filesource_class_init):
