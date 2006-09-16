@@ -1,5 +1,10 @@
 2006-09-16  Edward Hervey  <edward@fluendo.com>
 
+	* tests/check/.cvsignore:
+	add gnloperation
+
+2006-09-16  Edward Hervey  <edward@fluendo.com>
+
 	* tests/check/Makefile.am:
 	add common.h
 
