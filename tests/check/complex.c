@@ -444,6 +444,7 @@ GST_START_TEST (test_renegotiation)
   guint64 start, stop;
   gint64 duration;
   GstPad *sinkpad;
+  GstCaps *caps;
 
   pipeline = gst_pipeline_new ("test_pipeline");
   comp = gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
@@ -503,8 +504,9 @@ GST_START_TEST (test_renegotiation)
   audioconvert = gst_element_factory_make_or_warn ("audioconvert", "aconv");
 
   gst_bin_add_many (GST_BIN (pipeline), comp, audioconvert, sink, NULL);
-  gst_element_link_filtered (audioconvert, sink, 
-			     gst_caps_from_string("audio/x-raw-int"));
+  caps = gst_caps_from_string ("audio/x-raw-int");
+  gst_element_link_filtered (audioconvert, sink, caps);
+  gst_caps_unref (caps);
 
   /* Shared data */
   collect = g_new0 (CollectStructure, 1);

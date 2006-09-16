@@ -1,6 +1,13 @@
 2006-09-16  Edward Hervey  <edward@fluendo.com>
 
 	* tests/check/common.h:
+	* tests/check/complex.c: (GST_START_TEST):
+	gst_element_link_filtered() does not take the refcount on the caps.
+	Therefore we unref the caps after use.
+
+2006-09-16  Edward Hervey  <edward@fluendo.com>
+
+	* tests/check/common.h:
 	Added convenience function to create a int/float audiotest gnlsource.
 	* tests/check/complex.c: (GST_START_TEST), (gnonlin_suite):
 	Added test_renegotiation to test re-negotiation error seen in #352827

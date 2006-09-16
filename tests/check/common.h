@@ -179,6 +179,8 @@ audiotest_bin_src (const gchar * name, guint64 start,
   gst_element_link (audiotestsrc, audioconvert);
   gst_element_link_filtered (audioconvert, identity, caps);
 
+  gst_caps_unref (caps);
+
   gst_bin_add (GST_BIN (source), bin);
 
   gst_element_add_pad (bin, gst_ghost_pad_new ("src", gst_element_get_pad (identity, "src")));
