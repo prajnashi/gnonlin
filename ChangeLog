@@ -1,5 +1,13 @@
 2006-11-02  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (convert_list_to_tree):
+	Take into account the priority of default sources when calculating the
+	highest priority. This fixes #362399
+	* tests/check/gnloperation.c: (GST_START_TEST), (gnonlin_suite):
+	Unit test for fixed behaviour.
+
+2006-11-02  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (gnl_composition_ghost_pad_set_target),
 	(next_stop_in_region_above_priority), (convert_list_to_tree),
 	(get_stack_list), (get_clean_toplevel_stack),

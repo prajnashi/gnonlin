@@ -784,16 +784,14 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop, guint * highprio)
     *stop = object->stop;
   }
 
-  /* update highest priority */
-  if ((object->priority != G_MAXUINT) && (object->priority > *highprio))
-    *highprio = object->priority;
-
-  GST_DEBUG_OBJECT (object, "*stop:%"GST_TIME_FORMAT" priority:%d",
-		    GST_TIME_ARGS (*stop), *highprio);
-
   if (GNL_IS_SOURCE (object)) {
     *stack = g_list_next (*stack);
-    return g_node_new (object);
+    /* update highest priority.
+     * We do this here, since it's only used with sources (leafs of the tree) */
+    if (object->priority > *highprio)
+      *highprio = object->priority;
+    ret = g_node_new (object);
+    goto beach;
   } else {                      /* GnlOperation */
     GnlOperation *oper = (GnlOperation *) object;
 
@@ -812,6 +810,10 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop, guint * highprio)
         nbsinks--;
     }
   }
+
+ beach:
+  GST_DEBUG_OBJECT (object, "*stop:%"GST_TIME_FORMAT" priority:%d",
+		    GST_TIME_ARGS (*stop), *highprio);
 
   return ret;
 }
