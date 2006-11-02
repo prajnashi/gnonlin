@@ -251,6 +251,7 @@ gnl_operation_add_element (GstBin * bin, GstElement * element)
         if (!operation->ghostpad) {
           operation->ghostpad =
               gst_ghost_pad_new_no_target ("src", GST_PAD_SRC);
+	  gst_pad_set_active (operation->ghostpad, TRUE);
           gst_element_add_pad ((GstElement *) bin, operation->ghostpad);
         }
         gst_ghost_pad_set_target ((GstGhostPad *) operation->ghostpad, srcpad);
@@ -470,6 +471,7 @@ add_sink_pad (GnlOperation * operation)
   }
 
   if (gpad) {
+    gst_pad_set_active (gpad, TRUE);
     gst_element_add_pad ((GstElement *) operation, gpad);
     operation->sinks = g_list_append(operation->sinks, gpad);
     operation->realsinks++;

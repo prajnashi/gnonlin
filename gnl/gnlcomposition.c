@@ -704,6 +704,7 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
   gnl_object_ghost_pad_set_target (GNL_OBJECT (comp),
       comp->private->ghostpad, target);
   if (!(hadghost)) {
+    gst_pad_set_active (comp->private->ghostpad, TRUE);
     if (!(gst_element_add_pad (GST_ELEMENT (comp), comp->private->ghostpad)))
       GST_WARNING ("Couldn't add the ghostpad");
     else
@@ -734,6 +735,9 @@ next_stop_in_region_above_priority (GnlComposition * composition,
     if (object->stop <= start)
       continue;
 
+    if (object->start <= start)
+      continue;
+
     if (object->start > stop)
       break;
 
@@ -756,7 +760,7 @@ next_stop_in_region_above_priority (GnlComposition * composition,
  */
 
 static GNode *
-convert_list_to_tree (GList ** stack, GstClockTime * stop)
+convert_list_to_tree (GList ** stack, GstClockTime * stop, guint * highprio)
 {
   GNode *ret;
   guint nbsinks;
@@ -769,7 +773,8 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop)
 
   object = (GnlObject *) (*stack)->data;
 
-  GST_DEBUG ("object:%s", GST_ELEMENT_NAME (object));
+  GST_DEBUG ("object:%s , stop:%"GST_TIME_FORMAT"highprio:%d", GST_ELEMENT_NAME (object),
+	     GST_TIME_ARGS (*stop), *highprio);
 
   /* update earliest stop */
   if (GST_CLOCK_TIME_IS_VALID (*stop)) {
@@ -779,8 +784,12 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop)
     *stop = object->stop;
   }
 
-  GST_DEBUG_OBJECT (object, "*stop:%"GST_TIME_FORMAT,
-		    GST_TIME_ARGS (*stop));
+  /* update highest priority */
+  if ((object->priority != G_MAXUINT) && (object->priority > *highprio))
+    *highprio = object->priority;
+
+  GST_DEBUG_OBJECT (object, "*stop:%"GST_TIME_FORMAT" priority:%d",
+		    GST_TIME_ARGS (*stop), *highprio);
 
   if (GNL_IS_SOURCE (object)) {
     *stack = g_list_next (*stack);
@@ -797,7 +806,7 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop)
     /* FIXME : if num_sinks == -1 : request the proper number of pads */
 
     for (tmp = g_list_next (*stack); tmp && (!limit || nbsinks);) {
-      g_node_append (ret, convert_list_to_tree (&tmp, stop));
+      g_node_append (ret, convert_list_to_tree (&tmp, stop, highprio));
 
       if (limit)
         nbsinks--;
@@ -813,6 +822,8 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop)
  * @timestamp: The #GstClockTime to look at
  * @priority: The priority level to start looking from
  * @activeonly: Only look for active elements if TRUE
+ * @stop: The smallest stop time of the objects in the stack
+ * @highprio: The highest priority in the stack
  *
  * Not MT-safe, you should take the objects lock before calling it.
  * Returns: A tree of #GNode sorted in priority order, corresponding
@@ -821,12 +832,14 @@ convert_list_to_tree (GList ** stack, GstClockTime * stop)
 
 static GNode *
 get_stack_list (GnlComposition * comp, GstClockTime timestamp,
-    guint priority, gboolean activeonly, GstClockTime * stop)
+		guint priority, gboolean activeonly, GstClockTime * stop,
+		guint *highprio)
 {
   GList *tmp = comp->private->objects_start;
   GList *stack = NULL;
   GNode *ret = NULL;
   GstClockTime nstop = GST_CLOCK_TIME_NONE;
+  guint highest = 0;
 
   GST_DEBUG_OBJECT (comp,
       "timestamp:%" GST_TIME_FORMAT ", priority:%d, activeonly:%d",
@@ -862,8 +875,11 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
 
   /* convert that list to a stack */
   tmp = stack;
-  ret = convert_list_to_tree (&tmp, &nstop);
-  *stop = nstop;
+  ret = convert_list_to_tree (&tmp, &nstop, &highest);
+  if (nstop)
+    *stop = nstop;
+  if (highprio)
+    *highprio = highest;
 
   g_list_free (stack);
 
@@ -886,11 +902,12 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
   GNode *stack = NULL;
   GList *tmp;
   GstClockTime stop = G_MAXUINT64;
+  guint highprio;
 
   GST_DEBUG_OBJECT (comp, "timestamp:%" GST_TIME_FORMAT,
       GST_TIME_ARGS (*timestamp));
 
-  stack = get_stack_list (comp, *timestamp, 0, TRUE, &stop);
+  stack = get_stack_list (comp, *timestamp, 0, TRUE, &stop, &highprio);
 
   if (!stack) {
     GnlObject *object = NULL;
@@ -913,19 +930,19 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
           GST_TIME_FORMAT "]", GST_TIME_ARGS (*timestamp),
           GST_ELEMENT_NAME (object), GST_TIME_ARGS (object->start));
       *timestamp = object->start;
-      stack = get_stack_list (comp, *timestamp, 0, TRUE, &stop);
+      stack = get_stack_list (comp, *timestamp, 0, TRUE, &stop, &highprio);
     }
   }
 
   if (stack) {
     guint32 top_priority;
-
+    
     top_priority = GNL_OBJECT (stack->data)->priority;
-
+    
     /* Figure out if there's anything blocking us with smaller priority */
     stop =
         next_stop_in_region_above_priority (comp, *timestamp, stop,
-        top_priority);
+					    (highprio == 0) ? top_priority : highprio);
   }
 
   if (stop_time) {
@@ -1848,6 +1865,8 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
         (comp->private->objects_stop, element);
     comp->private->objects_stop = g_list_sort
         (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
+
+    GST_LOG_OBJECT (element, "Removed from the objects start/stop list");
   }
 
   if (!(g_hash_table_remove (comp->private->objects_hash, element)))
@@ -1864,6 +1883,8 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
     update_start_stop_duration (comp);
 
   ret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
+  
+  GST_LOG_OBJECT (element, "Done removing from the composition");
 
 beach:
   gst_object_unref (element);

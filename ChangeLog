@@ -1,3 +1,23 @@
+2006-11-02  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_ghost_pad_set_target),
+	(next_stop_in_region_above_priority), (convert_list_to_tree),
+	(get_stack_list), (get_clean_toplevel_stack),
+	(gnl_composition_remove_object):
+	Better check for the 'next stop' of a stack. It will now look at all
+	objects under the highest priority (and not the lowest as previously).
+	Fixes #356380.
+	Set new pads as active.
+	Add some debug.
+	* gnl/gnlobject.c: (gnl_object_ghost_pad_full):
+	* gnl/gnloperation.c: (gnl_operation_add_element), (add_sink_pad):
+	Activate new pads.
+	* tests/check/gnloperation.c: (GST_START_TEST), (gnonlin_suite):
+	Added new test (test_pyramid_operations) to test issues fixed for
+	#356380.
+	* tests/check/simple.c: (GST_START_TEST):
+	Unref sinkpads before testing some issues.
+
 2006-09-16  Edward Hervey  <edward@fluendo.com>
 
 	* tests/check/common.h:

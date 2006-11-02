@@ -795,6 +795,8 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
   }
 
 
+  /* activate pad */
+  gst_pad_set_active (ghost, TRUE);
   /* add it to element */
   if (!(gst_element_add_pad (GST_ELEMENT (object), ghost))) {
     GST_WARNING ("couldn't add newly created ghostpad");
