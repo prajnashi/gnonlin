@@ -609,8 +609,10 @@ handle_seek_event (GnlComposition * comp, GstEvent * event)
       comp->private->segment->flags);
 
   /* crop the segment start/stop values */
-  comp->private->segment->start = MAX (comp->private->segment->start,
-      GNL_OBJECT (comp)->start);
+  /* Only crop segment start value if we don't have a default object */
+  if (comp->private->defaultobject == NULL)
+    comp->private->segment->start = MAX (comp->private->segment->start,
+					 GNL_OBJECT (comp)->start);
   comp->private->segment->stop = MIN (comp->private->segment->stop,
       GNL_OBJECT (comp)->stop);
 
@@ -627,7 +629,15 @@ gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
   GST_DEBUG_OBJECT (comp, "event type:%s", GST_EVENT_TYPE_NAME (event));
   switch (GST_EVENT_TYPE (event)) {
     case GST_EVENT_SEEK:{
+      GstEvent * nevent;
+
       handle_seek_event (comp, event);
+
+      /* the incoming event might not be quite correct, we get a new proper
+       * event to pass on to the childs. */
+      nevent = get_new_seek_event (comp, FALSE);
+      gst_event_unref (event);
+      event = nevent;
       break;
     }
     default:
@@ -1105,12 +1115,21 @@ update_start_stop_duration (GnlComposition * comp)
     return;
   }
 
-  obj = GNL_OBJECT (comp->private->objects_start->data);
-  if (obj->start != cobj->start) {
-    GST_LOG_OBJECT (obj, "setting start from %s to %" GST_TIME_FORMAT,
-        GST_OBJECT_NAME (obj), GST_TIME_ARGS (obj->start));
-    cobj->start = obj->start;
-    g_object_notify (G_OBJECT (cobj), "start");
+  /* If we have a default object, the start position is 0 */
+  if (comp->private->defaultobject) {
+    if (cobj->start != 0) { 
+      cobj->start = 0;
+      g_object_notify (G_OBJECT (cobj), "start");
+    }
+  } else {
+    /* Else it's the first object's start value */
+    obj = GNL_OBJECT (comp->private->objects_start->data);
+    if (obj->start != cobj->start) {
+      GST_LOG_OBJECT (obj, "setting start from %s to %" GST_TIME_FORMAT,
+		      GST_OBJECT_NAME (obj), GST_TIME_ARGS (obj->start));
+      cobj->start = obj->start;
+      g_object_notify (G_OBJECT (cobj), "start");
+    }
   }
 
   obj = GNL_OBJECT (comp->private->objects_stop->data);
