@@ -1851,6 +1851,7 @@ beach:
 
 chiringuito:
   COMP_OBJECTS_UNLOCK (comp);
+  update_start_stop_duration (comp);
   goto beach;
 }
 

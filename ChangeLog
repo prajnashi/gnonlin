@@ -1,5 +1,14 @@
 2006-11-03  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlcomposition.c: (gnl_composition_add_object):
+	Recalculate start/stop/duration of composition when adding a default
+	source.
+	* tests/check/complex.c: (GST_START_TEST):
+	Modify test so it also test for the case where the composition starts
+	with a default source.
+
+2006-11-03  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (handle_seek_event),
 	(gnl_composition_event_handler), (update_start_stop_duration):
 	If we have a default source, the composition start value is always 0.
