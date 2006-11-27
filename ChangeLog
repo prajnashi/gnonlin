@@ -1,5 +1,11 @@
 2006-11-27  Edward Hervey  <edward@fluendo.com>
 
+	* RELEASE:
+	Ouch, forgot to update the release file.
+	Personal note : REMEMBER IT'S HERE !!!
+
+2006-11-27  Edward Hervey  <edward@fluendo.com>
+
 	* configure.ac:
 	Back to development cycle.
 

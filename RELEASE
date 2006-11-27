@@ -1,5 +1,5 @@
 
-Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.1 "Jamon Serrano"
+Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.6 "Who stole my beard ?"
         
 
 
@@ -15,11 +15,20 @@ timeline-oriented use of GStreamer makes sense.
   
 Features of this release
     
-      * Bug and memleak fixes
-      * unit testing added
+      * New GnlOperation element for using filters/effects in GnlComposition
+      * Modification of GnlComposition internal structure for faster behaviour
+      * Lots of fixes for complex compositions
+      * Fixes for default sources
+      * Many more unit tests
+      * Code and documentation cleanups, more memory leaks fixes
 
 Bugs fixed in this release
-    
+
+     * 356380  : Composition doesn't find the next stop correctly with ope...
+     * 351899  : Empty GnlComposition in paused will not take into account...
+     * 352382  : Mention whether high/low number are high/low priority in ...
+     * 352389  : Cannot link gnlfilesource and gnloperation
+     * 362399  : Default sources broken
 
 Download
 
@@ -46,13 +55,10 @@ will create more lists as necessary.
 
         
 Applications
-GNonLin is primarily used by PiTiVi (http://www.pitivi.org/)
+GNonLin is primarily used by PiTiVi (http://www.pitivi.org/) and Jokosher
+(http://www.jokosher.org/)
   
 Contributors to this release
     
-      * Christian Schaller
       * Edward Hervey
-      * Thomas Vander Stichele
       * Wim Taymans
-      * Wouter Paesen
- 
