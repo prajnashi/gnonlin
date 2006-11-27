@@ -1,3 +1,11 @@
+=== release 0.10.6 ===
+
+2006-11-27  Edward Hervey <edward@fluendo.com>
+
+	* configure.ac:
+	* NEWS:
+	  releasing 0.10.6, "Who stole my beard ?"
+
 2006-11-23  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
