@@ -1,3 +1,24 @@
+2007-01-10  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (gnl_composition_reset),
+	(segment_done_main_thread), (seek_handling), (handle_seek_event),
+	(gnl_composition_event_handler),
+	(gnl_composition_ghost_pad_set_target), (convert_list_to_tree),
+	(get_stack_list), (get_clean_toplevel_stack),
+	(gnl_composition_change_state), (update_start_stop_duration),
+	(no_more_pads_object_cb), (compare_relink_single_node),
+	(compare_deactivate_single_node), (compare_relink_stack),
+	(update_pipeline), (object_start_changed), (object_stop_changed),
+	(object_priority_changed), (object_active_changed),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	Add 'modify' boolean parameter to update_pipeline(). This is needed
+	for cases where the timeline is being updated because of modifications
+	in the timeline. In that case, flush events need to be sent downstream
+	so that the streaming threads are properly released and no longer
+	blocking on downstream elements/pads.
+	Add more debugging statements a bit everywhere.
+	Re-indent all code.
+
 2006-11-27  Edward Hervey  <edward@fluendo.com>
 
 	* RELEASE:
