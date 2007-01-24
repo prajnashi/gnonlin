@@ -1,3 +1,9 @@
+2007-01-24  Edward Hervey  <edward@fluendo.com>
+
+	* configure.ac:
+	Bump requirement to GStreamer core 0.10.9
+	pre-releasing gnonlin 0.10.6.2
+
 2007-01-22  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlfilesource.c: (gnl_filesource_init):
