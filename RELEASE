@@ -1,5 +1,5 @@
 
-Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.6 "Who stole my beard ?"
+Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.7 "Anything better ?"
         
 
 
@@ -12,23 +12,26 @@ This module contains a set of plug-ins for GStreamer to ease the
 creation of multimedia editors, or any other application where a
 timeline-oriented use of GStreamer makes sense.
 
+
+These elements include:
+
+gnlsource
+An element for using source elements/bins in a GnlComposition
+gnlfilesource
+A higher-level element for using a uri in a GnlComposition
+gnlcomposition
+A container element that handles GNonLin objects
+
+
   
+
 Features of this release
     
-      * New GnlOperation element for using filters/effects in GnlComposition
-      * Modification of GnlComposition internal structure for faster behaviour
-      * Lots of fixes for complex compositions
-      * Fixes for default sources
-      * Many more unit tests
-      * Code and documentation cleanups, more memory leaks fixes
-
-Bugs fixed in this release
-
-     * 356380  : Composition doesn't find the next stop correctly with ope...
-     * 351899  : Empty GnlComposition in paused will not take into account...
-     * 352382  : Mention whether high/low number are high/low priority in ...
-     * 352389  : Cannot link gnlfilesource and gnloperation
-     * 362399  : Default sources broken
+      * GnlFileSource can use decodebin2 if the USE_DECODEBIN2 
+env variable is set
+      * Deadlock fixes for modifying GnlComposition
+There were no bugs fixed in this release
+    
 
 Download
 
@@ -55,10 +58,9 @@ will create more lists as necessary.
 
         
 Applications
-GNonLin is primarily used by PiTiVi (http://www.pitivi.org/) and Jokosher
-(http://www.jokosher.org/)
+GNonLin is primarily used by PiTiVi (http://www.pitivi.org/)
   
 Contributors to this release
     
       * Edward Hervey
-      * Wim Taymans
+ 

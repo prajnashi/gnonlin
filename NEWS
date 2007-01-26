@@ -1,3 +1,12 @@
+This is GNonLin 0.10.7 "Anything better ?"
+
+Features of this release
+    
+      * GnlFileSource can use decodebin2 if the USE_DECODEBIN2 
+env variable is set
+      * Deadlock fixes for modifying GnlComposition
+
+
 This is GNonLin 0.10.6, "Who stole my beard ?"
 
 New GnlOperation element for using filters/effects in GnlComposition
