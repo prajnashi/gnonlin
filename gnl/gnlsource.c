@@ -319,8 +319,6 @@ ghost_seek_pad (GnlSource * source)
 
   source->priv->pendingblock = FALSE;
 
-  gst_object_unref (pad);
-
 beach:
   return FALSE;
 }

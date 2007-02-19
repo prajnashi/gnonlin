@@ -1166,10 +1166,11 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
   GnlObject *object = GNL_OBJECT (element);
   GNode *tmp;
   GstPad *pad = NULL;
+  GstPad *tpad = NULL;
 
   GST_LOG_OBJECT (element, "no more pads");
   if (!(pad = get_src_pad (element)))
-    return;
+    goto no_source;
 
   COMP_OBJECTS_LOCK (comp);
 
@@ -1197,7 +1198,7 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
     }
 
     if (comp->private->current && comp->private->waitingpads == 0) {
-      GstPad *tpad = get_src_pad (GST_ELEMENT (comp->private->current->data));
+      tpad = get_src_pad (GST_ELEMENT (comp->private->current->data));
 
       /* There are no more waiting pads for the currently configured timeline */
       /* stack. */
@@ -1234,8 +1235,20 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
 done:
   COMP_OBJECTS_UNLOCK (comp);
 
+  if (pad)
+    gst_object_unref (pad);
+  if (tpad)
+    gst_object_unref (tpad);
 
   GST_DEBUG_OBJECT (comp, "end");
+
+  return;
+
+no_source:
+  {
+    GST_LOG_OBJECT (comp, "no source pad");
+    return;
+  }
 }
 
 /*
@@ -1257,7 +1270,7 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
   GnlObject *newobj;
   GnlObject *newparent;
   GnlObject *oldparent = NULL;
-  GstPad *srcpad;
+  GstPad *srcpad = NULL;
 
   if (!node)
     return;
@@ -1323,6 +1336,9 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
           (G_OBJECT (newobj), "no-more-pads",
           G_CALLBACK (no_more_pads_object_cb), comp);
   }
+
+  if (srcpad)
+    gst_object_unref (srcpad);
 
   GST_LOG_OBJECT (newobj, "DONE");
 }
@@ -1653,9 +1669,8 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
             GST_LOG_OBJECT (comp, "About to unblock top-level srcpad");
             gst_pad_set_blocked_async (pad, FALSE,
                 (GstPadBlockCallback) pad_blocked, comp);
-            gst_object_unref (pad);
           }
-
+          gst_object_unref (pad);
         } else {
           GST_WARNING_OBJECT (comp,
               "Timeline is entirely linked, but couldn't get top-level element's source pad");

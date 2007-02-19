@@ -725,6 +725,7 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
   GST_LOG_OBJECT (ghostpad, "overriding ghostpad's internal pad function");
 
   internal = gst_pad_get_peer (target);
+  gst_object_unref (target);
 
   if (!(priv = gst_pad_get_element_private (internal))) {
     GST_DEBUG_OBJECT (internal,
@@ -789,7 +790,6 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
   if (ghost && (!(gnl_object_ghost_pad_set_target (object, ghost, target)))) {
     GST_WARNING_OBJECT (object,
         "Couldn't set the target pad... removing ghostpad");
-    gst_element_remove_pad (GST_ELEMENT (object), ghost);
     gst_object_unref (ghost);
     return NULL;
   }

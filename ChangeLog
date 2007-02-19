@@ -1,3 +1,12 @@
+2007-02-19  Wim Taymans  <wim@fluendo.com>
+
+	* gnl/gnlcomposition.c: (no_more_pads_object_cb),
+	(compare_relink_single_node), (update_pipeline):
+	* gnl/gnlobject.c: (control_internal_pad),
+	(gnl_object_ghost_pad_full):
+	* gnl/gnlsource.c: (ghost_seek_pad):
+	Fix some leaks.
+
 2007-01-26  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:
