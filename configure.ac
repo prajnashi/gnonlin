@@ -7,6 +7,8 @@ AC_INIT(GNonLin, 0.10.7.1,
     http://gnonlin.sourceforge.net/,
     gnonlin)
 
+AG_GST_INIT
+
 dnl initialize automake
 AM_INIT_AUTOMAKE
 
@@ -50,13 +52,13 @@ AC_SUBST(ACLOCAL_AMFLAGS, "-I m4 -I common/m4")
 
 dnl *** check for arguments to configure ***
 
-GST_ARG_DEBUG
-GST_ARG_VALGRIND
-GST_ARG_GCOV
+AG_GST_ARG_DEBUG
+AG_GST_ARG_VALGRIND
+AG_GST_ARG_GCOV
 
-GST_ARG_WITH_PKG_CONFIG_PATH
-GST_ARG_WITH_PACKAGE_NAME
-GST_ARG_WITH_PACKAGE_ORIGIN
+AG_GST_ARG_WITH_PKG_CONFIG_PATH
+AG_GST_ARG_WITH_PACKAGE_NAME
+AG_GST_ARG_WITH_PACKAGE_ORIGIN
 
 dnl *** checks for platform ***
 
@@ -89,11 +91,11 @@ dnl *** checks for library functions ***
 dnl *** checks for dependancy libraries ***
 
 dnl GLib is required
-GST_GLIB_CHECK([2.6])
+AG_GST_GLIB_CHECK([2.6])
 
 dnl checks for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
-GST_CHECK_GST($GST_MAJORMINOR, [$GST_REQ])
+AG_GST_CHECK_GST($GST_MAJORMINOR, [$GST_REQ])
 
 GST_TOOLS_DIR=`$PKG_CONFIG --variable=toolsdir gstreamer-$GST_MAJORMINOR`
 if test -z $GST_TOOLS_DIR; then
@@ -105,14 +107,14 @@ GST_PLUGINS_DIR=`$PKG_CONFIG gstreamer-$GST_MAJORMINOR --variable pluginsdir`
 AC_SUBST(GST_PLUGINS_DIR)
 AC_MSG_NOTICE(Using GStreamer Core Plugins in $GST_PLUGINS_DIR)
 
-GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ])
+AG_GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ])
 
-GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ])
+AG_GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ])
 GSTPB_PLUGINS_DIR=`$PKG_CONFIG gstreamer-plugins-base-$GST_MAJORMINOR --variable pluginsdir`
 AC_SUBST(GSTPB_PLUGINS_DIR)
 AC_MSG_NOTICE(Using GStreamer Base Plugins in $GSTPB_PLUGINS_DIR)
 
-GST_CHECK_GST_CHECK($GST_MAJORMINOR, [$GST_REQ], no)
+AG_GST_CHECK_GST_CHECK($GST_MAJORMINOR, [$GST_REQ], no)
 
 dnl FIXME: get rid of this by making sure gstreamer-check brings it in
 dnl check for "check", unit testing library/header
@@ -127,16 +129,16 @@ AC_DEFINE_UNQUOTED(GST_LICENSE, "$GST_LICENSE", [GStreamer license])
 AC_SUBST(GST_LICENSE)
 
 dnl set location of plugin directory
-GST_SET_PLUGINDIR
+AG_GST_SET_PLUGINDIR
 
 dnl define an ERROR_CFLAGS Makefile variable
-GST_SET_ERROR_CFLAGS($GST_CVS)
+AG_GST_SET_ERROR_CFLAGS($GST_CVS)
 
 dnl define correct level for debugging messages
-GST_SET_LEVEL_DEFAULT($GST_CVS)
+AG_GST_SET_LEVEL_DEFAULT($GST_CVS)
 
 dnl used in examples
-GST_DEFAULT_ELEMENTS
+AG_GST_DEFAULT_ELEMENTS
 
 dnl *** finalize CFLAGS, LDFLAGS, LIBS
 
