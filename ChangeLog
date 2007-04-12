@@ -1,3 +1,11 @@
+2007-04-12  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlobject.c: (gnl_object_remove_ghost_pad):
+	Don't forget to unset the target when removing a ghost pad, else the
+	target will still be linked to the no-longer-present-ghostpad internal
+	pad.
+	This is the "+500 power points" Jokosher bugfix.
+
 2007-02-28  Thomas Vander Stichele  <thomas at apestaart dot org>
 
 	* configure.ac:
