@@ -101,7 +101,7 @@ struct _GnlObject
   gdouble rate;
 
   /* priority in parent */
-  guint priority;
+  guint32 priority;
 
   /* active in parent */
   gboolean active;

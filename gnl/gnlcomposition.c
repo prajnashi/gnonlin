@@ -496,7 +496,11 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
 static gint
 priority_comp (GnlObject * a, GnlObject * b)
 {
-  return a->priority - b->priority;
+  if (a->priority < b->priority)
+    return -1;
+  if (a->priority > b->priority)
+    return 1;
+  return 0;
 }
 
 static gboolean
@@ -1072,8 +1076,13 @@ beach:
 static gint
 objects_start_compare (GnlObject * a, GnlObject * b)
 {
-  if (a->start == b->start)
-    return a->priority - b->priority;
+  if (a->start == b->start) {
+    if (a->priority < b->priority)
+      return -1;
+    if (a->priority > b->priority)
+      return 1;
+    return 0;
+  }
   if (a->start < b->start)
     return -1;
   if (a->start > b->start)
@@ -1084,8 +1093,13 @@ objects_start_compare (GnlObject * a, GnlObject * b)
 static gint
 objects_stop_compare (GnlObject * a, GnlObject * b)
 {
-  if (a->stop == b->stop)
-    return a->priority - b->priority;
+  if (a->stop == b->stop) {
+    if (a->priority < b->priority)
+      return -1;
+    if (a->priority > b->priority)
+      return 1;
+    return 0;
+  }
   if (b->stop < a->stop)
     return -1;
   if (b->stop > a->stop)
@@ -1706,7 +1720,9 @@ static void
 object_start_changed (GnlObject * object, GParamSpec * arg,
     GnlComposition * comp)
 {
-  GST_DEBUG_OBJECT (object, "...");
+  GST_DEBUG_OBJECT (object, "start position changed (%"GST_TIME_FORMAT
+		    "), evaluating pipeline update",
+		    GST_TIME_ARGS (object->start));
 
   comp->private->objects_start = g_list_sort
       (comp->private->objects_start, (GCompareFunc) objects_start_compare);
@@ -1724,7 +1740,9 @@ static void
 object_stop_changed (GnlObject * object, GParamSpec * arg,
     GnlComposition * comp)
 {
-  GST_DEBUG_OBJECT (object, "...");
+  GST_DEBUG_OBJECT (object, "start position changed (%"GST_TIME_FORMAT
+		    "), evaluating pipeline update",
+		    GST_TIME_ARGS (object->stop));
 
   comp->private->objects_stop = g_list_sort
       (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
@@ -1742,7 +1760,8 @@ static void
 object_priority_changed (GnlObject * object, GParamSpec * arg,
     GnlComposition * comp)
 {
-  GST_DEBUG_OBJECT (object, "...");
+  GST_DEBUG_OBJECT (object, "priority changed (%u), evaluating pipeline update",
+		    object->priority);
 
   comp->private->objects_start = g_list_sort
       (comp->private->objects_start, (GCompareFunc) objects_start_compare);
@@ -1760,7 +1779,8 @@ static void
 object_active_changed (GnlObject * object, GParamSpec * arg,
     GnlComposition * comp)
 {
-  GST_DEBUG_OBJECT (object, "...");
+  GST_DEBUG_OBJECT (object, "active flag changed (%d), evaluating pipeline update",
+		    object->active);
 
   update_start_stop_duration (comp);
 

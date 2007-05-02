@@ -1,3 +1,15 @@
+2007-05-02  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlobject.h:
+	priority is a guint32 !
+	* gnl/gnlcomposition.c: (priority_comp), (objects_start_compare),
+	(objects_stop_compare), (object_start_changed),
+	(object_stop_changed), (object_priority_changed),
+	(object_active_changed):
+	Fix major stupidity in GCompareFunc, the difference between 2 guint32
+	is not guaranteed to be correct within a gint :)
+	Fixes #435215
+
 2007-04-12  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlobject.c: (gnl_object_remove_ghost_pad):
