@@ -1,3 +1,8 @@
+2007-05-03  Edward Hervey  <edward@fluendo.com>
+
+	* configure.ac:
+	0.10.7.2 pre-release
+
 2007-05-02  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlobject.h:
