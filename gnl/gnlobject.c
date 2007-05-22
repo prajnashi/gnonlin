@@ -202,7 +202,7 @@ gnl_object_dispose (GObject * object)
  * Returns: TRUE if @objecttime was within the limits of the @object start/stop time,
  * FALSE otherwise
  */
-static gboolean
+gboolean
 gnl_object_to_media_time (GnlObject * object, GstClockTime otime,
     GstClockTime * mtime)
 {
@@ -261,7 +261,7 @@ gnl_object_to_media_time (GnlObject * object, GstClockTime otime,
  * FALSE otherwise
  */
 
-static gboolean
+gboolean
 gnl_media_to_object_time (GnlObject * object, GstClockTime mtime,
     GstClockTime * otime)
 {
@@ -394,6 +394,7 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
   gdouble rate, nrate;
   GstSeekFlags flags;
   GstSeekType curtype, stoptype;
+  GstSeekType ncurtype;
   gint64 cur;
   guint64 ncur;
   gint64 stop;
@@ -415,15 +416,20 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
   GST_DEBUG ("nrate:%f , rate:%f, object->rate:%f", nrate, rate, object->rate);
 
   /* convert cur */
+  ncurtype = GST_SEEK_TYPE_SET;
   if ((curtype == GST_SEEK_TYPE_SET)
       && (gnl_object_to_media_time (object, cur, &ncur))) {
     if (ncur > G_MAXINT64)
       GST_WARNING_OBJECT (object, "return value too big...");
     GST_LOG_OBJECT (object, "Setting cur to %" GST_TIME_FORMAT,
         GST_TIME_ARGS (ncur));
-  } else {
+  } else if ((curtype != GST_SEEK_TYPE_NONE)) {
     GST_DEBUG_OBJECT (object, "Limiting seek start to media_start");
     ncur = object->media_start;
+  } else {
+    GST_DEBUG_OBJECT (object, "leaving GST_SEEK_TYPE_NONE");
+    ncur = cur;
+    ncurtype = GST_SEEK_TYPE_NONE;
   }
 
   /* convert stop, we also need to limit it to object->stop */
@@ -463,12 +469,12 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
 
 
   GST_DEBUG_OBJECT (object,
-      "SENDING SEEK rate:%f, format:TIME, flags:%d, curtype:SET, stoptype:SET, %"
-      GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, nrate, flags,
-      GST_TIME_ARGS (ncur), GST_TIME_ARGS (nstop));
+      "SENDING SEEK rate:%f, format:TIME, flags:%d, curtype:%d, stoptype:SET, %"
+		    GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, nrate, flags, ncurtype,
+		    GST_TIME_ARGS (ncur), GST_TIME_ARGS (nstop));
 
   event2 = gst_event_new_seek (nrate, GST_FORMAT_TIME, flags,
-      GST_SEEK_TYPE_SET, (gint64) ncur, GST_SEEK_TYPE_SET, (gint64) nstop);
+      ncurtype, (gint64) ncur, GST_SEEK_TYPE_SET, (gint64) nstop);
 
   gst_event_unref (event);
 

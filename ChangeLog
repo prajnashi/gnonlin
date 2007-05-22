@@ -1,3 +1,16 @@
+2007-05-22  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (get_new_seek_event),
+	(get_current_position), (gnl_composition_event_handler),
+	(refine_start_stop_in_region_above_priority),
+	(convert_list_to_tree), (get_stack_list),
+	(get_clean_toplevel_stack), (are_same_stacks), (update_pipeline),
+	(gnl_composition_add_object):
+	* gnl/gnlobject.c: (translate_incoming_seek):
+	* gnl/gnlobject.h:
+	Allow adding objects in a composition WHILE playing.
+	Fixes #437105
+
 2007-05-05  Edward Hervey  <edward@fluendo.com>
 
 	* configure.ac:

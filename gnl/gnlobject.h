@@ -147,5 +147,13 @@ void gnl_object_remove_ghost_pad (GnlObject * object, GstPad * ghost);
 gboolean gnl_object_covers (GnlObject * object,
     GstClockTime start, GstClockTime stop, GnlCoverType type);
 
+gboolean
+gnl_object_to_media_time (GnlObject * object, GstClockTime otime,
+			  GstClockTime * mtime);
+
+gboolean
+gnl_media_to_object_time (GnlObject * object, GstClockTime mtime,
+			  GstClockTime * otime);
+
 G_END_DECLS
 #endif /* __GNL_OBJECT_H__ */
