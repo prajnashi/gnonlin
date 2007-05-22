@@ -1,5 +1,11 @@
 2007-05-22  Edward Hervey  <edward@fluendo.com>
 
+	* gnl/gnlsource.c: (gnl_source_init):
+	Use 'async-handling' property if available so our state change happens
+	correctly with latest core modifications.
+
+2007-05-22  Edward Hervey  <edward@fluendo.com>
+
 	* gnl/gnlcomposition.c: (get_new_seek_event),
 	(get_current_position), (gnl_composition_event_handler),
 	(refine_start_stop_in_region_above_priority),

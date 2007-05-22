@@ -128,6 +128,11 @@ gnl_source_init (GnlSource * source, GnlSourceClass * klass)
   GST_OBJECT_FLAG_SET (source, GNL_OBJECT_SOURCE);
   source->element = NULL;
   source->priv = g_new0 (GnlSourcePrivate, 1);
+
+  if (g_object_class_find_property (G_OBJECT_CLASS (parent_class), "async-handling")) {
+    GST_DEBUG_OBJECT (source, "Setting GstBin async-handling to TRUE");
+    g_object_set (G_OBJECT (source), "async-handling", TRUE, NULL);
+  }
 }
 
 static void
