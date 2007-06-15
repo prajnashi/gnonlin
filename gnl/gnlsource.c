@@ -292,7 +292,7 @@ get_valid_src_pad (GnlSource * source, GstElement * element, GstPad ** pad)
   return FALSE;
 }
 
-static gboolean
+static gpointer
 ghost_seek_pad (GnlSource * source)
 {
   GstPad *pad = source->priv->ghostedpad;
@@ -325,7 +325,7 @@ ghost_seek_pad (GnlSource * source)
   source->priv->pendingblock = FALSE;
 
 beach:
-  return FALSE;
+  return NULL;
 }
 
 static void
@@ -336,7 +336,7 @@ pad_blocked_cb (GstPad * pad, gboolean blocked, GnlSource * source)
 
   if (!(source->priv->ghostpad)) {
     if (blocked)
-      g_idle_add ((GSourceFunc) ghost_seek_pad, source);
+      g_thread_create ((GThreadFunc) ghost_seek_pad, source, FALSE, NULL);
   }
 }
 

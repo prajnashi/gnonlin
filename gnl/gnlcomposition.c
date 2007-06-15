@@ -478,6 +478,10 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
             "There was already a pending segment_done in main thread !");
         g_source_remove (comp->private->pending_idle);
       }
+
+      /* FIXME : This should be switched to using a g_thread_create() instead
+       * of a g_idle_add(). EXTENSIVE TESTING AND ANALYSIS REQUIRED BEFORE
+       * DOING THE SWITCH !!! */
       comp->private->pending_idle =
           g_idle_add ((GSourceFunc) segment_done_main_thread, (gpointer) comp);
 

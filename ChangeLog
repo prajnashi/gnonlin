@@ -1,3 +1,14 @@
+2007-06-15  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlsource.c: (ghost_seek_pad), (pad_blocked_cb):
+	Let's stop using the main thread for other-thread processing and
+	instead go the proper way and use yet-another-thread through
+	g_thread_create().
+	* gnl/gnlcomposition.c: (gnl_composition_handle_message):
+	Add a FIXME/WARNING related to switching to g_thread_create regarding
+	SEGMENT_DONE message handling. This requires a better look at than I
+	can give right now.
+
 2007-05-22  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlsource.c: (gnl_source_init):
