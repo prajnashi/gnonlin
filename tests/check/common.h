@@ -137,6 +137,7 @@ videotest_in_bin_gnl_src (const gchar * name, guint64 start, gint64 duration, gi
   GstElement * gnlsource = NULL;
   GstElement * videotestsrc = NULL;
   GstElement * bin = NULL;
+  GstPad *srcpad = NULL;
 
   videotestsrc = gst_element_factory_make_or_warn ("videotestsrc", NULL);
   g_object_set (G_OBJECT (videotestsrc), "pattern", pattern, NULL);
@@ -148,7 +149,11 @@ videotest_in_bin_gnl_src (const gchar * name, guint64 start, gint64 duration, gi
 
   gst_bin_add (GST_BIN (gnlsource), bin);
   
-  gst_element_add_pad (bin, gst_ghost_pad_new ("src", gst_element_get_pad (videotestsrc, "src")));
+  srcpad = gst_element_get_pad (videotestsrc, "src");
+
+  gst_element_add_pad (bin, gst_ghost_pad_new ("src", srcpad));
+
+  gst_object_unref (srcpad);
 
   return gnlsource;
 }
@@ -163,6 +168,7 @@ audiotest_bin_src (const gchar * name, guint64 start,
   GstElement * audioconvert = NULL;
   GstElement * bin = NULL;
   GstCaps * caps;
+  GstPad *srcpad = NULL;
 
   audiotestsrc = gst_element_factory_make_or_warn ("audiotestsrc", NULL);
   identity = gst_element_factory_make_or_warn ("identity", NULL);
@@ -177,13 +183,17 @@ audiotest_bin_src (const gchar * name, guint64 start,
 
   gst_bin_add_many (GST_BIN (bin), audiotestsrc, audioconvert, identity, NULL);
   gst_element_link (audiotestsrc, audioconvert);
-  gst_element_link_filtered (audioconvert, identity, caps);
+  fail_if ((gst_element_link_filtered (audioconvert, identity, caps)) != TRUE);
 
   gst_caps_unref (caps);
 
   gst_bin_add (GST_BIN (source), bin);
 
-  gst_element_add_pad (bin, gst_ghost_pad_new ("src", gst_element_get_pad (identity, "src")));
+  srcpad = gst_element_get_pad (identity, "src");
+
+  gst_element_add_pad (bin, gst_ghost_pad_new ("src", srcpad));
+
+  gst_object_unref (srcpad);
 
   return source;
 }

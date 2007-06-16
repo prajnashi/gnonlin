@@ -1,3 +1,23 @@
+2007-06-16  Edward Hervey  <edward@fluendo.com>
+
+	* gnl/gnlcomposition.c: (unblock_child_pads), (unblock_childs),
+	(unlock_child_state), (lock_child_state),
+	(gnl_composition_change_state), (object_pad_removed),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	Unblock child source pads when the pads OR the elements are being
+	removed.
+	Also unblock those pads when going to READY/NULL.
+	Lock the state of gnlobjects being added, else it screws up state
+	changes of the composition.
+	Properly unref items when using GstIterators.
+	* gnl/gnloperation.c: (gnl_operation_class_init),
+	(gnl_operation_finalize), (get_unused_static_sink_pad),
+	(add_sink_pad):
+	memleak fixes.
+	* tests/check/common.h:
+	* tests/check/simple.c: (GST_START_TEST):
+	memleak fixes.
+
 2007-06-15  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlsource.c: (ghost_seek_pad), (pad_blocked_cb):

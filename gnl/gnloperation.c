@@ -54,6 +54,8 @@ enum
   ARG_SINKS,
 };
 
+static void gnl_operation_finalize (GObject * object);
+
 static void gnl_operation_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gnl_operation_get_property (GObject * object, guint prop_id,
@@ -91,6 +93,8 @@ gnl_operation_class_init (GnlOperationClass * klass)
   GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation",
       GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Operation element");
 
+  gobject_class->finalize = GST_DEBUG_FUNCPTR (gnl_operation_finalize);
+
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_operation_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_operation_get_property);
 
@@ -115,6 +119,16 @@ gnl_operation_class_init (GnlOperationClass * klass)
   gst_element_class_add_pad_template (gstelement_class,
       gst_static_pad_template_get (&gnl_operation_sink_template));
 
+}
+
+static void
+gnl_operation_finalize (GObject * object)
+{
+  GnlOperation *oper = GNL_OPERATION (object);
+
+  g_list_free (oper->sinks);
+
+  G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
 static void
@@ -383,7 +397,8 @@ get_unused_static_sink_pad (GnlOperation * operation)
           } else {
             gst_object_unref (pad);
 	  }
-        }
+        } else
+	  gst_object_unref (pad);
         break;
       }
       case GST_ITERATOR_RESYNC:
@@ -457,8 +472,10 @@ add_sink_pad (GnlOperation * operation)
 
     /* static sink pads */
     ret = get_unused_static_sink_pad (operation);
-    if (ret)
+    if (ret) {
       gpad = gst_ghost_pad_new (GST_PAD_NAME (ret), ret);
+      gst_object_unref (ret);
+    }
   }
   
   if (!gpad) {
@@ -466,8 +483,10 @@ add_sink_pad (GnlOperation * operation)
     /* request sink pads */
 
     ret = get_request_sink_pad (operation);
-    if (ret)
+    if (ret) {
       gpad = gst_ghost_pad_new (GST_PAD_NAME (ret), ret);
+      gst_object_unref (ret);
+    }
   }
 
   if (gpad) {

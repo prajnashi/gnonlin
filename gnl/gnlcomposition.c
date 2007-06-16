@@ -121,6 +121,8 @@ static GstStateChangeReturn
 gnl_composition_change_state (GstElement * element, GstStateChange transition);
 
 static GstPad * get_src_pad (GstElement * element);
+static void
+pad_blocked (GstPad * pad, gboolean blocked, GnlComposition * comp);
 
 static gboolean
 seek_handling (GnlComposition * comp, gboolean initial, gboolean update);
@@ -330,10 +332,44 @@ gnl_composition_finalize (GObject * object)
 }
 
 static gboolean
+unblock_child_pads (GstElement * child, GValue * ret, GnlComposition *comp)
+{
+  GstPad *pad;
+
+  GST_DEBUG_OBJECT (child, "unblocking pads");
+  pad = get_src_pad (child);
+  if (pad) {
+      gst_pad_set_blocked_async (pad, FALSE, (GstPadBlockCallback) pad_blocked,
+				 comp);
+      gst_object_unref (pad);
+    }
+  gst_object_unref (child);
+  return TRUE;
+}
+
+static void
+unblock_childs (GnlComposition * comp)
+{
+  GstIterator *childs;
+  GstIteratorResult res;
+  GValue val = { 0 };
+
+  g_value_init (&val, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&val, FALSE);
+  childs = gst_bin_iterate_elements (GST_BIN (comp));
+  res =
+      gst_iterator_fold (childs, (GstIteratorFoldFunction) unblock_child_pads,
+      &val, comp);
+  gst_iterator_free (childs);
+}
+
+
+static gboolean
 unlock_child_state (GstElement * child, GValue * ret, gpointer udata)
 {
   GST_DEBUG_OBJECT (child, "unlocking state");
   gst_element_set_locked_state (child, FALSE);
+  gst_object_unref (child);
   return TRUE;
 }
 
@@ -342,6 +378,7 @@ lock_child_state (GstElement * child, GValue * ret, gpointer udata)
 {
   GST_DEBUG_OBJECT (child, "locking state");
   gst_element_set_locked_state (child, TRUE);
+  gst_object_unref (child);
   return TRUE;
 }
 
@@ -1175,6 +1212,10 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
     return ret;
 
   switch (transition) {
+  case GST_STATE_CHANGE_PAUSED_TO_READY:
+  case GST_STATE_CHANGE_READY_TO_NULL:
+    unblock_childs(comp);
+    break;
     default:
       break;
   }
@@ -1967,6 +2008,10 @@ object_pad_removed (GnlObject * object, GstPad * pad, GnlComposition * comp)
     GST_DEBUG_OBJECT (comp, "Removing ghostpad");
     gnl_object_remove_ghost_pad (GNL_OBJECT (comp), comp->private->ghostpad);
     comp->private->ghostpad = NULL;
+  } else {
+    /* unblock it ! */
+    gst_pad_set_blocked_async (pad, FALSE, (GstPadBlockCallback) pad_blocked,
+			       comp);
   }
 }
 
@@ -2014,6 +2059,10 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
     GST_WARNING_OBJECT (bin, "couldn't add element");
     goto chiringuito;
   }
+
+  /* lock state of child ! */
+  GST_LOG_OBJECT (bin, "Locking state of %s", GST_ELEMENT_NAME (element));
+  gst_element_set_locked_state (element, TRUE);
 
   /* wrap new element in a GnlCompositionEntry ... */
   entry = g_new0 (GnlCompositionEntry, 1);
@@ -2159,6 +2208,17 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
   GST_LOG_OBJECT (element, "Done removing from the composition");
 
 beach:
+  /* unblock source pad */
+  if (1) {
+    GstPad * pad = get_src_pad (element);
+
+    if (pad) {
+      gst_pad_set_blocked_async (pad, FALSE, (GstPadBlockCallback) pad_blocked,
+				 comp);
+      gst_object_unref (pad);
+    }
+  }
+
   gst_object_unref (element);
   return ret;
 

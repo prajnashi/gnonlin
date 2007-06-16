@@ -60,6 +60,8 @@ GST_START_TEST (test_time_duration)
   gst_object_unref (source1);
   
   ASSERT_OBJECT_REFCOUNT(source1, "source1", 1);
+
+  gst_object_unref (comp);
 }
 
 GST_END_TEST;
