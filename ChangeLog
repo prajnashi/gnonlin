@@ -1,3 +1,10 @@
+2007-07-02  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/gnlobject.c: (ghostpad_event_function):
+	Don't forward QoS event upstreams until we properly implement the
+	time-shifting.
+	See bug #398453
+
 2007-06-16  Edward Hervey  <edward@fluendo.com>
 
 	* gnl/gnlcomposition.c: (unblock_child_pads), (unblock_childs),

@@ -660,6 +660,12 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
       if (GST_EVENT_TYPE (event) == GST_EVENT_SEEK) {
 
         event = translate_incoming_seek (object, event);
+      } else if (GST_EVENT_TYPE (event) == GST_EVENT_QOS) {
+
+	/* FIXME : Implement proper QoS time-shifting, for the time being it's
+	 * just ignored. See #398453 */
+	gst_event_unref (event);
+	goto beach;
       }
       break;
     default:
@@ -671,6 +677,7 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
   GST_DEBUG_OBJECT (ghostpad, "Returned from calling priv->eventfunc : %d",
       ret);
 
+ beach:
   return ret;
 
   /* ERRORS */
