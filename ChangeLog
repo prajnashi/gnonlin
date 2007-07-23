@@ -1,3 +1,16 @@
+2007-07-23  Edward Hervey  <bilboed@bilboed.com>
+
+	* gnl/gnlcomposition.c:
+	(get_new_seek_event): Added debugging
+	(seek_handling): comments on a race issue to fix.
+	(gnl_composition_event_handler): protect call to get_new_seek_event.
+	(update_pipeline): Update seek events need to be flushing if not in
+	PLAYING, else we will encounter deadlocks.
+	(object_start_changed), (object_stop_changed),
+	(object_priority_changed), (object_active_changed): If composition
+	has changed, we set segment->start to segment_start in the same way
+	we do when a segment has finished.
+
 2007-07-02  Edward Hervey  <bilboed@bilboed.com>
 
 	* gnl/gnlobject.c: (ghostpad_event_function):

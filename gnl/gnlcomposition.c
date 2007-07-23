@@ -588,6 +588,13 @@ get_new_seek_event (GnlComposition * comp, gboolean initial,
     flags =
         GST_SEEK_FLAG_SEGMENT | GST_SEEK_FLAG_ACCURATE | GST_SEEK_FLAG_FLUSH;
 
+  GST_DEBUG_OBJECT (comp, "private->segment->start:%"GST_TIME_FORMAT" segment_start%"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (comp->private->segment->start),
+		    GST_TIME_ARGS (comp->private->segment_start));
+  GST_DEBUG_OBJECT (comp, "private->segment->stop:%"GST_TIME_FORMAT" segment_stop%"GST_TIME_FORMAT,
+		    GST_TIME_ARGS (comp->private->segment->stop),
+		    GST_TIME_ARGS (comp->private->segment_stop));
+
   start = MAX (comp->private->segment->start, comp->private->segment_start);
   stop = GST_CLOCK_TIME_IS_VALID (comp->private->segment->stop)
       ? MIN (comp->private->segment->stop, comp->private->segment_stop)
@@ -656,6 +663,9 @@ seek_handling (GnlComposition * comp, gboolean initial, gboolean update)
   comp->private->flushing = TRUE;
 
   /* Send downstream flush start/stop if needed */
+  /* FIXME : The problem is that we might have a streaming thread which will
+   * be able to push AFTER FLUSH_STOP.
+   * We can't really block... since maybe we're not pushing anything currently !!! */
   if (comp->private->ghostpad
       && (comp->private->segment->flags & GST_SEEK_FLAG_FLUSH)
       && (!update)) {
@@ -723,7 +733,9 @@ gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
 
       /* the incoming event might not be quite correct, we get a new proper
        * event to pass on to the childs. */
+      COMP_OBJECTS_LOCK (comp);
       nevent = get_new_seek_event (comp, FALSE, FALSE);
+      COMP_OBJECTS_UNLOCK (comp);
       gst_event_unref (event);
       event = nevent;
       break;
@@ -1859,7 +1871,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
 
       /* 1. Create new seek event for newly configured timeline stack */
       if (samestack && stopchanged)
-	event = get_new_seek_event (comp, FALSE, TRUE);
+	event = get_new_seek_event (comp, (state == GST_STATE_PLAYING) ? FALSE : TRUE, TRUE);
       else
 	event = get_new_seek_event (comp, initial, FALSE);
 
@@ -1937,9 +1949,10 @@ object_start_changed (GnlObject * object, GParamSpec * arg,
   comp->private->objects_stop = g_list_sort
       (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
 
-  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object))
+  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object)) {
+    comp->private->segment->start = comp->private->segment_start;
     update_pipeline (comp, comp->private->segment_start, TRUE, TRUE, TRUE);
-  else
+  } else
     update_start_stop_duration (comp);
 }
 
@@ -1947,7 +1960,7 @@ static void
 object_stop_changed (GnlObject * object, GParamSpec * arg,
     GnlComposition * comp)
 {
-  GST_DEBUG_OBJECT (object, "start position changed (%"GST_TIME_FORMAT
+  GST_DEBUG_OBJECT (object, "stop position changed (%"GST_TIME_FORMAT
 		    "), evaluating pipeline update",
 		    GST_TIME_ARGS (object->stop));
 
@@ -1957,9 +1970,10 @@ object_stop_changed (GnlObject * object, GParamSpec * arg,
   comp->private->objects_start = g_list_sort
       (comp->private->objects_start, (GCompareFunc) objects_start_compare);
 
-  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object))
+  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object)) {
+    comp->private->segment->start = comp->private->segment_start;
     update_pipeline (comp, comp->private->segment_start, TRUE, TRUE, TRUE);
-  else
+  } else
     update_start_stop_duration (comp);
 }
 
@@ -1976,9 +1990,10 @@ object_priority_changed (GnlObject * object, GParamSpec * arg,
   comp->private->objects_stop = g_list_sort
       (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
 
-  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object))
+  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object)) {
+    comp->private->segment->start = comp->private->segment_start;
     update_pipeline (comp, comp->private->segment_start, TRUE, TRUE, TRUE);
-  else
+  } else
     update_start_stop_duration (comp);
 }
 
@@ -1991,9 +2006,10 @@ object_active_changed (GnlObject * object, GParamSpec * arg,
 
   update_start_stop_duration (comp);
 
-  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object))
+  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object)) {
+    comp->private->segment->start = comp->private->segment_start;
     update_pipeline (comp, comp->private->segment_start, TRUE, TRUE, TRUE);
-  else
+  } else
     update_start_stop_duration (comp);
 }
 
