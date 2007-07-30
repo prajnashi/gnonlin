@@ -86,9 +86,11 @@ GST_START_TEST (test_one_after_other)
     Source 1
     Start : 0s
     Duration : 1s
+    Media start : 5s
+    Media Duartion : 1s
     Priority : 1
   */
-  source1 = videotest_gnl_src ("source1", 0, 1 * GST_SECOND, 1, 1);
+  source1 = videotest_gnl_src_full ("source1", 0, 1 * GST_SECOND, 5 * GST_SECOND, 1 * GST_SECOND, 1, 1);
   fail_if (source1 == NULL);
   check_start_stop_duration(source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
@@ -96,9 +98,13 @@ GST_START_TEST (test_one_after_other)
     Source 2
     Start : 1s
     Duration : 1s
+    Media start : 2s
+    Media Duration : 1s
     Priority : 1
   */
-  source2 = videotest_gnl_src ("source2", 1 * GST_SECOND, 1 * GST_SECOND, 2, 1);
+  source2 = videotest_gnl_src_full ("source2", 1 * GST_SECOND, 1 * GST_SECOND,
+				    2 * GST_SECOND, 1 * GST_SECOND,
+				    2, 1);
   fail_if (source2 == NULL);
   check_start_stop_duration(source2, 1 * GST_SECOND, 2 * GST_SECOND, 1 * GST_SECOND);
 
@@ -145,10 +151,10 @@ GST_START_TEST (test_one_after_other)
   /* Expected segments */
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   0, 1 * GST_SECOND, 0));
+							   5 * GST_SECOND, 6 * GST_SECOND, 0));
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   1 * GST_SECOND, 2 * GST_SECOND,
+							   2 * GST_SECOND, 3 * GST_SECOND,
 							   1 * GST_SECOND));
 
   g_signal_connect (G_OBJECT (comp), "pad-added",
@@ -203,10 +209,10 @@ GST_START_TEST (test_one_after_other)
   /* Expected segments */
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   0, 1 * GST_SECOND, 0));
+							   5 * GST_SECOND, 6 * GST_SECOND, 0));
   collect->expected_segments = g_list_append (collect->expected_segments,
 					      segment_new (1.0, GST_FORMAT_TIME,
-							   1 * GST_SECOND, 2 * GST_SECOND,
+							   2 * GST_SECOND, 3 * GST_SECOND,
 							   1 * GST_SECOND));  
   collect->gotsegment = FALSE;
 

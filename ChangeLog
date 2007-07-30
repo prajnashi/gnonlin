@@ -1,3 +1,11 @@
+2007-07-30  Edward Hervey  <bilboed@bilboed.com>
+
+	* tests/check/common.h:
+	Add a bigger function for creating a video source with specific
+	media-start and media-duration.
+	* tests/check/simple.c: (GST_START_TEST):
+	Let's check with non-obvious media-start/duration sources.
+
 2007-07-23  Edward Hervey  <bilboed@bilboed.com>
 
 	* gnl/gnlcomposition.c:
