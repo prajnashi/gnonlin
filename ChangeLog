@@ -1,5 +1,10 @@
 2007-07-30  Edward Hervey  <bilboed@bilboed.com>
 
+	* configure.ac:
+	0.10.8.2 pre-release
+
+2007-07-30  Edward Hervey  <bilboed@bilboed.com>
+
 	* tests/check/common.h:
 	Add a bigger function for creating a video source with specific
 	media-start and media-duration.
