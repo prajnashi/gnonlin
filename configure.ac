@@ -3,7 +3,7 @@ AC_PREREQ(2.52)
 dnl initialize autoconf
 dnl when going to/from release please set the nano (fourth number) right !
 dnl releases only do Wall, cvs and prerelease does Werror too
-AC_INIT(GNonLin, 0.10.8.2,
+AC_INIT(GNonLin, 0.10.9,
     http://gnonlin.sourceforge.net/,
     gnonlin)
 
