@@ -250,7 +250,8 @@ gnl_operation_add_element (GstBin * bin, GstElement * element)
   } else {
     if (!element_is_valid_filter (element, &isdynamic)) {
       GST_WARNING_OBJECT (operation,
-          "Element %s is not a valid filter element");
+			  "Element %s is not a valid filter element", 
+			  GST_ELEMENT_NAME (element));
     } else {
       if ((res = GST_BIN_CLASS (parent_class)->add_element (bin, element))) {
         GstPad *srcpad;
