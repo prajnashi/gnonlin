@@ -24,6 +24,14 @@
 
 #include "gnl.h"
 
+/**
+ * SECTION:element-gnlcomposition
+ * @short_description: Combines and controls GNonLin elements
+ *
+ * A GnlComposition contains GnlObjects such as GnlSources and GnlOperations,
+ * and connects them dynamically to create a composition timeline.
+ */
+
 GST_BOILERPLATE (GnlComposition, gnl_composition, GnlObject, GNL_TYPE_OBJECT);
 
 static GstElementDetails gnl_composition_details =
@@ -563,7 +571,7 @@ have_to_update_pipeline (GnlComposition * comp)
   return FALSE;
 }
 
-/**
+/*
  * get_new_seek_event:
  *
  * Returns a seek event for the currently configured segment
@@ -959,7 +967,7 @@ beach:
   return ret;
 }
 
-/**
+/*
  * get_stack_list:
  * @comp: The #GnlComposition
  * @timestamp: The #GstClockTime to look at
@@ -1041,7 +1049,7 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
   return ret;
 }
 
-/**
+/*
  * get_clean_toplevel_stack:
  * @comp: The #GnlComposition
  * @timestamp: The #GstClockTime to look at
@@ -1140,15 +1148,14 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
  *
  */
 
-/**
+/*
  * get_src_pad:
- * #element: a #GstElement
+ * element: a #GstElement
  *
  * Returns: The src pad for the given element. A reference was added to the
  * returned pad, remove it when you don't need that pad anymore.
  * Returns NULL if there's no source pad.
  */
-
 static GstPad *
 get_src_pad (GstElement * element)
 {
@@ -1665,7 +1672,7 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
   return deactivate;
 }
 
-/**
+/*
  * compare_relink_stack:
  * @comp: The #GnlComposition
  * @stack: The new stack
@@ -1759,7 +1766,7 @@ are_same_stacks (GNode *stack1, GNode *stack2)
   return res;
 }
 
-/**
+/*
  * update_pipeline:
  * @comp: The #GnlComposition
  * @currenttime: The #GstClockTime to update at, can be GST_CLOCK_TIME_NONE.

@@ -1,3 +1,42 @@
+2008-05-16  Jan Schmidt  <jan.schmidt@sun.com>
+
+	* configure.ac:
+	* docs/Makefile.am:
+	* docs/libs/.cvsignore:
+	* docs/libs/Makefile.am:
+	* docs/libs/gnonlin-docs.sgml:
+	* docs/libs/gnonlin-sections.txt:
+	* docs/libs/gnonlin.args:
+	* docs/libs/gnonlin.hierarchy:
+	* docs/libs/gnonlin.interfaces:
+	* docs/libs/gnonlin.prerequisites:
+	* docs/libs/gnonlin.signals:
+	* docs/libs/gnonlin.types:
+	* docs/libs/inspect-build.stamp:
+	* docs/libs/inspect.stamp:
+	* docs/libs/inspect/plugin-gnonlin.xml:
+	* docs/libs/scanobj-build.stamp:
+	* docs/libs/tmpl/gnl.sgml:
+	* docs/libs/tmpl/gnlcomposition.sgml:
+	* docs/libs/tmpl/gnlobject.sgml:
+	* docs/libs/tmpl/gnloperation.sgml:
+	* docs/libs/tmpl/gnlsource.sgml:
+	* docs/libs/tmpl/gnltimeline.sgml:
+	* gnl/gnlcomposition.c:
+	* gnl/gnlcomposition.h:
+	* gnl/gnlfilesource.c:
+	* gnl/gnlfilesource.h:
+	* gnl/gnlobject.c:
+	* gnl/gnloperation.c:
+	* gnl/gnloperation.h:
+	* gnl/gnlsource.c:
+	* gnl/gnltypes.h:
+	Add some docs. The structure is based on the GStreamer plugin docs
+	build, with an enhancement to allow having GnlObject (a plugin-private
+	base class) documented too.
+
+	Actual docs contents needs fleshing out.
+
 2008-04-21  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* gnl/gnloperation.c: (gnl_operation_add_element): 

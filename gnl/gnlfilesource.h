@@ -44,6 +44,8 @@ struct _GnlFileSource
 {
   GnlSource parent;
 
+  /*< private >*/
+
   GnlFileSourcePrivate *private;
 };
 

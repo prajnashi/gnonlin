@@ -25,6 +25,19 @@
 #include <string.h>
 #include "gnl.h"
 
+/**
+ * SECTION:gnlobject
+ * @short_description: Base class for GNonLin elements
+ * 
+ * <refsect2>
+ * <para>
+ * GnlObject encapsulates default behaviour and implements standard
+ * properties provided by all the GNonLin elements.
+ * </para>
+ * </refsect2>
+ *  
+ */
+
 typedef struct _GnlPadPrivate GnlPadPrivate;
 
 struct _GnlPadPrivate
@@ -112,6 +125,10 @@ gnl_object_class_init (GnlObjectClass * klass)
   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_object_prepare_func);
   gnlobject_class->cleanup = GST_DEBUG_FUNCPTR (gnl_object_cleanup_func);
 
+  /**
+   * GnlObject:start:
+   *
+   */
   g_object_class_install_property (gobject_class, ARG_START,
       g_param_spec_uint64 ("start", "Start",
           "The start position relative to the parent",
@@ -826,11 +843,10 @@ gnl_object_ghost_pad (GnlObject * object, const gchar * name, GstPad * target)
   return gnl_object_ghost_pad_full (object, name, target, FALSE);
 }
 
-/**
+/*
  * gnl_object_ghost_pad_no_target:
  * /!\ Doesn't add the pad to the GnlObject....
-*/
-
+ */
 GstPad *
 gnl_object_ghost_pad_no_target (GnlObject * object, const gchar * name,
     GstPadDirection dir)

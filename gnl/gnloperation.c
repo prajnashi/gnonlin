@@ -25,6 +25,19 @@
 
 #include "gnl.h"
 
+/**
+ * SECTION:element-gnloperation
+ * @short_description: Encapsulates filters/effects for use with GnlObjects
+ *
+ * <refsect2>
+ * <para>
+ * A GnlOperation performs a transformation or mixing operation on the
+ * data from one or more #GnlSources, which is used to implement filters or 
+ * effects.
+ * </para>
+ * </refsect2>
+ */
+
 GST_BOILERPLATE (GnlOperation, gnl_operation, GnlObject, GNL_TYPE_OBJECT);
 
 static GstElementDetails gnl_operation_details =
@@ -98,6 +111,13 @@ gnl_operation_class_init (GnlOperationClass * klass)
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_operation_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_operation_get_property);
 
+  /**
+   * GnlOperation:sinks:
+   *
+   * Specifies the number of sink pads the operation should provide.
+   * If the sinks property is -1 (the default) pads are only created as
+   * demanded via get_request_pad() calls on the element.
+   */
   g_object_class_install_property (gobject_class, ARG_SINKS,
       g_param_spec_int ("sinks", "Sinks",
           "Number of input sinks (-1 for automatic handling)", -1, G_MAXINT, -1,
@@ -208,9 +228,9 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
   return (havesink && havesrc);
 }
 
-/**
+/*
  * get_src_pad:
- * #element: a #GstElement
+ * element: a #GstElement
  *
  * Returns: The src pad for the given element. A reference was added to the
  * returned pad, remove it when you don't need that pad anymore.

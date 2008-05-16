@@ -39,7 +39,4 @@ typedef struct _GnlSourceClass GnlSourceClass;
 typedef struct _GnlFileSource GnlFileSource;
 typedef struct _GnlFileSourceClass GnlFileSourceClass;
 
-typedef struct _GnlTimeline GnlTimeline;
-typedef struct _GnlTimelineClass GnlTimelineClass;
-
 #endif

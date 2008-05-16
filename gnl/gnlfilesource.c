@@ -24,6 +24,15 @@
 
 #include "gnl.h"
 
+/**
+ * SECTION:element-gnlfilesource
+ * @short_description: GNonLin File Source
+ *
+ * GnlFileSource is a #GnlSource which reads and decodes the contents
+ * of a given file. The data in the file is decoded using any available
+ * GStreamer plugins.
+ */
+
 static GstStaticPadTemplate gnl_filesource_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,

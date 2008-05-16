@@ -1,37 +1,26 @@
 <?xml version="1.0"?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" 
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
                "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
-
 <!ENTITY % version-entities SYSTEM "version.entities">
 %version-entities;
-<!ENTITY Gnl SYSTEM "xml/gnl.xml">
-<!ENTITY GnlObject SYSTEM "xml/gnlobject.xml">
-<!ENTITY GnlSource SYSTEM "xml/gnlsource.xml">
-<!ENTITY GnlOperation SYSTEM "xml/gnloperation.xml">
-<!ENTITY GnlComposition SYSTEM "xml/gnlcomposition.xml">
-<!ENTITY GnlTimeline SYSTEM "xml/gnltimeline.xml">
-
-<!ENTITY gnonlin-tree-index SYSTEM "xml/tree_index.sgml">
-
 ]>
-<book id="index">
+
+<book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
-    <title>GNonLin v&GNL_VERSION; Reference Manual</title>
-    <releaseinfo>For use with GStreamer Core v&GST_MAJORMINOR;</releaseinfo>
+    <title>GNonLin &GNL_VERSION; Reference Manual</title>
   </bookinfo>
 
   <chapter>
-    <title>GNonLin</title>
+    <title>GNonLin Elements</title>
+    <xi:include href="xml/element-gnlcomposition.xml"/>
+    <xi:include href="xml/element-gnlfilesource.xml"/>
+    <xi:include href="xml/element-gnloperation.xml"/>
+    <xi:include href="xml/element-gnlsource.xml"/>
+  </chapter>
 
-    &Gnl;
-    &GnlObject;
-    &GnlSource;
-    &GnlOperation;
-    &GnlComposition;
-    &GnlTimeline;
-  </chapter>
   <chapter>
-    <title>Object Hierarchy</title>
-    &gnonlin-tree-index;
+    <title>Base Classes</title>
+    <xi:include href="xml/gnlobject.xml"/>
   </chapter>
+
 </book>

@@ -46,6 +46,8 @@ struct _GnlComposition
 {
   GnlObject parent;
 
+  /*< private >*/
+
   GnlCompositionPrivate *private;
 };
 

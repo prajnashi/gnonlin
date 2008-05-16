@@ -1,11 +1,11 @@
 if ENABLE_GTK_DOC
-SUBDIRS_DOCS = libs
+DOCS_SUBDIRS = libs
 else
-SUBDIRS_DOCS =
+DOCS_SUBDIRS = 
 endif
 
-#SUBDIRS = $(SUBDIRS_DOCS)
-#DIST_SUBDIRS = libs
+SUBDIRS = $(DOCS_SUBDIRS)
+DIST_SUBDIRS = libs
 
 EXTRA_DIST = \
 	upload.mak version.entities.in

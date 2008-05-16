@@ -42,9 +42,9 @@ G_BEGIN_DECLS
 {
   GnlObject parent;
 
+  /* <private> */
   gint num_sinks;               /* Number of sink inputs. */
 
-  /* <private> */
   gboolean dynamicsinks;        /* TRUE if element has request pads */
   gint realsinks;               /* Number of real sink pads. */
 

@@ -25,6 +25,14 @@
 
 #include "gnl.h"
 
+/**
+ * SECTION:element-gnlsource
+ * @short_description: GNonLin Source
+ *
+ * The GnlSource encapsulates a pipeline which produces data for processing
+ * in a #GnlComposition.
+ */
+
 static GstStaticPadTemplate gnl_source_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,

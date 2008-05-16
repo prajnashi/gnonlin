@@ -77,6 +77,7 @@ AC_PATH_PROG(VALGRIND_PATH, valgrind, no)
 AM_CONDITIONAL(HAVE_VALGRIND, test ! "x$VALGRIND_PATH" = "xno")
 
 dnl check for documentation tools
+AG_GST_DOCBOOK_CHECK
 GTK_DOC_CHECK([1.3])
 AS_PATH_PYTHON([2.1])
 
@@ -117,6 +118,14 @@ AG_GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ])
 GSTPB_PLUGINS_DIR=`$PKG_CONFIG gstreamer-plugins-base-$GST_MAJORMINOR --variable pluginsdir`
 AC_SUBST(GSTPB_PLUGINS_DIR)
 AC_MSG_NOTICE(Using GStreamer Base Plugins in $GSTPB_PLUGINS_DIR)
+
+dnl There are paths for documentation xrefs
+GLIB_PREFIX="`$PKG_CONFIG --variable=prefix glib-2.0`"
+GST_PREFIX="`$PKG_CONFIG --variable=prefix gstreamer-$GST_MAJORMINOR`"
+GSTPB_PREFIX="`$PKG_CONFIG --variable=prefix gstreamer-plugins-base-$GST_MAJORMINOR`"
+AC_SUBST(GLIB_PREFIX)
+AC_SUBST(GST_PREFIX)
+AC_SUBST(GSTPB_PREFIX)
 
 AG_GST_CHECK_GST_CHECK($GST_MAJORMINOR, [$GST_REQ], no)
 
@@ -194,6 +203,8 @@ dnl keep this alphabetic per directory, please
 AC_CONFIG_FILES(
 Makefile
 docs/Makefile
+docs/libs/Makefile
+docs/version.entities
 common/Makefile
 common/m4/Makefile
 m4/Makefile
