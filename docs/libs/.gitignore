@@ -6,6 +6,7 @@ gnonlin-decl.txt
 gnonlin-overrides.txt
 gnonlin-undocumented.txt
 gnonlin-unused.txt
+gnonlin-undeclared.txt
 gnonlin.args
 gnonlin.args.new
 gnonlin.hierarchy
@@ -23,3 +24,4 @@ tmpl
 tmpl-build.stamp
 tmpl.stamp
 xml
+inspect-registry.xml
