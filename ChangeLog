@@ -1,5 +1,25 @@
 2008-05-26  Edward Hervey  <edward.hervey@collabora.co.uk>
 
+	* gnl/gnlcomposition.c: (unblock_child_pads), (get_new_seek_event),
+	(get_current_position),
+	(refine_start_stop_in_region_above_priority),
+	(convert_list_to_tree), (get_stack_list),
+	(get_clean_toplevel_stack), (gnl_composition_change_state),
+	(compare_relink_single_node), (are_same_stacks), (update_pipeline),
+	(object_start_changed), (object_stop_changed),
+	(object_priority_changed), (object_active_changed),
+	(object_pad_removed), (object_pad_added),
+	(gnl_composition_remove_object):
+	* gnl/gnloperation.c: (element_is_valid_filter),
+	(get_nb_static_sinks), (gnl_operation_add_element),
+	(get_unused_static_sink_pad), (get_request_sink_pad),
+	(add_sink_pad), (synchronize_sinks):
+	* gnl/gnloperation.h:
+	Fix more issues with dynamic-sinkpads operations.
+	Gst-indent the code.
+
+2008-05-26  Edward Hervey  <edward.hervey@collabora.co.uk>
+
 	* gnl/gnlfilesource.c: (gnl_filesource_init):
 	* gnl/gnlobject.c: (translate_incoming_seek),
 	(ghostpad_event_function):

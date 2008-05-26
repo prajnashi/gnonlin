@@ -43,10 +43,18 @@ G_BEGIN_DECLS
   GnlObject parent;
 
   /* <private> */
-  gint num_sinks;               /* Number of sink inputs. */
 
-  gboolean dynamicsinks;        /* TRUE if element has request pads */
-  gint realsinks;               /* Number of real sink pads. */
+  /* num_sinks:
+   * Number of sink inputs of the controlled element.
+   * -1 if the sink pads are dynamic */
+  gint num_sinks;
+
+  /* TRUE if element has request pads */
+  gboolean dynamicsinks;
+
+  /* realsinks:
+   * Number of sink pads currently used on the contolled element. */
+  gint realsinks;
 
   /* FIXME : We might need to use a lock to access this list */
   GList * sinks;		/* The sink ghostpads */
