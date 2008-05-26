@@ -116,15 +116,20 @@ new_gnl_src (const gchar * name, guint64 start, gint64 duration, gint priority)
 }
 
 static GstElement *
-videotest_gnl_src (const gchar * name, guint64 start, gint64 duration, gint pattern, guint priority)
+videotest_gnl_src (const gchar * name, guint64 start, gint64 duration,
+		   gint pattern, guint priority)
 {
   GstElement * gnlsource = NULL;
   GstElement * videotestsrc = NULL;
+  GstCaps * caps = gst_caps_from_string ("video/x-raw-yuv,format=(fourcc)I420");
+
+  fail_if (caps == NULL);
 
   videotestsrc = gst_element_factory_make_or_warn ("videotestsrc", NULL);
   g_object_set (G_OBJECT (videotestsrc), "pattern", pattern, NULL);
 
   gnlsource = new_gnl_src (name, start, duration, priority);
+  g_object_set (G_OBJECT (gnlsource), "caps", caps, NULL);
 
   gst_bin_add (GST_BIN (gnlsource), videotestsrc);
   
@@ -155,19 +160,25 @@ videotest_in_bin_gnl_src (const gchar * name, guint64 start, gint64 duration, gi
   GstElement * gnlsource = NULL;
   GstElement * videotestsrc = NULL;
   GstElement * bin = NULL;
+  GstElement * alpha = NULL;
   GstPad *srcpad = NULL;
 
   videotestsrc = gst_element_factory_make_or_warn ("videotestsrc", NULL);
   g_object_set (G_OBJECT (videotestsrc), "pattern", pattern, NULL);
   bin = gst_bin_new (NULL);
 
+  alpha = gst_element_factory_make_or_warn ("alpha", NULL);
+
   gnlsource = new_gnl_src (name, start, duration, priority);
 
   gst_bin_add (GST_BIN (bin), videotestsrc);
+  gst_bin_add (GST_BIN (bin), alpha);
+
+  gst_element_link (videotestsrc, alpha);
 
   gst_bin_add (GST_BIN (gnlsource), bin);
   
-  srcpad = gst_element_get_pad (videotestsrc, "src");
+  srcpad = gst_element_get_pad (alpha, "src");
 
   gst_element_add_pad (bin, gst_ghost_pad_new ("src", srcpad));
 

@@ -1,5 +1,15 @@
 2008-05-26  Edward Hervey  <edward.hervey@collabora.co.uk>
 
+	* tests/check/common.h:
+	* tests/check/complex.c: (GST_START_TEST):
+	* tests/check/gnlsource.c: (GST_START_TEST):
+	* tests/check/simple.c: (GST_START_TEST):
+	Round of gst-indent and more utilities
+	* tests/check/gnloperation.c: (GST_START_TEST), (gnonlin_suite):
+	New test for multiple-input-pad operations. Needs more work
+
+2008-05-26  Edward Hervey  <edward.hervey@collabora.co.uk>
+
 	* gnl/gnlcomposition.c: (no_more_pads_object_cb):
 	Exit properly if stack is empty.
 	
