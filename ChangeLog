@@ -1,5 +1,13 @@
 2008-05-26  Edward Hervey  <edward.hervey@collabora.co.uk>
 
+	* gnl/gnlfilesource.c: (gnl_filesource_init):
+	* gnl/gnlobject.c: (translate_incoming_seek),
+	(ghostpad_event_function):
+	* gnl/gnlsource.c: (gnl_source_init):
+	Round of gst-indent
+
+2008-05-26  Edward Hervey  <edward.hervey@collabora.co.uk>
+
 	* tests/check/common.h:
 	* tests/check/complex.c: (GST_START_TEST):
 	* tests/check/gnlsource.c: (GST_START_TEST):

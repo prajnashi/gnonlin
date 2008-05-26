@@ -134,7 +134,7 @@ gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
           ("Could not create a gnomevfssrc or filesource element, are you sure you have any of them installed ?");
   if (g_getenv ("USE_DECODEBIN2"))
     decodebin = gst_element_factory_make ("decodebin2", "internal-decodebin");
-  else 
+  else
     decodebin = gst_element_factory_make ("decodebin", "internal-decodebin");
   if (!decodebin)
     g_warning

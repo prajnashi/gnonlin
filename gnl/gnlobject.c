@@ -487,8 +487,8 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
 
   GST_DEBUG_OBJECT (object,
       "SENDING SEEK rate:%f, format:TIME, flags:%d, curtype:%d, stoptype:SET, %"
-		    GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, nrate, flags, ncurtype,
-		    GST_TIME_ARGS (ncur), GST_TIME_ARGS (nstop));
+      GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, nrate, flags, ncurtype,
+      GST_TIME_ARGS (ncur), GST_TIME_ARGS (nstop));
 
   event2 = gst_event_new_seek (nrate, GST_FORMAT_TIME, flags,
       ncurtype, (gint64) ncur, GST_SEEK_TYPE_SET, (gint64) nstop);
@@ -679,10 +679,10 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
         event = translate_incoming_seek (object, event);
       } else if (GST_EVENT_TYPE (event) == GST_EVENT_QOS) {
 
-	/* FIXME : Implement proper QoS time-shifting, for the time being it's
-	 * just ignored. See #398453 */
-	gst_event_unref (event);
-	goto beach;
+        /* FIXME : Implement proper QoS time-shifting, for the time being it's
+         * just ignored. See #398453 */
+        gst_event_unref (event);
+        goto beach;
       }
       break;
     default:
@@ -694,7 +694,7 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
   GST_DEBUG_OBJECT (ghostpad, "Returned from calling priv->eventfunc : %d",
       ret);
 
- beach:
+beach:
   return ret;
 
   /* ERRORS */
