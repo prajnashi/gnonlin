@@ -1,3 +1,8 @@
+2008-05-26  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c: (no_more_pads_object_cb):
+	Exit properly if stack is empty.
+	
 2008-05-18  Jan Schmidt  <jan.schmidt@sun.com>
 
 	* docs/libs/.cvsignore:

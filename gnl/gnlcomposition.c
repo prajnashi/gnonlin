@@ -1358,6 +1358,11 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
 
   COMP_OBJECTS_LOCK (comp);
 
+  if (comp->private->current == NULL) {
+    GST_DEBUG_OBJECT (comp, "current stack is empty !");
+    goto done;
+  }
+
   tmp =
       g_node_find (comp->private->current, G_IN_ORDER, G_TRAVERSE_ALL, object);
 
