@@ -1,3 +1,19 @@
+2008-05-27  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c: (add_message), (flush_messages),
+	(replace_message), (has_message), (dump_messages),
+	(gnl_composition_handle_message), (no_more_pads_object_cb),
+	(update_pipeline):
+	Properly accumulate segment_start/segment_done messages so that we only
+	switch segment when all segment_done have been emitted.
+	Inspired by the logic in gstbin.
+	* gnl/gnloperation.c: (get_unlinked_sink_ghost_pad),
+	(remove_sink_pad), (synchronize_sinks),
+	(gnl_operation_request_new_pad), (gnl_operation_release_pad):
+	Methods to properly remove request pads.
+	* tests/check/common.h:
+	Remove a leak
+
 2008-05-26  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* gnl/gnlcomposition.c: (unblock_child_pads), (get_new_seek_event),

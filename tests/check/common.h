@@ -130,6 +130,7 @@ videotest_gnl_src (const gchar * name, guint64 start, gint64 duration,
 
   gnlsource = new_gnl_src (name, start, duration, priority);
   g_object_set (G_OBJECT (gnlsource), "caps", caps, NULL);
+  gst_caps_unref(caps);
 
   gst_bin_add (GST_BIN (gnlsource), videotestsrc);
   

@@ -106,6 +106,9 @@ struct _GnlCompositionPrivate
      We are called before gnl_object_sync_handler
    */
   GstPadEventFunction gnl_event_pad_func;
+
+  /* List of SEGMENT_START/SEGMENT_DONE, protected by objects lock */
+  GList *segmessages;
 };
 
 #define OBJECT_IN_ACTIVE_SEGMENT(comp,element) \
@@ -481,6 +484,93 @@ segment_done_main_thread (GnlComposition * comp)
   return FALSE;
 }
 
+/* add_message
+ * flush_messages
+ * replace_message
+ * has_message
+ *
+ * Must be called with the OBJECTS_LOCK taken
+ */
+
+static void
+add_message (GnlComposition * comp, GstMessage * msg)
+{
+  GList *tmp;
+
+  /* make sure we don't already have a msg with the
+   * same src/type */
+  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next) {
+    GstMessage *tmpmsg = (GstMessage *) tmp->data;
+
+    if ((GST_MESSAGE_SRC (msg) == GST_MESSAGE_SRC (tmpmsg)) &&
+        (GST_MESSAGE_TYPE (msg) == GST_MESSAGE_TYPE (tmpmsg)))
+      return;
+  }
+  comp->private->segmessages = g_list_append (comp->private->segmessages,
+      gst_message_ref (msg));
+}
+
+static void
+flush_messages (GnlComposition * comp)
+{
+  GList *tmp;
+
+  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next)
+    gst_message_unref ((GstMessage *) tmp->data);
+  g_list_free (comp->private->segmessages);
+  comp->private->segmessages = NULL;
+}
+
+static void
+replace_message (GnlComposition * comp, GstMessage * msg, GstMessageType type)
+{
+  GList *tmp = NULL;
+
+  /* Find msg of type 'type' and source 'msg'->src */
+  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next) {
+    GstMessage *tmpmsg = (GstMessage *) tmp->data;
+
+    if ((GST_MESSAGE_TYPE (tmpmsg) == type) &&
+        (GST_MESSAGE_SRC (tmpmsg) == GST_MESSAGE_SRC (msg)))
+      break;
+  }
+
+  if (tmp != NULL) {
+    gst_message_unref ((GstMessage *) tmp->data);
+    comp->private->segmessages =
+        g_list_delete_link (comp->private->segmessages, tmp);
+  }
+  add_message (comp, msg);
+}
+
+static gboolean
+has_message (GnlComposition * comp, GstMessageType type)
+{
+  GList *tmp;
+  gboolean res = FALSE;
+
+  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next)
+    if (GST_MESSAGE_TYPE ((GstMessage *) tmp->data) == type) {
+      res = TRUE;
+      break;
+    }
+
+  return res;
+}
+
+static void
+dump_messages (GnlComposition * comp)
+{
+  GList *tmp;
+
+  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next) {
+    GstMessage *msg = (GstMessage *) tmp->data;
+
+    GST_LOG ("type:%s , src:%s",
+        GST_MESSAGE_TYPE_NAME (msg), GST_ELEMENT_NAME (GST_MESSAGE_SRC (msg)));
+  }
+}
+
 static void
 gnl_composition_handle_message (GstBin * bin, GstMessage * message)
 {
@@ -502,10 +592,18 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
       comp->private->pending_idle = 0;
       comp->private->flushing = FALSE;
       COMP_FLUSHING_UNLOCK (comp);
+
+      COMP_OBJECTS_LOCK (comp);
+      add_message (comp, message);
+      dump_messages (comp);
+      COMP_OBJECTS_UNLOCK (comp);
+
       dropit = TRUE;
       break;
     }
     case GST_MESSAGE_SEGMENT_DONE:{
+      gboolean has_start = FALSE;
+
       COMP_FLUSHING_LOCK (comp);
       if (comp->private->flushing) {
         GST_DEBUG_OBJECT (comp, "flushing, bailing out");
@@ -515,6 +613,17 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
       }
       COMP_FLUSHING_UNLOCK (comp);
 
+      COMP_OBJECTS_LOCK (comp);
+      replace_message (comp, message, GST_MESSAGE_SEGMENT_START);
+      has_start = has_message (comp, GST_MESSAGE_SEGMENT_START);
+      dump_messages (comp);
+      COMP_OBJECTS_UNLOCK (comp);
+
+      if (has_start == TRUE) {
+        GST_DEBUG_OBJECT (comp, "Still waiting for more SEGMENT_DONE");
+        dropit = TRUE;
+        break;
+      }
 
       GST_DEBUG_OBJECT (comp, "Adding segment_done handling to main thread");
       if (comp->private->pending_idle) {
@@ -1395,10 +1504,12 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
 
       /* 2. send pending seek */
       if (comp->private->childseek) {
-        GST_INFO_OBJECT (comp, "Sending pending seek for %s",
-            GST_OBJECT_NAME (object));
+        GST_INFO_OBJECT (comp, "Sending pending seek on %s:%s",
+            GST_DEBUG_PAD_NAME (tpad));
+        COMP_OBJECTS_UNLOCK (comp);
         if (!(gst_pad_send_event (tpad, comp->private->childseek)))
           GST_ERROR_OBJECT (comp, "Sending seek event failed!");
+        COMP_OBJECTS_LOCK (comp);
       }
       comp->private->childseek = NULL;
 
@@ -1825,6 +1936,9 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     GST_DEBUG_OBJECT (comp,
         "now really updating the pipeline, current-state:%s",
         gst_element_state_get_name (state));
+
+    /* Flush pending segment messages */
+    flush_messages (comp);
 
     /* (re)build the stack and relink new elements */
     stack =

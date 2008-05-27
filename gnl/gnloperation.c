@@ -485,6 +485,57 @@ get_unused_static_sink_pad (GnlOperation * operation)
 }
 
 static GstPad *
+get_unlinked_sink_ghost_pad (GnlOperation * operation)
+{
+  GstIterator *pads;
+  gboolean done = FALSE;
+  gpointer val;
+  GstPad *ret = NULL;
+
+  if (!operation->element)
+    return NULL;
+
+  pads = gst_element_iterate_sink_pads ((GstElement *) operation);
+
+  while (!done) {
+    switch (gst_iterator_next (pads, &val)) {
+      case GST_ITERATOR_OK:
+      {
+        GstPad *pad = (GstPad *) val;
+        GstPad *peer = gst_pad_get_peer (pad);
+
+        if (peer == NULL) {
+          ret = pad;
+          done = TRUE;
+        } else
+          gst_object_unref ((GstObject *) pad);
+        break;
+      }
+      case GST_ITERATOR_RESYNC:
+        if (ret)
+          gst_object_unref (ret);
+        ret = NULL;
+        gst_iterator_resync (pads);
+        break;
+      default:
+        /* ERROR and DONE */
+        done = TRUE;
+        break;
+    }
+  }
+  gst_iterator_free (pads);
+
+  if (ret)
+    GST_DEBUG_OBJECT (operation, "found unlinked ghost sink pad %s:%s",
+        GST_DEBUG_PAD_NAME (ret));
+  else
+    GST_DEBUG_OBJECT (operation, "Couldn't find an unlinked ghost sink pad");
+
+  return ret;
+
+}
+
+static GstPad *
 get_request_sink_pad (GnlOperation * operation)
 {
   GstPad *pad = NULL;
@@ -562,9 +613,11 @@ add_sink_pad (GnlOperation * operation)
 }
 
 static gboolean
-remove_sink_pad (GnlOperation * operation)
+remove_sink_pad (GnlOperation * operation, GstPad * sinkpad)
 {
-  /* FIXME : implement */
+  gboolean ret = TRUE;
+
+  GST_DEBUG ("sinkpad %s:%s", GST_DEBUG_PAD_NAME (sinkpad));
 
   /*
      We can't remove any random pad.
@@ -572,7 +625,25 @@ remove_sink_pad (GnlOperation * operation)
      thread-safe way.
    */
 
-  return TRUE;
+  if ((sinkpad == NULL) && operation->dynamicsinks) {
+    /* Find an unlinked sinkpad */
+    if ((sinkpad = get_unlinked_sink_ghost_pad (operation)) == NULL) {
+      ret = FALSE;
+      goto beach;
+    }
+  }
+
+  if (sinkpad) {
+    GstPad *target = gst_ghost_pad_get_target ((GstGhostPad *) sinkpad);
+
+    /* release the target pad */
+    gst_element_release_request_pad (operation->element, target);
+    operation->sinks = g_list_remove (operation->sinks, sinkpad);
+    gst_element_remove_pad ((GstElement *) operation, sinkpad);
+  }
+
+beach:
+  return ret;
 }
 
 static void
@@ -593,7 +664,7 @@ synchronize_sinks (GnlOperation * operation)
   } else {
     /* Remove pad */
     /* FIXME, which one do we remove ? :) */
-    remove_sink_pad (operation);
+    remove_sink_pad (operation, NULL);
   }
 }
 
@@ -616,6 +687,8 @@ gnl_operation_request_new_pad (GstElement * element, GstPadTemplate * templ,
   GnlOperation *operation = (GnlOperation *) element;
   GstPad *ret;
 
+  GST_DEBUG ("template:%s name:%s", templ->name_template, name);
+
   if (operation->num_sinks == operation->realsinks) {
     GST_WARNING_OBJECT (element,
         "We already have the maximum number of pads : %d",
@@ -631,5 +704,7 @@ gnl_operation_request_new_pad (GstElement * element, GstPadTemplate * templ,
 static void
 gnl_operation_release_pad (GstElement * element, GstPad * pad)
 {
+  GST_DEBUG ("pad %s:%s", GST_DEBUG_PAD_NAME (pad));
 
+  remove_sink_pad ((GnlOperation *) element, pad);
 }
