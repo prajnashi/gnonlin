@@ -1,6 +1,6 @@
 /* Gnonlin
- * Copyright (C) <2001> Wim Taymans <wim.taymans@chello.be>
- *               <2004> Edward Hervey <edward@fluendo.com>
+ * Copyright (C) <2001> Wim Taymans <wim.taymans@gmail.com>
+ *               <2004-2008> Edward Hervey <bilboed@bilboed.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -198,7 +198,7 @@ gnl_object_init (GnlObject * object, GnlObjectClass * klass)
 static void
 gnl_object_dispose (GObject * object)
 {
-  GnlObject *gnl = GNL_OBJECT (object);
+  GnlObject *gnl = (GnlObject *) object;
 
   if (gnl->caps) {
     gst_caps_unref (gnl->caps);
@@ -989,7 +989,7 @@ beach:
 static void
 gnl_object_handle_message (GstBin * bin, GstMessage * message)
 {
-  GnlObject *object = GNL_OBJECT (bin);
+  GnlObject *object = (GnlObject *) bin;
 
   GST_DEBUG_OBJECT (object, "message:%s",
       gst_message_type_get_name (GST_MESSAGE_TYPE (message)));
@@ -1066,7 +1066,7 @@ static void
 gnl_object_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  GnlObject *gnlobject = GNL_OBJECT (object);
+  GnlObject *gnlobject = (GnlObject *) object;
 
   g_return_if_fail (GNL_IS_OBJECT (object));
 
@@ -1105,11 +1105,7 @@ static void
 gnl_object_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  GnlObject *gnlobject;
-
-  g_return_if_fail (GNL_IS_OBJECT (object));
-
-  gnlobject = GNL_OBJECT (object);
+  GnlObject *gnlobject = (GnlObject *) object;
 
   switch (prop_id) {
     case ARG_START:

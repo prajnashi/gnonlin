@@ -1,6 +1,6 @@
 /* GStreamer
- * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
- *               2004 Edward Hervey <bilboed@bilboed.com>
+ * Copyright (C) 2001 Wim Taymans <wim.taymans@gmail.com>
+ *               2004-2008 Edward Hervey <bilboed@bilboed.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -44,7 +44,7 @@ static GstElementDetails gnl_operation_details =
 GST_ELEMENT_DETAILS ("GNonLin Operation",
     "Filter/Editor",
     "Encapsulates filters/effects for use with GNL Objects",
-    "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>");
+    "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
 
 static GstStaticPadTemplate gnl_operation_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
@@ -144,7 +144,7 @@ gnl_operation_class_init (GnlOperationClass * klass)
 static void
 gnl_operation_finalize (GObject * object)
 {
-  GnlOperation *oper = GNL_OPERATION (object);
+  GnlOperation *oper = (GnlOperation *) object;
 
   g_list_free (oper->sinks);
 
@@ -292,7 +292,7 @@ get_nb_static_sinks (GnlOperation * oper)
 static gboolean
 gnl_operation_add_element (GstBin * bin, GstElement * element)
 {
-  GnlOperation *operation = GNL_OPERATION (bin);
+  GnlOperation *operation = (GnlOperation *) bin;
   gboolean res = FALSE;
   gboolean isdynamic;
 
@@ -343,7 +343,7 @@ gnl_operation_add_element (GstBin * bin, GstElement * element)
 static gboolean
 gnl_operation_remove_element (GstBin * bin, GstElement * element)
 {
-  GnlOperation *operation = GNL_OPERATION (bin);
+  GnlOperation *operation = (GnlOperation *) bin;
   gboolean res = FALSE;
 
   if (operation->element) {
@@ -370,11 +370,7 @@ static void
 gnl_operation_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  GnlOperation *operation;
-
-  g_return_if_fail (GNL_IS_OPERATION (object));
-
-  operation = GNL_OPERATION (object);
+  GnlOperation *operation = (GnlOperation *) object;
 
   switch (prop_id) {
     case ARG_SINKS:
@@ -390,11 +386,7 @@ static void
 gnl_operation_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  GnlOperation *operation;
-
-  g_return_if_fail (GNL_IS_OPERATION (object));
-
-  operation = GNL_OPERATION (object);
+  GnlOperation *operation = (GnlOperation *) object;
 
   switch (prop_id) {
     case ARG_SINKS:
@@ -671,11 +663,8 @@ synchronize_sinks (GnlOperation * operation)
 static gboolean
 gnl_operation_prepare (GnlObject * object)
 {
-  if (!(GNL_OPERATION (object)->element))
-    return FALSE;
-
   /* Prepare the pads */
-  synchronize_sinks (GNL_OPERATION (object));
+  synchronize_sinks ((GnlOperation *) object);
 
   return TRUE;
 }

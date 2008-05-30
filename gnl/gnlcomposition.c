@@ -1,6 +1,6 @@
 /* GStreamer
- * Copyright (C) 2001 Wim Taymans <wim.taymans@chello.be>
- *               2004 Edward Hervey <edward@fluendo.com>
+ * Copyright (C) 2001 Wim Taymans <wim.taymans@gmail.com>
+ *               2004-2008 Edward Hervey <bilboed@bilboed.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -38,7 +38,7 @@ static GstElementDetails gnl_composition_details =
 GST_ELEMENT_DETAILS ("GNonLin Composition",
     "Filter/Editor",
     "Combines GNL objects",
-    "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <bilboed@bilboed.com>");
+    "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
 
 static GstStaticPadTemplate gnl_composition_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
@@ -112,10 +112,10 @@ struct _GnlCompositionPrivate
 };
 
 #define OBJECT_IN_ACTIVE_SEGMENT(comp,element) \
-  (((GNL_OBJECT (element)->start >= comp->private->segment_start) &&	\
-    (GNL_OBJECT (element)->start < comp->private->segment_stop)) ||	\
-   ((GNL_OBJECT (element)->stop > comp->private->segment_start) &&	\
-    (GNL_OBJECT (element)->stop <= comp->private->segment_stop)))	\
+  (((((GnlObject*)element)->start >= comp->private->segment_start) && \
+    (((GnlObject*)element)->start < comp->private->segment_stop)) ||	\
+   ((((GnlObject*)element)->stop > comp->private->segment_start) &&	\
+    (((GnlObject*)element)->stop <= comp->private->segment_stop)))	\
 
 static void gnl_composition_dispose (GObject * object);
 static void gnl_composition_finalize (GObject * object);
@@ -142,12 +142,12 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     gboolean initial, gboolean change_state, gboolean modify);
 
 #define COMP_REAL_START(comp) \
-  (MAX (comp->private->segment->start, GNL_OBJECT (comp)->start))
+  (MAX (comp->private->segment->start, ((GnlObject*)comp)->start))
 
 #define COMP_REAL_STOP(comp) \
   ((GST_CLOCK_TIME_IS_VALID (comp->private->segment->stop) \
-    ? (MIN (comp->private->segment->stop, GNL_OBJECT (comp)->stop))) \
-   : (GNL_OBJECT (comp)->stop))
+    ? (MIN (comp->private->segment->stop, ((GnlObject*)comp)->stop))) \
+   : (((GnlObject*)comp)->stop))
 
 #define COMP_ENTRY(comp, object) \
   (g_hash_table_lookup (comp->private->objects_hash, (gconstpointer) object))
@@ -299,7 +299,7 @@ gnl_composition_dispose (GObject * object)
   comp->private->dispose_has_run = TRUE;
 
   if (comp->private->ghostpad) {
-    gnl_object_remove_ghost_pad (GNL_OBJECT (object), comp->private->ghostpad);
+    gnl_object_remove_ghost_pad ((GnlObject *) object, comp->private->ghostpad);
     comp->private->ghostpad = NULL;
   }
 
@@ -423,7 +423,7 @@ gnl_composition_reset (GnlComposition * comp)
   comp->private->current = NULL;
 
   if (comp->private->ghostpad) {
-    gnl_object_remove_ghost_pad (GNL_OBJECT (comp), comp->private->ghostpad);
+    gnl_object_remove_ghost_pad ((GnlObject *) comp, comp->private->ghostpad);
     comp->private->ghostpad = NULL;
   }
 
@@ -469,9 +469,9 @@ segment_done_main_thread (GnlComposition * comp)
       gint64 epos;
 
       if (GST_CLOCK_TIME_IS_VALID (comp->private->segment->stop))
-        epos = (MIN (comp->private->segment->stop, GNL_OBJECT (comp)->stop));
+        epos = (MIN (comp->private->segment->stop, ((GnlObject *) comp)->stop));
       else
-        epos = (GNL_OBJECT (comp)->stop);
+        epos = (((GnlObject *) comp)->stop);
 
       GST_LOG_OBJECT (comp, "Emitting segment done pos %" GST_TIME_FORMAT,
           GST_TIME_ARGS (epos));
@@ -574,7 +574,7 @@ dump_messages (GnlComposition * comp)
 static void
 gnl_composition_handle_message (GstBin * bin, GstMessage * message)
 {
-  GnlComposition *comp = GNL_COMPOSITION (bin);
+  GnlComposition *comp = (GnlComposition *) bin;
   gboolean dropit = FALSE;
 
   GST_DEBUG_OBJECT (comp, "message:%s from %s",
@@ -828,9 +828,9 @@ handle_seek_event (GnlComposition * comp, GstEvent * event)
   /* Only crop segment start value if we don't have a default object */
   if (comp->private->defaultobject == NULL)
     comp->private->segment->start = MAX (comp->private->segment->start,
-        GNL_OBJECT (comp)->start);
+        ((GnlObject *) comp)->start);
   comp->private->segment->stop = MIN (comp->private->segment->stop,
-      GNL_OBJECT (comp)->stop);
+      ((GnlObject *) comp)->stop);
 
   seek_handling (comp, TRUE, FALSE);
 }
@@ -838,7 +838,7 @@ handle_seek_event (GnlComposition * comp, GstEvent * event)
 static gboolean
 gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
 {
-  GnlComposition *comp = GNL_COMPOSITION (gst_pad_get_parent (ghostpad));
+  GnlComposition *comp = (GnlComposition *) gst_pad_get_parent (ghostpad);
   gboolean res = TRUE;
 
 
@@ -899,8 +899,8 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
     GST_DEBUG_OBJECT (comp, "Removing target, hadghost:%d", hadghost);
 
   if (!(hadghost)) {
-    comp->private->ghostpad = gnl_object_ghost_pad_no_target (GNL_OBJECT (comp),
-        "src", GST_PAD_SRC);
+    comp->private->ghostpad =
+        gnl_object_ghost_pad_no_target ((GnlObject *) comp, "src", GST_PAD_SRC);
     GST_DEBUG_OBJECT (comp->private->ghostpad,
         "About to replace event_pad_func");
     comp->private->gnl_event_pad_func =
@@ -929,7 +929,7 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
     }
   }
 
-  gnl_object_ghost_pad_set_target (GNL_OBJECT (comp),
+  gnl_object_ghost_pad_set_target ((GnlObject *) comp,
       comp->private->ghostpad, target);
   if (!(hadghost)) {
     gst_pad_set_active (comp->private->ghostpad, TRUE);
@@ -1137,7 +1137,7 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
   }
 
   /* append the default source if we have one */
-  if ((timestamp < GNL_OBJECT (comp)->stop) && comp->private->defaultobject)
+  if ((timestamp < ((GnlObject *) comp)->stop) && comp->private->defaultobject)
     stack = g_list_append (stack, comp->private->defaultobject);
 
   /* convert that list to a stack */
@@ -1219,7 +1219,7 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
   if (stack) {
     guint32 top_priority;
 
-    top_priority = GNL_OBJECT (stack->data)->priority;
+    top_priority = ((GnlObject *) stack->data)->priority;
 
     /* Figure out if there's anything blocking us with smaller priority */
     refine_start_stop_in_region_above_priority (comp, *timestamp, start, stop,
@@ -1298,7 +1298,7 @@ gnl_composition_prepare (GnlObject * object)
 static GstStateChangeReturn
 gnl_composition_change_state (GstElement * element, GstStateChange transition)
 {
-  GnlComposition *comp = GNL_COMPOSITION (element);
+  GnlComposition *comp = (GnlComposition *) element;
   GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
 
   switch (transition) {
@@ -1388,7 +1388,7 @@ static void
 update_start_stop_duration (GnlComposition * comp)
 {
   GnlObject *obj;
-  GnlObject *cobj = GNL_OBJECT (comp);
+  GnlObject *cobj = (GnlObject *) comp;
 
   if (!(comp->private->objects_start)) {
     GST_LOG ("no objects, resetting everything to 0");
@@ -1415,7 +1415,7 @@ update_start_stop_duration (GnlComposition * comp)
     }
   } else {
     /* Else it's the first object's start value */
-    obj = GNL_OBJECT (comp->private->objects_start->data);
+    obj = (GnlObject *) comp->private->objects_start->data;
     if (obj->start != cobj->start) {
       GST_LOG_OBJECT (obj, "setting start from %s to %" GST_TIME_FORMAT,
           GST_OBJECT_NAME (obj), GST_TIME_ARGS (obj->start));
@@ -1424,7 +1424,7 @@ update_start_stop_duration (GnlComposition * comp)
     }
   }
 
-  obj = GNL_OBJECT (comp->private->objects_stop->data);
+  obj = (GnlObject *) comp->private->objects_stop->data;
   if (obj->stop != cobj->stop) {
     GST_LOG_OBJECT (obj, "setting stop from %s to %" GST_TIME_FORMAT,
         GST_OBJECT_NAME (obj), GST_TIME_ARGS (obj->stop));
@@ -1454,7 +1454,7 @@ update_start_stop_duration (GnlComposition * comp)
 static void
 no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
 {
-  GnlObject *object = GNL_OBJECT (element);
+  GnlObject *object = (GnlObject *) element;
   GNode *tmp;
   GstPad *pad = NULL;
   GstPad *tpad = NULL;
@@ -2060,7 +2060,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     } else {
       if ((!comp->private->objects_start) && comp->private->ghostpad) {
         GST_DEBUG_OBJECT (comp, "composition is now empty, removing ghostpad");
-        gnl_object_remove_ghost_pad (GNL_OBJECT (comp),
+        gnl_object_remove_ghost_pad ((GnlObject *) comp,
             comp->private->ghostpad);
         comp->private->ghostpad = NULL;
       }
@@ -2158,7 +2158,7 @@ object_pad_removed (GnlObject * object, GstPad * pad, GnlComposition * comp)
       && ((GnlObject *) comp->private->current->data == object)
       && comp->private->ghostpad) {
     GST_DEBUG_OBJECT (comp, "Removing ghostpad");
-    gnl_object_remove_ghost_pad (GNL_OBJECT (comp), comp->private->ghostpad);
+    gnl_object_remove_ghost_pad ((GnlObject *) comp, comp->private->ghostpad);
     comp->private->ghostpad = NULL;
   } else {
     /* unblock it ! */
@@ -2185,7 +2185,7 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
 {
   gboolean ret;
   GnlCompositionEntry *entry;
-  GnlComposition *comp = GNL_COMPOSITION (bin);
+  GnlComposition *comp = (GnlComposition *) bin;
   GstClockTime curpos;
 
   GST_DEBUG_OBJECT (bin, "element %s", GST_OBJECT_NAME (element));
@@ -2195,12 +2195,12 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
   gst_object_ref (element);
 
   GST_DEBUG_OBJECT (element, "%" GST_TIME_FORMAT "--%" GST_TIME_FORMAT,
-      GST_TIME_ARGS (GNL_OBJECT (element)->start),
-      GST_TIME_ARGS (GNL_OBJECT (element)->stop));
+      GST_TIME_ARGS (((GnlObject *) element)->start),
+      GST_TIME_ARGS (((GnlObject *) element)->stop));
 
   COMP_OBJECTS_LOCK (comp);
 
-  if ((GNL_OBJECT (element)->priority == G_MAXUINT32)
+  if ((((GnlObject *) element)->priority == G_MAXUINT32)
       && comp->private->defaultobject) {
     GST_WARNING_OBJECT (comp,
         "We already have a default source, remove it before adding new one");
@@ -2221,8 +2221,8 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
 
   /* wrap new element in a GnlCompositionEntry ... */
   entry = g_new0 (GnlCompositionEntry, 1);
-  entry->object = GNL_OBJECT (element);
-  if ((GNL_OBJECT (element)->priority != G_MAXUINT32)) {
+  entry->object = (GnlObject *) element;
+  if ((((GnlObject *) element)->priority != G_MAXUINT32)) {
     /* Only react on non-default objects properties */
     entry->starthandler = g_signal_connect (G_OBJECT (element),
         "notify::start", G_CALLBACK (object_start_changed), comp);
@@ -2235,8 +2235,8 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
     g_object_set (element,
         "start", (GstClockTime) 0,
         "media-start", (GstClockTime) 0,
-        "duration", (GstClockTimeDiff) GNL_OBJECT (comp)->stop,
-        "media-duration", (GstClockTimeDiff) GNL_OBJECT (comp)->stop, NULL);
+        "duration", (GstClockTimeDiff) ((GnlObject *) comp)->stop,
+        "media-duration", (GstClockTimeDiff) ((GnlObject *) comp)->stop, NULL);
   }
   entry->activehandler = g_signal_connect (G_OBJECT (element),
       "notify::active", G_CALLBACK (object_active_changed), comp);
@@ -2249,9 +2249,9 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
   g_hash_table_insert (comp->private->objects_hash, element, entry);
 
   /* Special case for default source. */
-  if (GNL_OBJECT (element)->priority == G_MAXUINT32) {
+  if (((GnlObject *) element)->priority == G_MAXUINT32) {
     /* It doesn't get added to objects_start and objects_stop. */
-    comp->private->defaultobject = GNL_OBJECT (element);
+    comp->private->defaultobject = ((GnlObject *) element);
     goto chiringuito;
   }
 
@@ -2266,8 +2266,10 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
         "Head of objects_start is now %s [%" GST_TIME_FORMAT "--%"
         GST_TIME_FORMAT "]",
         GST_OBJECT_NAME (comp->private->objects_start->data),
-        GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_start->data)->start),
-        GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_start->data)->stop));
+        GST_TIME_ARGS (((GnlObject *) comp->private->objects_start->data)->
+            start),
+        GST_TIME_ARGS (((GnlObject *) comp->private->objects_start->data)->
+            stop));
 
   comp->private->objects_stop = g_list_append
       (comp->private->objects_stop, element);
@@ -2279,8 +2281,10 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
         "Head of objects_stop is now %s [%" GST_TIME_FORMAT "--%"
         GST_TIME_FORMAT "]",
         GST_OBJECT_NAME (comp->private->objects_stop->data),
-        GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_stop->data)->start),
-        GST_TIME_ARGS (GNL_OBJECT (comp->private->objects_stop->data)->stop));
+        GST_TIME_ARGS (((GnlObject *) comp->private->objects_stop->data)->
+            start),
+        GST_TIME_ARGS (((GnlObject *) comp->private->objects_stop->data)->
+            stop));
 
   GST_DEBUG_OBJECT (comp,
       "segment_start:%" GST_TIME_FORMAT " segment_stop:%" GST_TIME_FORMAT,
@@ -2315,7 +2319,7 @@ static gboolean
 gnl_composition_remove_object (GstBin * bin, GstElement * element)
 {
   gboolean ret = GST_STATE_CHANGE_FAILURE;
-  GnlComposition *comp = GNL_COMPOSITION (bin);
+  GnlComposition *comp = (GnlComposition *) bin;
 
   GST_DEBUG_OBJECT (bin, "element %s", GST_OBJECT_NAME (element));
   /* we only accept GnlObject */
@@ -2328,7 +2332,7 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
   gst_element_set_locked_state (element, FALSE);
 
   /* handle default source */
-  if (GNL_OBJECT (element)->priority == G_MAXUINT32) {
+  if (((GnlObject *) element)->priority == G_MAXUINT32) {
     comp->private->defaultobject = NULL;
   } else {
     /* remove it from the objects list and resort the lists */
@@ -2353,7 +2357,7 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
   /* If we removed within currently configured segment, or it was the default source, *
    * update pipeline */
   if (OBJECT_IN_ACTIVE_SEGMENT (comp, element)
-      || (GNL_OBJECT (element)->priority == G_MAXUINT32))
+      || (((GnlObject *) element)->priority == G_MAXUINT32))
     update_pipeline (comp, comp->private->segment_start, TRUE, TRUE, TRUE);
   else
     update_start_stop_duration (comp);

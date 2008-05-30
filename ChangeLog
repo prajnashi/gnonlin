@@ -1,3 +1,20 @@
+2008-05-30  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* gnl/gnl.c:
+	* gnl/gnl.h:
+	* gnl/gnlcomposition.c:
+	* gnl/gnlcomposition.h:
+	* gnl/gnlfilesource.c:
+	* gnl/gnlfilesource.h:
+	* gnl/gnlobject.c:
+	* gnl/gnlobject.h:
+	* gnl/gnloperation.c:
+	* gnl/gnlsource.c:
+	* gnl/gnlsource.h:
+	Update email adresses of wim and edward to working adresses.
+	Use less GNL_* casting macros that actually also do typechecking for
+	all parts where it is not needed, and instead use simple casting.
+
 2008-05-27  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* gnl/gnlcomposition.c: (add_message), (flush_messages),

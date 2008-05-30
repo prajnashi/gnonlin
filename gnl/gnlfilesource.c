@@ -1,5 +1,5 @@
 /* Gnonlin
- * Copyright (C) <2005> Edward Hervey <edward@fluendo.com>
+ * Copyright (C) <2005-2008> Edward Hervey <bilboed@bilboed.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -49,7 +49,7 @@ static GstElementDetails gnl_filesource_details = GST_ELEMENT_DETAILS
     ("GNonLin File Source",
     "Filter/Editor",
     "High-level File Source element",
-    "Edward Hervey <edward@fluendo.com>");
+    "Edward Hervey <bilboed@bilboed.com>");
 
 enum
 {
@@ -147,7 +147,7 @@ gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
   if (!(gst_element_link (filesrc, decodebin)))
     g_warning ("Could not link the file source element to decodebin");
 
-  GNL_SOURCE_GET_CLASS (filesource)->control_element (GNL_SOURCE (filesource),
+  GNL_SOURCE_GET_CLASS (filesource)->control_element ((GnlSource *) filesource,
       decodebin);
 
   GST_DEBUG_OBJECT (filesource, "done");
@@ -156,7 +156,7 @@ gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
 static void
 gnl_filesource_dispose (GObject * object)
 {
-  GnlFileSource *filesource = GNL_FILESOURCE (object);
+  GnlFileSource *filesource = (GnlFileSource *) object;
 
   if (filesource->private->dispose_has_run)
     return;
@@ -171,7 +171,7 @@ gnl_filesource_dispose (GObject * object)
 static void
 gnl_filesource_finalize (GObject * object)
 {
-  GnlFileSource *filesource = GNL_FILESOURCE (object);
+  GnlFileSource *filesource = (GnlFileSource *) object;
 
   GST_INFO_OBJECT (object, "finalize");
   g_free (filesource->private);
@@ -183,7 +183,7 @@ static void
 gnl_filesource_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  GnlFileSource *fs = GNL_FILESOURCE (object);
+  GnlFileSource *fs = (GnlFileSource *) object;
 
   switch (prop_id) {
     case ARG_LOCATION:
@@ -201,7 +201,7 @@ static void
 gnl_filesource_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  GnlFileSource *fs = GNL_FILESOURCE (object);
+  GnlFileSource *fs = (GnlFileSource *) object;
 
   switch (prop_id) {
     case ARG_LOCATION:

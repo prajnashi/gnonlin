@@ -1,6 +1,6 @@
 /* Gnonlin
- * Copyright (C) <2001> Wim Taymans <wim.taymans@chello.be>
- *               <2004> Edward Hervey <edward@fluendo.com>
+ * Copyright (C) <2001> Wim Taymans <wim.taymans@gmail.com>
+ *               <2004-2008> Edward Hervey <bilboed@bilboed.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -48,7 +48,7 @@ static GstElementDetails gnl_source_details = GST_ELEMENT_DETAILS
     ("GNonLin Source",
     "Filter/Editor",
     "Manages source elements",
-    "Wim Taymans <wim.taymans@chello.be>, Edward Hervey <edward@fluendo.com>");
+    "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
 
 struct _GnlSourcePrivate
 {
@@ -147,7 +147,7 @@ gnl_source_init (GnlSource * source, GnlSourceClass * klass)
 static void
 gnl_source_dispose (GObject * object)
 {
-  GnlSource *source = GNL_SOURCE (object);
+  GnlSource *source = (GnlSource *) object;
 
   GST_DEBUG_OBJECT (object, "dispose");
 
@@ -164,7 +164,7 @@ gnl_source_dispose (GObject * object)
     gst_event_unref (source->priv->event);
 
   if (source->priv->ghostpad)
-    gnl_object_remove_ghost_pad (GNL_OBJECT (object), source->priv->ghostpad);
+    gnl_object_remove_ghost_pad ((GnlObject *) object, source->priv->ghostpad);
   source->priv->ghostpad = NULL;
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
@@ -173,7 +173,7 @@ gnl_source_dispose (GObject * object)
 static void
 gnl_source_finalize (GObject * object)
 {
-  GnlSource *source = GNL_SOURCE (object);
+  GnlSource *source = (GnlSource *) object;
 
   GST_DEBUG_OBJECT (object, "finalize");
 
@@ -185,7 +185,7 @@ gnl_source_finalize (GObject * object)
 static gboolean
 gnl_source_prepare (GnlObject * object)
 {
-  GnlSource *source = GNL_SOURCE (object);
+  GnlSource *source = (GnlSource *) object;
   GstElement *parent =
       (GstElement *) gst_element_get_parent ((GstElement *) object);
 
@@ -253,7 +253,8 @@ element_pad_removed_cb (GstElement * element, GstPad * pad, GnlSource * source)
           (GstPadBlockCallback) pad_blocked_cb, source);
 
 
-      gnl_object_remove_ghost_pad (GNL_OBJECT (source), source->priv->ghostpad);
+      gnl_object_remove_ghost_pad ((GnlObject *) source,
+          source->priv->ghostpad);
       source->priv->ghostpad = NULL;
     } else {
       GST_DEBUG_OBJECT (source, "The removed pad wasn't our ghostpad target");
@@ -312,7 +313,7 @@ ghost_seek_pad (GnlSource * source)
   GST_DEBUG_OBJECT (source, "ghosting %s:%s", GST_DEBUG_PAD_NAME (pad));
 
   source->priv->ghostpad = gnl_object_ghost_pad_full
-      (GNL_OBJECT (source), GST_PAD_NAME (pad), pad, TRUE);
+      ((GnlObject *) source, GST_PAD_NAME (pad), pad, TRUE);
   GST_DEBUG_OBJECT (source, "emitting no more pads");
   gst_pad_set_active (source->priv->ghostpad, TRUE);
 
@@ -419,7 +420,7 @@ gnl_source_control_element_func (GnlSource * source, GstElement * element)
 static gboolean
 gnl_source_add_element (GstBin * bin, GstElement * element)
 {
-  GnlSource *source = GNL_SOURCE (bin);
+  GnlSource *source = (GnlSource *) bin;
   gboolean pret;
 
   GST_DEBUG_OBJECT (source, "Adding element %s", GST_ELEMENT_NAME (element));
@@ -441,7 +442,7 @@ gnl_source_add_element (GstBin * bin, GstElement * element)
 static gboolean
 gnl_source_remove_element (GstBin * bin, GstElement * element)
 {
-  GnlSource *source = GNL_SOURCE (bin);
+  GnlSource *source = (GnlSource *) bin;
   gboolean pret;
 
   GST_DEBUG_OBJECT (source, "Removing element %s", GST_ELEMENT_NAME (element));
@@ -456,7 +457,7 @@ gnl_source_remove_element (GstBin * bin, GstElement * element)
   if (pret) {
     /* remove ghostpad */
     if (source->priv->ghostpad) {
-      gnl_object_remove_ghost_pad (GNL_OBJECT (bin), source->priv->ghostpad);
+      gnl_object_remove_ghost_pad ((GnlObject *) bin, source->priv->ghostpad);
       source->priv->ghostpad = NULL;
     }
 
@@ -486,7 +487,7 @@ gnl_source_remove_element (GstBin * bin, GstElement * element)
 static gboolean
 gnl_source_send_event (GstElement * element, GstEvent * event)
 {
-  GnlSource *source = GNL_SOURCE (element);
+  GnlSource *source = (GnlSource *) element;
   gboolean res = TRUE;
 
   switch (GST_EVENT_TYPE (event)) {
@@ -509,7 +510,7 @@ gnl_source_send_event (GstElement * element, GstEvent * event)
 static GstStateChangeReturn
 gnl_source_change_state (GstElement * element, GstStateChange transition)
 {
-  GnlSource *source = GNL_SOURCE (element);
+  GnlSource *source = (GnlSource *) element;
   GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
 
   switch (transition) {
@@ -563,7 +564,7 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
 
         gst_pad_set_blocked_async (target, FALSE,
             (GstPadBlockCallback) pad_blocked_cb, source);
-        gnl_object_remove_ghost_pad (GNL_OBJECT (source),
+        gnl_object_remove_ghost_pad ((GnlObject *) source,
             source->priv->ghostpad);
         source->priv->ghostpad = NULL;
         source->priv->ghostedpad = NULL;
