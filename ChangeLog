@@ -1,5 +1,10 @@
 2008-05-31  Edward Hervey  <edward.hervey@collabora.co.uk>
 
+	* docs/libs/inspect/plugin-gnonlin.xml:
+	Plugin info as changed (email addresses).
+
+2008-05-31  Edward Hervey  <edward.hervey@collabora.co.uk>
+
 	* gnl/gnlcomposition.c: (gnl_composition_init),
 	(gnl_composition_finalize), (gnl_composition_handle_message),
 	(update_pipeline):

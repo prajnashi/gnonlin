@@ -14,7 +14,7 @@
       <longname>GNonLin Composition</longname>
       <class>Filter/Editor</class>
       <description>Combines GNL objects</description>
-      <author>Wim Taymans &lt;wim.taymans@chello.be&gt;, Edward Hervey &lt;bilboed@bilboed.com&gt;</author>
+      <author>Wim Taymans &lt;wim.taymans@gmail.com&gt;, Edward Hervey &lt;bilboed@bilboed.com&gt;</author>
       <pads>
         <caps>
           <name>src</name>
@@ -29,7 +29,7 @@
       <longname>GNonLin File Source</longname>
       <class>Filter/Editor</class>
       <description>High-level File Source element</description>
-      <author>Edward Hervey &lt;edward@fluendo.com&gt;</author>
+      <author>Edward Hervey &lt;bilboed@bilboed.com&gt;</author>
       <pads>
         <caps>
           <name>src</name>
@@ -44,7 +44,7 @@
       <longname>GNonLin Operation</longname>
       <class>Filter/Editor</class>
       <description>Encapsulates filters/effects for use with GNL Objects</description>
-      <author>Wim Taymans &lt;wim.taymans@chello.be&gt;, Edward Hervey &lt;bilboed@bilboed.com&gt;</author>
+      <author>Wim Taymans &lt;wim.taymans@gmail.com&gt;, Edward Hervey &lt;bilboed@bilboed.com&gt;</author>
       <pads>
         <caps>
           <name>sink%d</name>
@@ -65,7 +65,7 @@
       <longname>GNonLin Source</longname>
       <class>Filter/Editor</class>
       <description>Manages source elements</description>
-      <author>Wim Taymans &lt;wim.taymans@chello.be&gt;, Edward Hervey &lt;edward@fluendo.com&gt;</author>
+      <author>Wim Taymans &lt;wim.taymans@gmail.com&gt;, Edward Hervey &lt;bilboed@bilboed.com&gt;</author>
       <pads>
         <caps>
           <name>src</name>
