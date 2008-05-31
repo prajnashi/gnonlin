@@ -109,6 +109,7 @@ struct _GnlCompositionPrivate
 
   /* List of SEGMENT_START/SEGMENT_DONE, protected by objects lock */
   GList *segmessages;
+  GMutex *messages_lock;
 };
 
 #define OBJECT_IN_ACTIVE_SEGMENT(comp,element) \
@@ -141,6 +142,8 @@ static gboolean
 update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     gboolean initial, gboolean change_state, gboolean modify);
 
+static void flush_messages (GnlComposition * comp);
+
 #define COMP_REAL_START(comp) \
   (MAX (comp->private->segment->start, ((GnlObject*)comp)->start))
 
@@ -156,7 +159,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     GST_LOG_OBJECT (comp, "locking objects_lock from thread %p",		\
       g_thread_self());							\
     g_mutex_lock (comp->private->objects_lock);				\
-    GST_LOG_OBJECT (comp, "locked object_lock from thread %p",		\
+    GST_LOG_OBJECT (comp, "locked objects_lock from thread %p",		\
 		    g_thread_self());					\
   } G_STMT_END
 
@@ -164,6 +167,20 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     GST_LOG_OBJECT (comp, "unlocking objects_lock from thread %p",		\
 		    g_thread_self());					\
     g_mutex_unlock (comp->private->objects_lock);			\
+  } G_STMT_END
+
+#define COMP_MESSAGES_LOCK(comp) G_STMT_START {				\
+    GST_LOG_OBJECT (comp, "locking messages_lock from thread %p",		\
+      g_thread_self());							\
+    g_mutex_lock (comp->private->messages_lock);				\
+    GST_LOG_OBJECT (comp, "locked messages_lock from thread %p",		\
+		    g_thread_self());					\
+  } G_STMT_END
+
+#define COMP_MESSAGES_UNLOCK(comp) G_STMT_START {			\
+    GST_LOG_OBJECT (comp, "unlocking messages_lock from thread %p",		\
+		    g_thread_self());					\
+    g_mutex_unlock (comp->private->messages_lock);			\
   } G_STMT_END
 
 #define COMP_FLUSHING_LOCK(comp) G_STMT_START {				\
@@ -285,6 +302,8 @@ gnl_composition_init (GnlComposition * comp, GnlCompositionClass * klass)
       (g_direct_hash,
       g_direct_equal, NULL, (GDestroyNotify) hash_value_destroy);
 
+  comp->private->messages_lock = g_mutex_new ();
+
   gnl_composition_reset (comp);
 }
 
@@ -335,6 +354,9 @@ gnl_composition_finalize (GObject * object)
   gst_segment_free (comp->private->segment);
 
   g_mutex_free (comp->private->flushing_lock);
+
+  g_mutex_free (comp->private->messages_lock);
+  flush_messages (comp);
 
   g_free (comp->private);
 
@@ -489,7 +511,7 @@ segment_done_main_thread (GnlComposition * comp)
  * replace_message
  * has_message
  *
- * Must be called with the OBJECTS_LOCK taken
+ * Must be called with the MESSAGES_LOCK taken
  */
 
 static void
@@ -571,6 +593,7 @@ dump_messages (GnlComposition * comp)
   }
 }
 
+/* Warning : Don't take the objects lock in this method */
 static void
 gnl_composition_handle_message (GstBin * bin, GstMessage * message)
 {
@@ -593,10 +616,10 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
       comp->private->flushing = FALSE;
       COMP_FLUSHING_UNLOCK (comp);
 
-      COMP_OBJECTS_LOCK (comp);
+      COMP_MESSAGES_LOCK (comp);
       add_message (comp, message);
       dump_messages (comp);
-      COMP_OBJECTS_UNLOCK (comp);
+      COMP_MESSAGES_UNLOCK (comp);
 
       dropit = TRUE;
       break;
@@ -613,11 +636,11 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
       }
       COMP_FLUSHING_UNLOCK (comp);
 
-      COMP_OBJECTS_LOCK (comp);
+      COMP_MESSAGES_LOCK (comp);
       replace_message (comp, message, GST_MESSAGE_SEGMENT_START);
       has_start = has_message (comp, GST_MESSAGE_SEGMENT_START);
       dump_messages (comp);
-      COMP_OBJECTS_UNLOCK (comp);
+      COMP_MESSAGES_UNLOCK (comp);
 
       if (has_start == TRUE) {
         GST_DEBUG_OBJECT (comp, "Still waiting for more SEGMENT_DONE");
@@ -1938,7 +1961,10 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         gst_element_state_get_name (state));
 
     /* Flush pending segment messages */
+
+    COMP_MESSAGES_LOCK (comp);
     flush_messages (comp);
+    COMP_MESSAGES_UNLOCK (comp);
 
     /* (re)build the stack and relink new elements */
     stack =

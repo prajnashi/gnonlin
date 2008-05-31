@@ -1,3 +1,11 @@
+2008-05-31  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c: (gnl_composition_init),
+	(gnl_composition_finalize), (gnl_composition_handle_message),
+	(update_pipeline):
+	Don't use the objects_lock to protect the message handling, instead
+	use a new lock (messages_lock). Avoids a stupid deadlock.
+
 2008-05-30  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* gnl/gnl.c:
