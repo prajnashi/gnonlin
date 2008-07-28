@@ -1,3 +1,13 @@
+2008-07-17  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c: (gnl_composition_handle_message),
+	(no_more_pads_object_cb), (update_pipeline):
+	Fix race-issue when unblocking top-level pad because the update_pipeline
+	method isn't atomic (the objects lock is released in the middle).
+	Also ignore ERROR/WARNING coming from elements which aren't in the
+	currently configured stack. This is mostly related to a big issue with
+	reverse negotiation in dynamic pipelines.
+
 2008-05-31  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* docs/libs/inspect/plugin-gnonlin.xml:

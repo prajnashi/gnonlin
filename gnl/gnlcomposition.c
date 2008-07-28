@@ -664,6 +664,27 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
       dropit = TRUE;
       break;
     }
+    case GST_MESSAGE_ERROR:
+    case GST_MESSAGE_WARNING:{
+      /* FIXME / HACK
+       * There is a massive issue with reverse negotiation and dynamic pipelines.
+       *
+       * Since we're not waiting for the pads of the previous stack to block before
+       * re-switching, we might end up switching sources in the middle of a downstrea
+       * negotiation which will do reverse negotiation... with the new source (which
+       * is no longer the one that issues the request). That negotiation will fail
+       * and the original source will emit an ERROR message.
+       *
+       * In order to avoid those issues, we just ignore error messages from elements
+       * which aren't in the currently configured stack
+       */
+      if (GST_MESSAGE_SRC (message)
+          && !OBJECT_IN_ACTIVE_SEGMENT (comp, GST_MESSAGE_SRC (message))) {
+        GST_DEBUG_OBJECT (comp,
+            "HACK Dropping error message from object not in currently configured stack !");
+        dropit = TRUE;
+      }
+    }
     default:
       break;
   }
@@ -1527,21 +1548,31 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
 
       /* 2. send pending seek */
       if (comp->private->childseek) {
+        GstEvent *childseek = comp->private->childseek;
+        comp->private->childseek = NULL;
         GST_INFO_OBJECT (comp, "Sending pending seek on %s:%s",
             GST_DEBUG_PAD_NAME (tpad));
         COMP_OBJECTS_UNLOCK (comp);
-        if (!(gst_pad_send_event (tpad, comp->private->childseek)))
+        if (!(gst_pad_send_event (tpad, childseek)))
           GST_ERROR_OBJECT (comp, "Sending seek event failed!");
         COMP_OBJECTS_LOCK (comp);
       }
       comp->private->childseek = NULL;
 
-      /* 3. unblock ghostpad */
-      GST_LOG_OBJECT (comp, "About to unblock top-level pad : %s:%s",
-          GST_DEBUG_PAD_NAME (tpad));
-      gst_pad_set_blocked_async (tpad, FALSE, (GstPadBlockCallback) pad_blocked,
-          comp);
-      GST_LOG_OBJECT (comp, "Unblocked top-level pad");
+      /* Check again if this element is still in the stack */
+      if (comp->private->current && (tmp =
+              g_node_find (comp->private->current, G_IN_ORDER, G_TRAVERSE_ALL,
+                  object))) {
+
+        /* 3. unblock ghostpad */
+        GST_LOG_OBJECT (comp, "About to unblock top-level pad : %s:%s",
+            GST_DEBUG_PAD_NAME (tpad));
+        gst_pad_set_blocked_async (tpad, FALSE,
+            (GstPadBlockCallback) pad_blocked, comp);
+        GST_LOG_OBJECT (comp, "Unblocked top-level pad");
+      } else {
+        GST_DEBUG ("Element went away from currently configured stack");
+      }
     }
 
     /* deactivate nomorepads handler */
@@ -1952,7 +1983,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     GList *deactivate = NULL;
     GstClockTime new_start = GST_CLOCK_TIME_NONE;
     GstClockTime new_stop = GST_CLOCK_TIME_NONE;
-    gboolean switchtarget = FALSE;
     gboolean samestack = FALSE;
     gboolean startchanged, stopchanged;
 
@@ -1983,9 +2013,15 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
 
     /* Clear pending child seek */
     if (comp->private->childseek) {
+      GST_DEBUG ("unreffing event %p", comp->private->childseek);
       gst_event_unref (comp->private->childseek);
       comp->private->childseek = NULL;
     }
+
+    /* activate new stack */
+    if (comp->private->current)
+      g_node_destroy (comp->private->current);
+    comp->private->current = NULL;
 
     COMP_OBJECTS_UNLOCK (comp);
 
@@ -2007,18 +2043,10 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
       GST_DEBUG_OBJECT (comp, "Finished de-activating objects no longer used");
     }
 
-    /* if toplevel element has changed, redirect ghostpad to it */
-    if ((stack) && ((!(comp->private->current))
-            || (comp->private->current->data != stack->data)))
-      switchtarget = TRUE;
+    comp->private->current = stack;
 
     GST_DEBUG_OBJECT (comp, "activating objects in new stack to %s",
         gst_element_state_get_name (nextstate));
-
-    /* activate new stack */
-    if (comp->private->current)
-      g_node_destroy (comp->private->current);
-    comp->private->current = stack;
 
     if (!samestack && stack)
       unlock_activate_stack (comp, stack, change_state, nextstate);
