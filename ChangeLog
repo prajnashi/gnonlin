@@ -1,3 +1,15 @@
+2008-07-29  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c: (get_current_position),
+	(object_start_changed), (object_stop_changed),
+	(object_priority_changed), (object_active_changed),
+	(gnl_composition_add_object), (gnl_composition_remove_object):
+	When calculating current position, request it downstream since it has a
+	much better chance of knowing the exact position (because of queues, ..).
+	If that fails, then revert to upstream (in sources) as before.
+	Also, use the current position when stop/start/active/priority child
+	properties change.
+
 2008-07-17  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* gnl/gnlcomposition.c: (gnl_composition_handle_message),
