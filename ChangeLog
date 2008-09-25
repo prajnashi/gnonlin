@@ -1,3 +1,8 @@
+2008-09-25  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnloperation.c: (GST_START_TEST):
+	Adapt test to 'fixed' behaviour of videomixer fixed by #537361
+
 2008-07-29  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* gnl/gnlcomposition.c: (get_current_position),

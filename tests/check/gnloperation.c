@@ -750,7 +750,7 @@ GST_START_TEST (test_complex_operations)
       segment_new (1.0, GST_FORMAT_TIME, 0, 2 * GST_SECOND, 0));
   collect->expected_segments = g_list_append (collect->expected_segments,
       segment_new (1.0, GST_FORMAT_TIME,
-          2 * GST_SECOND, 4 * GST_SECOND, 2 * GST_SECOND));
+          0 * GST_SECOND, 2 * GST_SECOND, 2 * GST_SECOND));
   collect->expected_segments = g_list_append (collect->expected_segments,
       segment_new (1.0, GST_FORMAT_TIME,
           4 * GST_SECOND, 6 * GST_SECOND, 4 * GST_SECOND));
@@ -814,7 +814,7 @@ GST_START_TEST (test_complex_operations)
       segment_new (1.0, GST_FORMAT_TIME, 0, 2 * GST_SECOND, 0));
   collect->expected_segments = g_list_append (collect->expected_segments,
       segment_new (1.0, GST_FORMAT_TIME,
-          2 * GST_SECOND, 4 * GST_SECOND, 2 * GST_SECOND));
+          0 * GST_SECOND, 2 * GST_SECOND, 2 * GST_SECOND));
   collect->expected_segments = g_list_append (collect->expected_segments,
       segment_new (1.0, GST_FORMAT_TIME,
           4 * GST_SECOND, 6 * GST_SECOND, 4 * GST_SECOND));
