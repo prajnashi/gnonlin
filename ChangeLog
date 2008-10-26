@@ -1,3 +1,8 @@
+2008-10-27  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* configure.ac:
+	0.10.9.2 pre-release.
+	
 2008-09-25  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* tests/check/gnloperation.c: (GST_START_TEST):
