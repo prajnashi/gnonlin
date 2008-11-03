@@ -1,5 +1,5 @@
 
-Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.9 "Cheese and Wine"
+Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.10 "All Good Things..."
         
 
 
@@ -29,11 +29,11 @@ An element for using filters in a GnlComposition
 
 Features of this release
     
-      * Improved support for modifying compositions during playback.
-
-Bugs fixed in this release
-     
-      * 437105 : [gnlcomposition] Adding sources within the currently acti...
+      * Documentation in gtk-doc format
+      * Smarter handling of modifications while playing.
+      * Can handle more complicated combinations/types of operations
+There were no bugs fixed in this release
+    
 
 Download
 
@@ -64,5 +64,9 @@ GNonLin is primarily used by PiTiVi (http://www.pitivi.org/) and Jokosher (http:
   
 Contributors to this release
     
+      * 
+      * Damien Lespiau
       * Edward Hervey
+      * Jan Schmidt
+      * Sebastian Dröge
  
