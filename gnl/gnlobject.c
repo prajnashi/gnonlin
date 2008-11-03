@@ -742,9 +742,16 @@ static void
 control_internal_pad (GstPad * ghostpad, GnlObject * object)
 {
   GnlPadPrivate *priv;
-  GnlPadPrivate *privghost = gst_pad_get_element_private (ghostpad);
-  GstPad *target = gst_ghost_pad_get_target (GST_GHOST_PAD (ghostpad));
+  GnlPadPrivate *privghost;
+  GstPad *target;
   GstPad *internal;
+
+  if (!ghostpad) {
+    GST_DEBUG_OBJECT (object, "We don't have a valid ghostpad !");
+    return;
+  }
+  privghost = gst_pad_get_element_private (ghostpad);
+  target = gst_ghost_pad_get_target (GST_GHOST_PAD (ghostpad));
 
   if (!target) {
     GST_DEBUG_OBJECT (ghostpad,

@@ -1,3 +1,9 @@
+2008-11-03  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlobject.c: (control_internal_pad):
+	Small protection for when we get invalid ghostpads. Doesn't change
+	behaviour, but reduces fatal warnings.
+
 2008-10-27  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* configure.ac:
