@@ -1033,6 +1033,9 @@ refine_start_stop_in_region_above_priority (GnlComposition * composition,
     if (object->start <= timestamp)
       continue;
 
+    if (object->start >= nstop)
+      continue;
+
     nstop = object->start;
     GST_DEBUG_OBJECT (composition,
         "START Found %s [prio:%u] at %" GST_TIME_FORMAT,
@@ -1051,6 +1054,9 @@ refine_start_stop_in_region_above_priority (GnlComposition * composition,
       continue;
 
     if (object->stop >= timestamp)
+      continue;
+
+    if (object->stop <= nstart)
       continue;
 
     nstart = object->stop;

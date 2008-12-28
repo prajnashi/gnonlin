@@ -1,3 +1,9 @@
+2008-12-28  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c: (refine_start_stop_in_region_above_priority):
+	Refine means "do not EXTEND the region" !
+	This should fix more issues with complex timelines.
+
 2008-12-14  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* gnl/gnlsource.c: (gnl_source_send_event):
