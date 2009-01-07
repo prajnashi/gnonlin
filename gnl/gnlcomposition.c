@@ -1000,8 +1000,11 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
     gst_pad_set_active (comp->private->ghostpad, TRUE);
     if (!(gst_element_add_pad (GST_ELEMENT (comp), comp->private->ghostpad)))
       GST_WARNING ("Couldn't add the ghostpad");
-    else
+    else {
+      COMP_OBJECTS_UNLOCK (comp);
       gst_element_no_more_pads (GST_ELEMENT (comp));
+      COMP_OBJECTS_LOCK (comp);
+    }
   }
   GST_DEBUG_OBJECT (comp, "END");
 }

@@ -1,3 +1,13 @@
+2009-01-07  Edward Hervey  <edward.hervey@collabora.co.uk>
+
+	Patch by: Alessandro Decina <alessandro.decina@collabora.co.uk>
+	* gnl/gnlcomposition.c: (gnl_composition_ghost_pad_set_target):
+	Release objects lock temporarily when emitting no-more-pads.
+	This should not affect anything considering that the composition is
+	in the process of being built at that point and no actions should
+	be attempting to modify it while that lock is released.
+	Fixes #566796
+
 2008-12-28  Edward Hervey  <edward.hervey@collabora.co.uk>
 
 	* gnl/gnlcomposition.c: (refine_start_stop_in_region_above_priority):
