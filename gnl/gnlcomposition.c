@@ -678,7 +678,7 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
        * In order to avoid those issues, we just ignore error messages from elements
        * which aren't in the currently configured stack
        */
-      if (GST_MESSAGE_SRC (message)
+      if (GST_MESSAGE_SRC (message) && GNL_IS_OBJECT (GST_MESSAGE_SRC (message))
           && !OBJECT_IN_ACTIVE_SEGMENT (comp, GST_MESSAGE_SRC (message))) {
         GST_DEBUG_OBJECT (comp,
             "HACK Dropping error message from object not in currently configured stack !");
