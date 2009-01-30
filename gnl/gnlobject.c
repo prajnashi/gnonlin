@@ -632,6 +632,24 @@ beach:
 }
 
 static gboolean
+translate_incoming_duration_query (GnlObject * object, GstQuery * query)
+{
+  GstFormat format;
+  gint64 cur;
+
+  gst_query_parse_duration (query, &format, &cur);
+  if (format != GST_FORMAT_TIME) {
+    GST_WARNING_OBJECT (object,
+        "We can only handle duration queries in GST_FORMAT_TIME");
+    return FALSE;
+  }
+
+  gst_query_set_duration (query, GST_FORMAT_TIME, object->duration);
+
+  return TRUE;
+}
+
+static gboolean
 internalpad_query_function (GstPad * internal, GstQuery * query)
 {
   GnlPadPrivate *priv = gst_pad_get_element_private (internal);
@@ -711,17 +729,25 @@ ghostpad_query_function (GstPad * ghostpad, GstQuery * query)
 {
   GnlPadPrivate *priv = gst_pad_get_element_private (ghostpad);
   GnlObject *object = GNL_OBJECT (GST_PAD_PARENT (ghostpad));
-  gboolean pret;
+  gboolean pret = TRUE;
 
   GST_DEBUG_OBJECT (ghostpad, "querytype:%d", GST_QUERY_TYPE (query));
 
-  pret = priv->queryfunc (ghostpad, query);
+  switch (GST_QUERY_TYPE (query)) {
+    case GST_QUERY_DURATION:
+      break;
+    default:
+      pret = priv->queryfunc (ghostpad, query);
+  }
 
   if (pret) {
     /* translate result */
     switch (GST_QUERY_TYPE (query)) {
       case GST_QUERY_POSITION:
         pret = translate_incoming_position_query (object, query);
+        break;
+      case GST_QUERY_DURATION:
+        pret = translate_incoming_duration_query (object, query);
         break;
       default:
         break;
