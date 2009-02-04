@@ -142,13 +142,16 @@ gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
 
   filesource->private->filesource = filesrc;
 
-  gst_bin_add_many (GST_BIN (filesource), filesrc, decodebin, NULL);
+  if (filesrc && decodebin) {
+    gst_bin_add_many (GST_BIN (filesource), filesrc, decodebin, NULL);
+    if (!(gst_element_link (filesrc, decodebin)))
+      g_warning ("Could not link the file source element to decodebin");
+  }
 
-  if (!(gst_element_link (filesrc, decodebin)))
-    g_warning ("Could not link the file source element to decodebin");
-
-  GNL_SOURCE_GET_CLASS (filesource)->control_element ((GnlSource *) filesource,
-      decodebin);
+  if (decodebin) {
+    GNL_SOURCE_GET_CLASS (filesource)->control_element (
+        (GnlSource *) filesource, decodebin);
+  }
 
   GST_DEBUG_OBJECT (filesource, "done");
 }
