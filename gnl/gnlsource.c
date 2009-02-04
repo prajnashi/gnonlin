@@ -386,10 +386,10 @@ gnl_source_control_element_func (GnlSource * source, GstElement * element)
 {
   GstPad *pad = NULL;
 
+  g_return_val_if_fail (source->element == NULL, FALSE);
+
   GST_DEBUG_OBJECT (source, "element:%s, source->element:%p",
       GST_ELEMENT_NAME (element), source->element);
-
-  g_return_val_if_fail (source->element == NULL, FALSE);
 
   source->element = element;
   gst_object_ref (element);
