@@ -256,11 +256,10 @@ element_pad_removed_cb (GstElement * element, GstPad * pad, GnlSource * source)
       gnl_object_remove_ghost_pad ((GnlObject *) source,
           source->priv->ghostpad);
       source->priv->ghostpad = NULL;
+      gst_object_unref (target);
     } else {
       GST_DEBUG_OBJECT (source, "The removed pad wasn't our ghostpad target");
     }
-
-    gst_object_unref (target);
   }
 }
 
@@ -563,13 +562,15 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
         GstPad *target =
             gst_ghost_pad_get_target ((GstGhostPad *) source->priv->ghostpad);
 
-        gst_pad_set_blocked_async (target, FALSE,
-            (GstPadBlockCallback) pad_blocked_cb, source);
+        if (target) {
+          gst_pad_set_blocked_async (target, FALSE,
+              (GstPadBlockCallback) pad_blocked_cb, source);
+          gst_object_unref (target);
+        }
         gnl_object_remove_ghost_pad ((GnlObject *) source,
             source->priv->ghostpad);
         source->priv->ghostpad = NULL;
         source->priv->ghostedpad = NULL;
-        gst_object_unref (target);
       }
     default:
       break;
