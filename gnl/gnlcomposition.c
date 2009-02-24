@@ -2090,10 +2090,10 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
       COMP_OBJECTS_LOCK (comp);
 
       /* 1. Create new seek event for newly configured timeline stack */
-      if (samestack && stopchanged)
+      if (samestack && (startchanged || stopchanged))
         event =
             get_new_seek_event (comp,
-            (state == GST_STATE_PLAYING) ? FALSE : TRUE, TRUE);
+            (state == GST_STATE_PLAYING) ? FALSE : TRUE, !startchanged);
       else
         event = get_new_seek_event (comp, initial, FALSE);
 
@@ -2360,10 +2360,10 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
         "Head of objects_start is now %s [%" GST_TIME_FORMAT "--%"
         GST_TIME_FORMAT "]",
         GST_OBJECT_NAME (comp->private->objects_start->data),
-        GST_TIME_ARGS (((GnlObject *) comp->private->objects_start->data)->
-            start),
-        GST_TIME_ARGS (((GnlObject *) comp->private->objects_start->data)->
-            stop));
+        GST_TIME_ARGS (((GnlObject *)
+                comp->private->objects_start->data)->start),
+        GST_TIME_ARGS (((GnlObject *)
+                comp->private->objects_start->data)->stop));
 
   comp->private->objects_stop = g_list_append
       (comp->private->objects_stop, element);
@@ -2375,10 +2375,10 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
         "Head of objects_stop is now %s [%" GST_TIME_FORMAT "--%"
         GST_TIME_FORMAT "]",
         GST_OBJECT_NAME (comp->private->objects_stop->data),
-        GST_TIME_ARGS (((GnlObject *) comp->private->objects_stop->data)->
-            start),
-        GST_TIME_ARGS (((GnlObject *) comp->private->objects_stop->data)->
-            stop));
+        GST_TIME_ARGS (((GnlObject *)
+                comp->private->objects_stop->data)->start),
+        GST_TIME_ARGS (((GnlObject *)
+                comp->private->objects_stop->data)->stop));
 
   GST_DEBUG_OBJECT (comp,
       "segment_start:%" GST_TIME_FORMAT " segment_stop:%" GST_TIME_FORMAT,
