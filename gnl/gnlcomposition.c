@@ -363,6 +363,21 @@ gnl_composition_finalize (GObject * object)
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
+/* signal_duration_change
+ * Creates a new GST_MESSAGE_DURATION with the currently configured
+ * composition duration and sends that on the bus.
+ */
+
+static void inline
+signal_duration_change (GnlComposition * comp)
+{
+  GstMessage *msg;
+
+  msg = gst_message_new_duration (GST_OBJECT_CAST (comp),
+      GST_FORMAT_TIME, ((GnlObject *) comp)->duration);
+  gst_element_post_message (GST_ELEMENT_CAST (comp), msg);
+}
+
 static gboolean
 unblock_child_pads (GstElement * child, GValue * ret, GnlComposition * comp)
 {
@@ -1473,6 +1488,7 @@ update_start_stop_duration (GnlComposition * comp)
     if (cobj->duration) {
       cobj->duration = 0;
       g_object_notify (G_OBJECT (cobj), "duration");
+      signal_duration_change (comp);
     }
     if (cobj->stop) {
       cobj->stop = 0;
@@ -1515,6 +1531,7 @@ update_start_stop_duration (GnlComposition * comp)
   if ((cobj->stop - cobj->start) != cobj->duration) {
     cobj->duration = cobj->stop - cobj->start;
     g_object_notify (G_OBJECT (cobj), "duration");
+    signal_duration_change (comp);
   }
 
   GST_LOG_OBJECT (comp,
