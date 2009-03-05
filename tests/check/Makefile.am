@@ -25,7 +25,8 @@ check_PROGRAMS =	\
 	./simple	\
 	./complex	\
 	./gnlsource	\
-	./gnloperation
+	./gnloperation	\
+	./gnlcomposition
 
 noinst_HEADERS = \
 	common.h

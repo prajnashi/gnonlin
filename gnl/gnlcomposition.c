@@ -2164,6 +2164,8 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         gnl_object_remove_ghost_pad ((GnlObject *) comp,
             comp->private->ghostpad);
         comp->private->ghostpad = NULL;
+        comp->private->segment_start = 0;
+        comp->private->segment_stop = GST_CLOCK_TIME_NONE;
       }
     }
   } else {
@@ -2191,7 +2193,9 @@ object_start_changed (GnlObject * object, GParamSpec * arg,
   comp->private->objects_stop = g_list_sort
       (comp->private->objects_stop, (GCompareFunc) objects_stop_compare);
 
-  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object)) {
+  if (comp->private->current && (OBJECT_IN_ACTIVE_SEGMENT (comp, object) ||
+          g_node_find (comp->private->current,
+              G_IN_ORDER, G_TRAVERSE_ALL, object))) {
     GstClockTime curpos = get_current_position (comp);
     if (curpos == GST_CLOCK_TIME_NONE)
       curpos = comp->private->segment->start = comp->private->segment_start;
@@ -2213,7 +2217,9 @@ object_stop_changed (GnlObject * object, GParamSpec * arg,
   comp->private->objects_start = g_list_sort
       (comp->private->objects_start, (GCompareFunc) objects_start_compare);
 
-  if (comp->private->current && OBJECT_IN_ACTIVE_SEGMENT (comp, object)) {
+  if (comp->private->current && (OBJECT_IN_ACTIVE_SEGMENT (comp, object) ||
+          g_node_find (comp->private->current,
+              G_IN_ORDER, G_TRAVERSE_ALL, object))) {
     GstClockTime curpos = get_current_position (comp);
     if (curpos == GST_CLOCK_TIME_NONE)
       curpos = comp->private->segment->start = comp->private->segment_start;
