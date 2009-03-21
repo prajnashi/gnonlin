@@ -164,11 +164,13 @@ videotest_in_bin_gnl_src (const gchar * name, guint64 start, gint64 duration, gi
   GstElement * alpha = NULL;
   GstPad *srcpad = NULL;
 
+  alpha = gst_element_factory_make ("alpha", NULL);
+  if (alpha == NULL)
+    return NULL;
+
   videotestsrc = gst_element_factory_make_or_warn ("videotestsrc", NULL);
   g_object_set (G_OBJECT (videotestsrc), "pattern", pattern, NULL);
   bin = gst_bin_new (NULL);
-
-  alpha = gst_element_factory_make_or_warn ("alpha", NULL);
 
   gnlsource = new_gnl_src (name, start, duration, priority);
 
