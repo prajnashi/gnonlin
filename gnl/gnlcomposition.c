@@ -77,6 +77,7 @@ struct _GnlCompositionPrivate
 
   /* source top-level ghostpad */
   GstPad *ghostpad;
+  guint ghosteventprobe;
 
   /* current stack, list of GnlObject* */
   GNode *current;
@@ -107,9 +108,6 @@ struct _GnlCompositionPrivate
    */
   GstPadEventFunction gnl_event_pad_func;
 
-  /* List of SEGMENT_START/SEGMENT_DONE, protected by objects lock */
-  GList *segmessages;
-  GMutex *messages_lock;
 };
 
 #define OBJECT_IN_ACTIVE_SEGMENT(comp,element) \
@@ -142,7 +140,6 @@ static gboolean
 update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     gboolean initial, gboolean change_state, gboolean modify);
 
-static void flush_messages (GnlComposition * comp);
 
 #define COMP_REAL_START(comp) \
   (MAX (comp->private->segment->start, ((GnlObject*)comp)->start))
@@ -169,19 +166,6 @@ static void flush_messages (GnlComposition * comp);
     g_mutex_unlock (comp->private->objects_lock);			\
   } G_STMT_END
 
-#define COMP_MESSAGES_LOCK(comp) G_STMT_START {				\
-    GST_LOG_OBJECT (comp, "locking messages_lock from thread %p",		\
-      g_thread_self());							\
-    g_mutex_lock (comp->private->messages_lock);				\
-    GST_LOG_OBJECT (comp, "locked messages_lock from thread %p",		\
-		    g_thread_self());					\
-  } G_STMT_END
-
-#define COMP_MESSAGES_UNLOCK(comp) G_STMT_START {			\
-    GST_LOG_OBJECT (comp, "unlocking messages_lock from thread %p",		\
-		    g_thread_self());					\
-    g_mutex_unlock (comp->private->messages_lock);			\
-  } G_STMT_END
 
 #define COMP_FLUSHING_LOCK(comp) G_STMT_START {				\
     GST_LOG_OBJECT (comp, "locking flushing_lock from thread %p",		\
@@ -302,7 +286,6 @@ gnl_composition_init (GnlComposition * comp, GnlCompositionClass * klass)
       (g_direct_hash,
       g_direct_equal, NULL, (GDestroyNotify) hash_value_destroy);
 
-  comp->private->messages_lock = g_mutex_new ();
 
   gnl_composition_reset (comp);
 }
@@ -355,8 +338,6 @@ gnl_composition_finalize (GObject * object)
 
   g_mutex_free (comp->private->flushing_lock);
 
-  g_mutex_free (comp->private->messages_lock);
-  flush_messages (comp);
 
   g_free (comp->private);
 
@@ -484,7 +465,7 @@ gnl_composition_reset (GnlComposition * comp)
 }
 
 static gboolean
-segment_done_main_thread (GnlComposition * comp)
+eos_main_thread (GnlComposition * comp)
 {
   /* Set up a non-initial seek on segment_stop */
   GST_DEBUG_OBJECT (comp,
@@ -512,8 +493,7 @@ segment_done_main_thread (GnlComposition * comp)
 
       GST_LOG_OBJECT (comp, "Emitting segment done pos %" GST_TIME_FORMAT,
           GST_TIME_ARGS (epos));
-      GST_BIN_CLASS (parent_class)->handle_message
-          (GST_BIN (comp),
+      gst_element_post_message (GST_ELEMENT_CAST (comp),
           gst_message_new_segment_done (GST_OBJECT (comp),
               comp->private->segment->format, epos));
     }
@@ -521,92 +501,60 @@ segment_done_main_thread (GnlComposition * comp)
   return FALSE;
 }
 
-/* add_message
- * flush_messages
- * replace_message
- * has_message
- *
- * Must be called with the MESSAGES_LOCK taken
- */
-
-static void
-add_message (GnlComposition * comp, GstMessage * msg)
-{
-  GList *tmp;
-
-  /* make sure we don't already have a msg with the
-   * same src/type */
-  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next) {
-    GstMessage *tmpmsg = (GstMessage *) tmp->data;
-
-    if ((GST_MESSAGE_SRC (msg) == GST_MESSAGE_SRC (tmpmsg)) &&
-        (GST_MESSAGE_TYPE (msg) == GST_MESSAGE_TYPE (tmpmsg)))
-      return;
-  }
-  comp->private->segmessages = g_list_append (comp->private->segmessages,
-      gst_message_ref (msg));
-}
-
-static void
-flush_messages (GnlComposition * comp)
-{
-  GList *tmp;
-
-  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next)
-    gst_message_unref ((GstMessage *) tmp->data);
-  g_list_free (comp->private->segmessages);
-  comp->private->segmessages = NULL;
-}
-
-static void
-replace_message (GnlComposition * comp, GstMessage * msg, GstMessageType type)
-{
-  GList *tmp = NULL;
-
-  /* Find msg of type 'type' and source 'msg'->src */
-  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next) {
-    GstMessage *tmpmsg = (GstMessage *) tmp->data;
-
-    if ((GST_MESSAGE_TYPE (tmpmsg) == type) &&
-        (GST_MESSAGE_SRC (tmpmsg) == GST_MESSAGE_SRC (msg)))
-      break;
-  }
-
-  if (tmp != NULL) {
-    gst_message_unref ((GstMessage *) tmp->data);
-    comp->private->segmessages =
-        g_list_delete_link (comp->private->segmessages, tmp);
-  }
-  add_message (comp, msg);
-}
-
 static gboolean
-has_message (GnlComposition * comp, GstMessageType type)
+ghost_event_probe_handler (GstPad * ghostpad, GstEvent * event,
+    GnlComposition * comp)
 {
-  GList *tmp;
-  gboolean res = FALSE;
+  gboolean keepit = TRUE;
 
-  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next)
-    if (GST_MESSAGE_TYPE ((GstMessage *) tmp->data) == type) {
-      res = TRUE;
-      break;
+  GST_DEBUG_OBJECT (comp, "event: %s", GST_EVENT_TYPE_NAME (event));
+
+  switch (GST_EVENT_TYPE (event)) {
+    case GST_EVENT_NEWSEGMENT:{
+      COMP_FLUSHING_LOCK (comp);
+      if (comp->private->pending_idle) {
+        GST_DEBUG_OBJECT (comp, "removing pending seek for main thread");
+        g_source_remove (comp->private->pending_idle);
+      }
+      comp->private->pending_idle = 0;
+      comp->private->flushing = FALSE;
+      COMP_FLUSHING_UNLOCK (comp);
     }
+      break;
+    case GST_EVENT_EOS:{
+      COMP_FLUSHING_LOCK (comp);
+      if (comp->private->flushing) {
+        GST_DEBUG_OBJECT (comp, "flushing, bailing out");
+        COMP_FLUSHING_UNLOCK (comp);
+        keepit = FALSE;
+        break;
+      }
+      COMP_FLUSHING_UNLOCK (comp);
 
-  return res;
-}
+      GST_DEBUG_OBJECT (comp, "Adding eos handling to main thread");
+      if (comp->private->pending_idle) {
+        GST_WARNING_OBJECT (comp,
+            "There was already a pending eos in main thread !");
+        g_source_remove (comp->private->pending_idle);
+      }
 
-static void
-dump_messages (GnlComposition * comp)
-{
-  GList *tmp;
+      /* FIXME : This should be switched to using a g_thread_create() instead
+       * of a g_idle_add(). EXTENSIVE TESTING AND ANALYSIS REQUIRED BEFORE
+       * DOING THE SWITCH !!! */
+      comp->private->pending_idle =
+          g_idle_add ((GSourceFunc) eos_main_thread, (gpointer) comp);
 
-  for (tmp = comp->private->segmessages; tmp; tmp = tmp->next) {
-    GstMessage *msg = (GstMessage *) tmp->data;
-
-    GST_LOG ("type:%s , src:%s",
-        GST_MESSAGE_TYPE_NAME (msg), GST_ELEMENT_NAME (GST_MESSAGE_SRC (msg)));
+      keepit = FALSE;
+    }
+      break;
+    default:
+      break;
   }
+
+  return keepit;
 }
+
+
 
 /* Warning : Don't take the objects lock in this method */
 static void
@@ -621,64 +569,6 @@ gnl_composition_handle_message (GstBin * bin, GstMessage * message)
       "UNKNOWN");
 
   switch (GST_MESSAGE_TYPE (message)) {
-    case GST_MESSAGE_SEGMENT_START:{
-      COMP_FLUSHING_LOCK (comp);
-      if (comp->private->pending_idle) {
-        GST_DEBUG_OBJECT (comp, "removing pending seek for main thread");
-        g_source_remove (comp->private->pending_idle);
-      }
-      comp->private->pending_idle = 0;
-      comp->private->flushing = FALSE;
-      COMP_FLUSHING_UNLOCK (comp);
-
-      COMP_MESSAGES_LOCK (comp);
-      add_message (comp, message);
-      dump_messages (comp);
-      COMP_MESSAGES_UNLOCK (comp);
-
-      dropit = TRUE;
-      break;
-    }
-    case GST_MESSAGE_SEGMENT_DONE:{
-      gboolean has_start = FALSE;
-
-      COMP_FLUSHING_LOCK (comp);
-      if (comp->private->flushing) {
-        GST_DEBUG_OBJECT (comp, "flushing, bailing out");
-        COMP_FLUSHING_UNLOCK (comp);
-        dropit = TRUE;
-        break;
-      }
-      COMP_FLUSHING_UNLOCK (comp);
-
-      COMP_MESSAGES_LOCK (comp);
-      replace_message (comp, message, GST_MESSAGE_SEGMENT_START);
-      has_start = has_message (comp, GST_MESSAGE_SEGMENT_START);
-      dump_messages (comp);
-      COMP_MESSAGES_UNLOCK (comp);
-
-      if (has_start == TRUE) {
-        GST_DEBUG_OBJECT (comp, "Still waiting for more SEGMENT_DONE");
-        dropit = TRUE;
-        break;
-      }
-
-      GST_DEBUG_OBJECT (comp, "Adding segment_done handling to main thread");
-      if (comp->private->pending_idle) {
-        GST_WARNING_OBJECT (comp,
-            "There was already a pending segment_done in main thread !");
-        g_source_remove (comp->private->pending_idle);
-      }
-
-      /* FIXME : This should be switched to using a g_thread_create() instead
-       * of a g_idle_add(). EXTENSIVE TESTING AND ANALYSIS REQUIRED BEFORE
-       * DOING THE SWITCH !!! */
-      comp->private->pending_idle =
-          g_idle_add ((GSourceFunc) segment_done_main_thread, (gpointer) comp);
-
-      dropit = TRUE;
-      break;
-    }
     case GST_MESSAGE_ERROR:
     case GST_MESSAGE_WARNING:{
       /* FIXME / HACK
@@ -760,8 +650,7 @@ get_new_seek_event (GnlComposition * comp, gboolean initial,
   if (!(initial))
     flags = comp->private->segment->flags;
   else
-    flags =
-        GST_SEEK_FLAG_SEGMENT | GST_SEEK_FLAG_ACCURATE | GST_SEEK_FLAG_FLUSH;
+    flags = GST_SEEK_FLAG_ACCURATE | GST_SEEK_FLAG_FLUSH;
 
   GST_DEBUG_OBJECT (comp,
       "private->segment->start:%" GST_TIME_FORMAT " segment_start%"
@@ -979,6 +868,7 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
     GST_DEBUG_OBJECT (comp, "Removing target, hadghost:%d", hadghost);
 
   if (!(hadghost)) {
+    /* Create new ghostpad */
     comp->private->ghostpad =
         gnl_object_ghost_pad_no_target ((GnlObject *) comp, "src", GST_PAD_SRC);
     GST_DEBUG_OBJECT (comp->private->ghostpad,
@@ -1000,17 +890,31 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
       return;
     }
 
+    /* Unset previous target */
     if (ptarget) {
       GST_DEBUG_OBJECT (comp, "Previous target was %s:%s, blocking that pad",
           GST_DEBUG_PAD_NAME (ptarget));
       gst_pad_set_blocked_async (ptarget, TRUE,
           (GstPadBlockCallback) pad_blocked, comp);
+      /* remove event probe */
+      if (comp->private->ghosteventprobe) {
+        gst_pad_remove_event_probe (ptarget, comp->private->ghosteventprobe);
+        comp->private->ghosteventprobe = 0;
+      }
       gst_object_unref (ptarget);
     }
   }
 
   gnl_object_ghost_pad_set_target ((GnlObject *) comp,
       comp->private->ghostpad, target);
+
+  if (target && (comp->private->ghosteventprobe == 0)) {
+    GST_DEBUG ("Setting event probe");
+    comp->private->ghosteventprobe =
+        gst_pad_add_event_probe (target, G_CALLBACK (ghost_event_probe_handler),
+        comp);
+  }
+
   if (!(hadghost)) {
     gst_pad_set_active (comp->private->ghostpad, TRUE);
     if (!(gst_element_add_pad (GST_ELEMENT (comp), comp->private->ghostpad)))
@@ -2037,11 +1941,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         "now really updating the pipeline, current-state:%s",
         gst_element_state_get_name (state));
 
-    /* Flush pending segment messages */
-
-    COMP_MESSAGES_LOCK (comp);
-    flush_messages (comp);
-    COMP_MESSAGES_UNLOCK (comp);
 
     /* (re)build the stack and relink new elements */
     stack =

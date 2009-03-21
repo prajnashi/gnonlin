@@ -465,14 +465,6 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
         GST_TIME_ARGS (nstop));
   }
 
-  /* add segment seekflags */
-  if (!(flags & GST_SEEK_FLAG_SEGMENT)) {
-    GST_DEBUG_OBJECT (object, "Adding GST_SEEK_FLAG_SEGMENT");
-    flags |= GST_SEEK_FLAG_SEGMENT;
-  } else {
-    GST_DEBUG_OBJECT (object,
-        "event already has GST_SEEK_FLAG_SEGMENT : %d", flags);
-  }
 
   /* add accurate seekflags */
   if (!(flags & GST_SEEK_FLAG_ACCURATE)) {
