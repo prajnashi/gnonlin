@@ -303,6 +303,7 @@ gnl_composition_dispose (GObject * object)
   if (comp->private->ghostpad) {
     gnl_object_remove_ghost_pad ((GnlObject *) object, comp->private->ghostpad);
     comp->private->ghostpad = NULL;
+    comp->private->ghosteventprobe = 0;
   }
 
   if (comp->private->childseek) {
@@ -443,6 +444,7 @@ gnl_composition_reset (GnlComposition * comp)
   if (comp->private->ghostpad) {
     gnl_object_remove_ghost_pad ((GnlObject *) comp, comp->private->ghostpad);
     comp->private->ghostpad = NULL;
+    comp->private->ghosteventprobe = 0;
   }
 
   if (comp->private->childseek) {
@@ -530,6 +532,8 @@ ghost_event_probe_handler (GstPad * ghostpad, GstEvent * event,
         break;
       }
       COMP_FLUSHING_UNLOCK (comp);
+
+      GST_ERROR_OBJECT (comp, "MEH");
 
       GST_DEBUG_OBJECT (comp, "Adding eos handling to main thread");
       if (comp->private->pending_idle) {
@@ -909,10 +913,11 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target)
       comp->private->ghostpad, target);
 
   if (target && (comp->private->ghosteventprobe == 0)) {
-    GST_DEBUG ("Setting event probe");
     comp->private->ghosteventprobe =
         gst_pad_add_event_probe (target, G_CALLBACK (ghost_event_probe_handler),
         comp);
+    GST_DEBUG_OBJECT (comp, "added event probe %d",
+        comp->private->ghosteventprobe);
   }
 
   if (!(hadghost)) {
@@ -2063,6 +2068,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         gnl_object_remove_ghost_pad ((GnlObject *) comp,
             comp->private->ghostpad);
         comp->private->ghostpad = NULL;
+        comp->private->ghosteventprobe = 0;
         comp->private->segment_start = 0;
         comp->private->segment_stop = GST_CLOCK_TIME_NONE;
       }
@@ -2176,6 +2182,7 @@ object_pad_removed (GnlObject * object, GstPad * pad, GnlComposition * comp)
     GST_DEBUG_OBJECT (comp, "Removing ghostpad");
     gnl_object_remove_ghost_pad ((GnlObject *) comp, comp->private->ghostpad);
     comp->private->ghostpad = NULL;
+    comp->private->ghosteventprobe = 0;
   } else {
     /* unblock it ! */
     gst_pad_set_blocked_async (pad, FALSE, (GstPadBlockCallback) pad_blocked,
