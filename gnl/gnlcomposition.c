@@ -533,8 +533,6 @@ ghost_event_probe_handler (GstPad * ghostpad, GstEvent * event,
       }
       COMP_FLUSHING_UNLOCK (comp);
 
-      GST_ERROR_OBJECT (comp, "MEH");
-
       GST_DEBUG_OBJECT (comp, "Adding eos handling to main thread");
       if (comp->private->pending_idle) {
         GST_WARNING_OBJECT (comp,
