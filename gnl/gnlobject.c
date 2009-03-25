@@ -404,6 +404,34 @@ gnl_object_cleanup (GnlObject * object)
 }
 
 static GstEvent *
+translate_incoming_qos (GnlObject * object, GstEvent * event)
+{
+  gdouble prop;
+  GstClockTimeDiff diff;
+  GstClockTime timestamp, timestamp2;
+  GstEvent *event2 = NULL;
+
+  gst_event_parse_qos (event, &prop, &diff, &timestamp);
+
+  GST_DEBUG_OBJECT (object,
+      "incoming qos prop:%f, diff:%" G_GINT64_FORMAT
+      ", timestamp:%" GST_TIME_FORMAT, prop, diff, GST_TIME_ARGS (timestamp));
+
+  if (!(gnl_object_to_media_time (object, timestamp, &timestamp2)) ||
+      ((diff < 0) && (-diff > timestamp))) {
+    GST_DEBUG ("Invalid timestamp, discarding event");
+    gst_event_unref (event);
+  } else {
+    GST_DEBUG_OBJECT (object,
+        "translated qos prop:%f, diff:%" G_GINT64_FORMAT
+        ", timestamp:%" GST_TIME_FORMAT, prop, diff,
+        GST_TIME_ARGS (timestamp2));
+    event2 = gst_event_new_qos (prop, diff, timestamp2);
+  }
+  return event2;
+}
+
+static GstEvent *
 translate_incoming_seek (GnlObject * object, GstEvent * event)
 {
   GstEvent *event2;
@@ -684,27 +712,30 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
 
   switch (priv->dir) {
     case GST_PAD_SRC:
-      if (GST_EVENT_TYPE (event) == GST_EVENT_SEEK) {
-
-        event = translate_incoming_seek (object, event);
-      } else if (GST_EVENT_TYPE (event) == GST_EVENT_QOS) {
-
-        /* FIXME : Implement proper QoS time-shifting, for the time being it's
-         * just ignored. See #398453 */
-        gst_event_unref (event);
-        goto beach;
+    {
+      switch (GST_EVENT_TYPE (event)) {
+        case GST_EVENT_SEEK:
+          event = translate_incoming_seek (object, event);
+          break;
+        case GST_EVENT_QOS:
+          event = translate_incoming_qos (object, event);
+          break;
+        default:
+          break;
       }
+    }
       break;
     default:
       break;
   }
 
-  GST_DEBUG_OBJECT (ghostpad, "Calling priv->eventfunc");
-  ret = priv->eventfunc (ghostpad, event);
-  GST_DEBUG_OBJECT (ghostpad, "Returned from calling priv->eventfunc : %d",
-      ret);
+  if (event) {
+    GST_DEBUG_OBJECT (ghostpad, "Calling priv->eventfunc");
+    ret = priv->eventfunc (ghostpad, event);
+    GST_DEBUG_OBJECT (ghostpad, "Returned from calling priv->eventfunc : %d",
+        ret);
+  }
 
-beach:
   return ret;
 
   /* ERRORS */

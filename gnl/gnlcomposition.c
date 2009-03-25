@@ -812,7 +812,6 @@ gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
   GnlComposition *comp = (GnlComposition *) gst_pad_get_parent (ghostpad);
   gboolean res = TRUE;
 
-
   GST_DEBUG_OBJECT (comp, "event type:%s", GST_EVENT_TYPE_NAME (event));
   switch (GST_EVENT_TYPE (event)) {
     case GST_EVENT_SEEK:{
@@ -827,6 +826,17 @@ gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
       COMP_OBJECTS_UNLOCK (comp);
       gst_event_unref (event);
       event = nevent;
+      break;
+    }
+    case GST_EVENT_QOS:{
+      gdouble prop;
+      GstClockTimeDiff diff;
+      GstClockTime timestamp;
+
+      gst_event_parse_qos (event, &prop, &diff, &timestamp);
+      GST_INFO_OBJECT (comp, "timestamp:%" GST_TIME_FORMAT,
+          GST_TIME_ARGS (timestamp));
+      /* else we let it go through (gnlobject will take care of time-shifting) */
       break;
     }
     default:
