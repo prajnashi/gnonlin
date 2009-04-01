@@ -344,14 +344,12 @@ gnl_composition_finalize (GObject * object)
  * composition duration and sends that on the bus.
  */
 
-static void inline
+static inline void
 signal_duration_change (GnlComposition * comp)
 {
-  GstMessage *msg;
-
-  msg = gst_message_new_duration (GST_OBJECT_CAST (comp),
-      GST_FORMAT_TIME, ((GnlObject *) comp)->duration);
-  gst_element_post_message (GST_ELEMENT_CAST (comp), msg);
+  gst_element_post_message (GST_ELEMENT_CAST (comp),
+      gst_message_new_duration (GST_OBJECT_CAST (comp),
+          GST_FORMAT_TIME, ((GnlObject *) comp)->duration));
 }
 
 static gboolean
