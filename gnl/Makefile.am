@@ -1,5 +1,3 @@
-built_header_configure = gnlversion.h
-
 plugin_LTLIBRARIES = libgnl.la
 
 libgnl_la_SOURCES =		\
@@ -24,11 +22,7 @@ gnl_headers =			\
 	gnltypes.h		\
 	gnlfilesource.h
 
-#files built on make all/check/instal
-BUILT_SOURCES =			\
-	$(built_header_configure)
+DISTCLEANFILE = $(CLEANFILES)
 
-DISTCLEANFILE = $(CLEANFILES) $(built_header_configure)
-
-noinst_HEADERS = $(gnl_headers) $(built_header_configure)
+noinst_HEADERS = $(gnl_headers)
 

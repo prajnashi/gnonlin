@@ -215,7 +215,6 @@ m4/Makefile
 tests/Makefile
 tests/check/Makefile
 gnl/Makefile
-gnl/gnlversion.h
 gnonlin.spec
 )
 AC_OUTPUT
