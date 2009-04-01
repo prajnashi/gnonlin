@@ -117,7 +117,8 @@ gnl_filesource_class_init (GnlFileSourceClass * klass)
 }
 
 static void
-gnl_filesource_init (GnlFileSource * filesource, GnlFileSourceClass * klass)
+gnl_filesource_init (GnlFileSource * filesource,
+    GnlFileSourceClass * klass G_GNUC_UNUSED)
 {
   GstElement *filesrc, *decodebin;
 

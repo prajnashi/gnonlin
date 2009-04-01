@@ -131,7 +131,7 @@ gnl_source_class_init (GnlSourceClass * klass)
 
 
 static void
-gnl_source_init (GnlSource * source, GnlSourceClass * klass)
+gnl_source_init (GnlSource * source, GnlSourceClass * klass G_GNUC_UNUSED)
 {
   GST_OBJECT_FLAG_SET (source, GNL_OBJECT_SOURCE);
   source->element = NULL;
@@ -209,7 +209,8 @@ gnl_source_prepare (GnlObject * object)
 
 
 static void
-element_pad_added_cb (GstElement * element, GstPad * pad, GnlSource * source)
+element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
+    GnlSource * source)
 {
   GST_DEBUG_OBJECT (source, "pad %s:%s", GST_DEBUG_PAD_NAME (pad));
 
@@ -240,7 +241,8 @@ element_pad_added_cb (GstElement * element, GstPad * pad, GnlSource * source)
 }
 
 static void
-element_pad_removed_cb (GstElement * element, GstPad * pad, GnlSource * source)
+element_pad_removed_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
+    GnlSource * source)
 {
   GST_DEBUG_OBJECT (source, "pad %s:%s", GST_DEBUG_PAD_NAME (pad));
 

@@ -181,8 +181,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     g_mutex_unlock (comp->private->flushing_lock);			\
   } G_STMT_END
 
-static gboolean gnl_composition_prepare (GnlObject * object);
-
 
 typedef struct _GnlCompositionEntry GnlCompositionEntry;
 
@@ -216,12 +214,10 @@ gnl_composition_class_init (GnlCompositionClass * klass)
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
   GstBinClass *gstbin_class;
-  GnlObjectClass *gnlobject_class;
 
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
   gstbin_class = (GstBinClass *) klass;
-  gnlobject_class = (GnlObjectClass *) klass;
 
   GST_DEBUG_CATEGORY_INIT (gnlcomposition, "gnlcomposition",
       GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Composition");
@@ -230,15 +226,12 @@ gnl_composition_class_init (GnlCompositionClass * klass)
   gobject_class->finalize = GST_DEBUG_FUNCPTR (gnl_composition_finalize);
 
   gstelement_class->change_state = gnl_composition_change_state;
-/*   gstelement_class->query	 = gnl_composition_query; */
 
   gstbin_class->add_element = GST_DEBUG_FUNCPTR (gnl_composition_add_object);
   gstbin_class->remove_element =
       GST_DEBUG_FUNCPTR (gnl_composition_remove_object);
   gstbin_class->handle_message =
       GST_DEBUG_FUNCPTR (gnl_composition_handle_message);
-
-  gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_composition_prepare);
 
   gst_element_class_add_pad_template (gstelement_class,
       gst_static_pad_template_get (&gnl_composition_src_template));
@@ -263,7 +256,8 @@ hash_value_destroy (GnlCompositionEntry * entry)
 }
 
 static void
-gnl_composition_init (GnlComposition * comp, GnlCompositionClass * klass)
+gnl_composition_init (GnlComposition * comp,
+    GnlCompositionClass * klass G_GNUC_UNUSED)
 {
   GST_OBJECT_FLAG_SET (comp, GNL_OBJECT_SOURCE);
 
@@ -350,18 +344,17 @@ gnl_composition_finalize (GObject * object)
  * composition duration and sends that on the bus.
  */
 
-static void inline
+static inline void
 signal_duration_change (GnlComposition * comp)
 {
-  GstMessage *msg;
-
-  msg = gst_message_new_duration (GST_OBJECT_CAST (comp),
-      GST_FORMAT_TIME, ((GnlObject *) comp)->duration);
-  gst_element_post_message (GST_ELEMENT_CAST (comp), msg);
+  gst_element_post_message (GST_ELEMENT_CAST (comp),
+      gst_message_new_duration (GST_OBJECT_CAST (comp),
+          GST_FORMAT_TIME, ((GnlObject *) comp)->duration));
 }
 
 static gboolean
-unblock_child_pads (GstElement * child, GValue * ret, GnlComposition * comp)
+unblock_child_pads (GstElement * child, GValue * ret G_GNUC_UNUSED,
+    GnlComposition * comp)
 {
   GstPad *pad;
 
@@ -394,7 +387,8 @@ unblock_childs (GnlComposition * comp)
 
 
 static gboolean
-unlock_child_state (GstElement * child, GValue * ret, gpointer udata)
+unlock_child_state (GstElement * child, GValue * ret G_GNUC_UNUSED,
+    gpointer udata G_GNUC_UNUSED)
 {
   GST_DEBUG_OBJECT (child, "unlocking state");
   gst_element_set_locked_state (child, FALSE);
@@ -403,7 +397,8 @@ unlock_child_state (GstElement * child, GValue * ret, gpointer udata)
 }
 
 static gboolean
-lock_child_state (GstElement * child, GValue * ret, gpointer udata)
+lock_child_state (GstElement * child, GValue * ret G_GNUC_UNUSED,
+    gpointer udata G_GNUC_UNUSED)
 {
   GST_DEBUG_OBJECT (child, "locking state");
   gst_element_set_locked_state (child, TRUE);
@@ -504,7 +499,7 @@ eos_main_thread (GnlComposition * comp)
 }
 
 static gboolean
-ghost_event_probe_handler (GstPad * ghostpad, GstEvent * event,
+ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED, GstEvent * event,
     GnlComposition * comp)
 {
   gboolean keepit = TRUE;
@@ -1292,14 +1287,6 @@ get_src_pad (GstElement * element)
  * END OF UTILITY FUNCTIONS
  *
  */
-
-static gboolean
-gnl_composition_prepare (GnlObject * object)
-{
-  gboolean ret = TRUE;
-
-  return ret;
-}
 
 static GstStateChangeReturn
 gnl_composition_change_state (GstElement * element, GstStateChange transition)
@@ -2094,7 +2081,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
  */
 
 static void
-object_start_changed (GnlObject * object, GParamSpec * arg,
+object_start_changed (GnlObject * object, GParamSpec * arg G_GNUC_UNUSED,
     GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (object, "start position changed (%" GST_TIME_FORMAT
@@ -2118,7 +2105,7 @@ object_start_changed (GnlObject * object, GParamSpec * arg,
 }
 
 static void
-object_stop_changed (GnlObject * object, GParamSpec * arg,
+object_stop_changed (GnlObject * object, GParamSpec * arg G_GNUC_UNUSED,
     GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (object, "stop position changed (%" GST_TIME_FORMAT
@@ -2142,7 +2129,7 @@ object_stop_changed (GnlObject * object, GParamSpec * arg,
 }
 
 static void
-object_priority_changed (GnlObject * object, GParamSpec * arg,
+object_priority_changed (GnlObject * object, GParamSpec * arg G_GNUC_UNUSED,
     GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (object, "priority changed (%u), evaluating pipeline update",
@@ -2164,7 +2151,7 @@ object_priority_changed (GnlObject * object, GParamSpec * arg,
 }
 
 static void
-object_active_changed (GnlObject * object, GParamSpec * arg,
+object_active_changed (GnlObject * object, GParamSpec * arg G_GNUC_UNUSED,
     GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (object,
@@ -2199,7 +2186,8 @@ object_pad_removed (GnlObject * object, GstPad * pad, GnlComposition * comp)
 }
 
 static void
-object_pad_added (GnlObject * object, GstPad * pad, GnlComposition * comp)
+object_pad_added (GnlObject * object G_GNUC_UNUSED, GstPad * pad,
+    GnlComposition * comp)
 {
   if (GST_PAD_DIRECTION (pad) == GST_PAD_SINK)
     return;
