@@ -181,8 +181,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     g_mutex_unlock (comp->private->flushing_lock);			\
   } G_STMT_END
 
-static gboolean gnl_composition_prepare (GnlObject * object);
-
 
 typedef struct _GnlCompositionEntry GnlCompositionEntry;
 
@@ -216,12 +214,10 @@ gnl_composition_class_init (GnlCompositionClass * klass)
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
   GstBinClass *gstbin_class;
-  GnlObjectClass *gnlobject_class;
 
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
   gstbin_class = (GstBinClass *) klass;
-  gnlobject_class = (GnlObjectClass *) klass;
 
   GST_DEBUG_CATEGORY_INIT (gnlcomposition, "gnlcomposition",
       GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Composition");
@@ -230,15 +226,12 @@ gnl_composition_class_init (GnlCompositionClass * klass)
   gobject_class->finalize = GST_DEBUG_FUNCPTR (gnl_composition_finalize);
 
   gstelement_class->change_state = gnl_composition_change_state;
-/*   gstelement_class->query	 = gnl_composition_query; */
 
   gstbin_class->add_element = GST_DEBUG_FUNCPTR (gnl_composition_add_object);
   gstbin_class->remove_element =
       GST_DEBUG_FUNCPTR (gnl_composition_remove_object);
   gstbin_class->handle_message =
       GST_DEBUG_FUNCPTR (gnl_composition_handle_message);
-
-  gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_composition_prepare);
 
   gst_element_class_add_pad_template (gstelement_class,
       gst_static_pad_template_get (&gnl_composition_src_template));
@@ -1296,14 +1289,6 @@ get_src_pad (GstElement * element)
  * END OF UTILITY FUNCTIONS
  *
  */
-
-static gboolean
-gnl_composition_prepare (GnlObject * object)
-{
-  gboolean ret = TRUE;
-
-  return ret;
-}
 
 static GstStateChangeReturn
 gnl_composition_change_state (GstElement * element, GstStateChange transition)
