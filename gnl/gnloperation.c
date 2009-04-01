@@ -159,7 +159,8 @@ gnl_operation_reset (GnlOperation * operation)
 }
 
 static void
-gnl_operation_init (GnlOperation * operation, GnlOperationClass * klass)
+gnl_operation_init (GnlOperation * operation,
+    GnlOperationClass * klass G_GNUC_UNUSED)
 {
   gnl_operation_reset (operation);
   operation->ghostpad = NULL;

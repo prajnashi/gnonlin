@@ -263,7 +263,8 @@ hash_value_destroy (GnlCompositionEntry * entry)
 }
 
 static void
-gnl_composition_init (GnlComposition * comp, GnlCompositionClass * klass)
+gnl_composition_init (GnlComposition * comp,
+    GnlCompositionClass * klass G_GNUC_UNUSED)
 {
   GST_OBJECT_FLAG_SET (comp, GNL_OBJECT_SOURCE);
 
@@ -361,7 +362,8 @@ signal_duration_change (GnlComposition * comp)
 }
 
 static gboolean
-unblock_child_pads (GstElement * child, GValue * ret, GnlComposition * comp)
+unblock_child_pads (GstElement * child, GValue * ret G_GNUC_UNUSED,
+    GnlComposition * comp)
 {
   GstPad *pad;
 
@@ -394,7 +396,8 @@ unblock_childs (GnlComposition * comp)
 
 
 static gboolean
-unlock_child_state (GstElement * child, GValue * ret, gpointer udata)
+unlock_child_state (GstElement * child, GValue * ret G_GNUC_UNUSED,
+    gpointer udata G_GNUC_UNUSED)
 {
   GST_DEBUG_OBJECT (child, "unlocking state");
   gst_element_set_locked_state (child, FALSE);
@@ -403,7 +406,8 @@ unlock_child_state (GstElement * child, GValue * ret, gpointer udata)
 }
 
 static gboolean
-lock_child_state (GstElement * child, GValue * ret, gpointer udata)
+lock_child_state (GstElement * child, GValue * ret G_GNUC_UNUSED,
+    gpointer udata G_GNUC_UNUSED)
 {
   GST_DEBUG_OBJECT (child, "locking state");
   gst_element_set_locked_state (child, TRUE);
@@ -504,7 +508,7 @@ eos_main_thread (GnlComposition * comp)
 }
 
 static gboolean
-ghost_event_probe_handler (GstPad * ghostpad, GstEvent * event,
+ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED, GstEvent * event,
     GnlComposition * comp)
 {
   gboolean keepit = TRUE;
@@ -2094,7 +2098,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
  */
 
 static void
-object_start_changed (GnlObject * object, GParamSpec * arg,
+object_start_changed (GnlObject * object, GParamSpec * arg G_GNUC_UNUSED,
     GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (object, "start position changed (%" GST_TIME_FORMAT
@@ -2118,7 +2122,7 @@ object_start_changed (GnlObject * object, GParamSpec * arg,
 }
 
 static void
-object_stop_changed (GnlObject * object, GParamSpec * arg,
+object_stop_changed (GnlObject * object, GParamSpec * arg G_GNUC_UNUSED,
     GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (object, "stop position changed (%" GST_TIME_FORMAT
@@ -2142,7 +2146,7 @@ object_stop_changed (GnlObject * object, GParamSpec * arg,
 }
 
 static void
-object_priority_changed (GnlObject * object, GParamSpec * arg,
+object_priority_changed (GnlObject * object, GParamSpec * arg G_GNUC_UNUSED,
     GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (object, "priority changed (%u), evaluating pipeline update",
@@ -2164,7 +2168,7 @@ object_priority_changed (GnlObject * object, GParamSpec * arg,
 }
 
 static void
-object_active_changed (GnlObject * object, GParamSpec * arg,
+object_active_changed (GnlObject * object, GParamSpec * arg G_GNUC_UNUSED,
     GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (object,
@@ -2199,7 +2203,8 @@ object_pad_removed (GnlObject * object, GstPad * pad, GnlComposition * comp)
 }
 
 static void
-object_pad_added (GnlObject * object, GstPad * pad, GnlComposition * comp)
+object_pad_added (GnlObject * object G_GNUC_UNUSED, GstPad * pad,
+    GnlComposition * comp)
 {
   if (GST_PAD_DIRECTION (pad) == GST_PAD_SINK)
     return;

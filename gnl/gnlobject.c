@@ -92,7 +92,7 @@ static GstStateChangeReturn gnl_object_prepare (GnlObject * object);
 static void gnl_object_handle_message (GstBin * bin, GstMessage * message);
 
 static void
-gnl_object_base_init (gpointer g_class)
+gnl_object_base_init (gpointer g_class G_GNUC_UNUSED)
 {
 
 };
@@ -782,7 +782,7 @@ ghostpad_query_function (GstPad * ghostpad, GstQuery * query)
 
 /* internal pad going away */
 static void
-internal_pad_finalizing (GnlPadPrivate * priv, GObject * pad)
+internal_pad_finalizing (GnlPadPrivate * priv, GObject * pad G_GNUC_UNUSED)
 {
   g_free (priv);
 }
